@@ -52,22 +52,21 @@ for the full secrets-handling policy.
 removes Storage files first, then a database function deletes the `auth.users` row, and
 `on delete cascade` removes every row chained from it across every table (`0020`/`0030` migrations).
 
-**Scheduled deletion is now live** (`supabase/migrations/0052_scheduled_data_retention.sql`), via
-`pg_cron`, running daily as `postgres` (bypassing RLS, same as any other maintenance job):
+**Scheduled deletion is now live** (`0052_scheduled_data_retention.sql` and
+`0053_retention_notifications_messages.sql`), via `pg_cron`, running daily as `postgres`
+(bypassing RLS, same as any other maintenance job):
 
 | Job | Deletes | Retention window |
 |---|---|---|
 | `purge-old-audit-logs` | `public.audit_logs` rows | Older than **13 months** (not 12, so a full year stays available right after a monthly review) |
 | `purge-stale-push-tokens` | `public.push_tokens` rows | Not refreshed in **180 days** (almost certainly a reinstalled/replaced device — `send-push` already reactively removes tokens Expo reports as gone; this catches the ones that just went quiet instead) |
+| `purge-read-notifications` | `public.notifications` rows already marked read | Older than **90 days** (unread ones are never touched, regardless of age — they still need to surface to the user) |
+| `purge-old-deleted-messages` | `public.messages` rows already soft-deleted (`is_deleted = true`) | Older than **24 months** (content is already overwritten to `[deleted]` at delete time, so this removes an empty placeholder row, not real conversation history; `reply_to_id` is `on delete set null`, so a reply to a purged message just loses its "replying to" pointer rather than breaking) |
 
 Check what's scheduled at any time with `select * from cron.job;`; see run history with
 `select * from cron.job_run_details order by start_time desc limit 20;`.
 
-**Still not covered** (a smaller remaining gap, not a blocker): read notifications and
-soft-deleted messages (content is already overwritten to `[deleted]`, so no sensitive data
-remains — just an empty row) aren't purged yet. Can be added the same way if wanted.
-
-Retention windows above are a product decision, adjustable in the migration if the business wants
+Retention windows above are a product decision, adjustable in the migrations if the business wants
 something different — not a fixed security requirement.
 
 ## 4. Limit access
@@ -101,7 +100,5 @@ any purpose beyond operating the app.
 
 ## Open items
 
-- **Scheduled retention covers audit logs and stale push tokens** (see §3); read notifications and
-  soft-deleted message rows aren't purged yet — a smaller remaining gap, not a blocker.
 - **Independent security review:** not yet commissioned (also declared as "No" in
   `legal/DATA_SAFETY.md`'s Play Store answers).

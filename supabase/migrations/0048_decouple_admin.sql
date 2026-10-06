@@ -25,33 +25,26 @@
 drop trigger if exists advocate_profiles_protect_admin_scope on public.advocate_profiles;
 drop function if exists public.protect_admin_block_update();
 
+-- 0046 only ever ADDED these two alongside the original 0001 policies — it
+-- never touched "advocate can read own profile"/"advocate can update own
+-- profile", so those are still live and correct as-is. Dropping just the
+-- admin additions is enough to restore the original single-policy shape.
 drop policy if exists "admin can read all profiles" on public.advocate_profiles;
 drop policy if exists "admin can update block status" on public.advocate_profiles;
+-- These two only exist if 0047 (never applied live) had been run first.
 drop policy if exists "advocate can read own profile or admin can read any" on public.advocate_profiles;
 drop policy if exists "advocate can update own profile or admin can update any" on public.advocate_profiles;
-
--- Restore the exact original single-policy shape from 0001.
-create policy "advocate can read own profile"
-  on public.advocate_profiles for select
-  using (auth.uid() = id);
-
-create policy "advocate can update own profile"
-  on public.advocate_profiles for update
-  using (auth.uid() = id)
-  with check (auth.uid() = id);
 
 alter table public.advocate_profiles
   drop column if exists is_blocked,
   drop column if exists blocked_at,
   drop column if exists blocked_reason;
 
+-- Same story: "advocate can read own reports" (from 0016) was never
+-- touched by 0046, only added to.
 drop policy if exists "admin can read all reports" on public.reports;
 drop policy if exists "admin can review reports" on public.reports;
 drop policy if exists "advocate can read own reports or admin can read any" on public.reports;
-
-create policy "advocate can read own reports"
-  on public.reports for select
-  using ((select auth.uid()) = reporter_id);
 
 -- The new, separate entity ---------------------------------------------
 

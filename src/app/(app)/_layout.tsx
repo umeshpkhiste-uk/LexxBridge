@@ -56,6 +56,7 @@ export default function AppLayout() {
         <Stack.Screen name="change-password" options={{ headerShown: true, title: "Change password" }} />
         <Stack.Screen name="manage-profile" options={{ headerShown: true, title: "Manage profile" }} />
         <Stack.Screen name="settings" options={{ headerShown: true, title: "Settings" }} />
+        <Stack.Screen name="admin" options={{ headerShown: true, title: "Admin" }} />
         <Stack.Screen name="language" options={{ headerShown: true, title: "Language" }} />
         <Stack.Screen name="app-lock" options={{ headerShown: true, title: "App lock" }} />
         <Stack.Screen name="about" options={{ headerShown: true, title: "About LexxBridge" }} />

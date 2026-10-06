@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Platform, ScrollView, Share } from "react-native";
 import { exportMyData } from "@/features/account/api";
+import { isCurrentUserAdmin } from "@/features/admin/api";
 import { getAppLockMethod } from "@/features/applock/appLock";
 import { LockMethod } from "@/features/applock/rules";
 import { useAuth } from "@/features/auth/AuthProvider";
@@ -25,9 +26,11 @@ export default function SettingsScreen() {
   const [themePref, setThemePref] = useState<ThemePreference>("system");
   const [biometric, setBiometric] = useState({ available: false, label: "Biometrics", enabled: false });
   const [lockMethod, setLockMethod] = useState<LockMethod | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     getThemePreference().then(setThemePref).catch(() => {});
+    isCurrentUserAdmin().then(setIsAdmin).catch(() => {});
   }, []);
 
   // Security state can change on the App lock screen, so refresh on return.
@@ -137,6 +140,17 @@ export default function SettingsScreen() {
         <SettingsRow icon="reader-outline" label="Terms of Service" onPress={() => router.push("/legal/terms")} />
         <SettingsRow icon="trash-outline" label="Delete account & data" onPress={() => router.push("/legal/delete-account")} />
       </SettingsGroup>
+
+      {isAdmin ? (
+        <SettingsGroup title="Admin">
+          <SettingsRow
+            icon="shield-checkmark-outline"
+            label="Admin panel"
+            subtitle="User directory, blocking, reports"
+            onPress={() => router.push("/(app)/admin")}
+          />
+        </SettingsGroup>
+      ) : null}
     </ScrollView>
   );
 }

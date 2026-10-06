@@ -37,6 +37,8 @@ Supabase project ref: `ujrosfflqevkytburevc` (used throughout migrations/Edge Fu
 ## Docs map — what to read for what
 
 - `README.md` — product overview, phase status.
+- `PRD.md` — the full product requirements, each feature tagged against what's actually
+  shipped/partial/not-built — read this before assuming a spec'd feature exists.
 - `docs/ARCHITECTURE.md` — the RLS/data-isolation model, the two intentionally
   `security_invoker = false` views.
 - `docs/AUTH.md` — full auth implementation reference (sign-up/in, password reset, deep links,

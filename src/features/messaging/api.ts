@@ -334,15 +334,42 @@ export function subscribeToConversation(
   };
 }
 
-/** Fires whenever any message the user can see is added or changes, so the
- * chat list can refresh previews, ticks and unread counts live. */
+/** Fires whenever a message in one of the caller's own conversations is
+ * added or changes, so the chat list can refresh previews, ticks and
+ * unread counts live. Scoped with an `in.(...)` filter to just the
+ * caller's conversation ids — subscribing to the whole `messages` table
+ * with no filter at all (the previous version) meant the realtime server
+ * had to evaluate every message anyone on the platform sent against every
+ * connected client, which doesn't hold up under real traffic. A
+ * conversation started after this subscribes won't be covered until the
+ * next call — acceptable since the screen re-subscribes on every focus
+ * and starting a new conversation is rare next to sending messages in
+ * existing ones. */
 export function subscribeToMyMessages(onChange: () => void) {
-  const channel = supabase
-    .channel(`chat-list:${Math.random().toString(36).slice(2)}`)
-    .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, onChange)
-    .subscribe();
+  let channel: ReturnType<typeof supabase.channel> | null = null;
+  let cancelled = false;
+
+  currentUserId()
+    .then((me) =>
+      supabase
+        .from("conversations")
+        .select("id")
+        .or(`participant_one_id.eq.${me},participant_two_id.eq.${me}`)
+        .limit(100),
+    )
+    .then(({ data }) => {
+      if (cancelled || !data || data.length === 0) return;
+      const ids = data.map((c) => c.id).join(",");
+      channel = supabase
+        .channel(`chat-list:${Math.random().toString(36).slice(2)}`)
+        .on("postgres_changes", { event: "*", schema: "public", table: "messages", filter: `conversation_id=in.(${ids})` }, onChange)
+        .subscribe();
+    })
+    .catch(() => {});
+
   return () => {
-    supabase.removeChannel(channel);
+    cancelled = true;
+    if (channel) supabase.removeChannel(channel);
   };
 }
 

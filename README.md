@@ -4,7 +4,7 @@
 
 LexxBridge (formerly LexConnect, formerly CounselConnect) combines advocate practice management (clients, cases,
 hearings, documents, finances) with a professional network for advocates
-across India. See [`PRD.md`](PRD.md) for the full product requirements,
+across India. See [`docs/PRD.md`](docs/PRD.md) for the full product requirements,
 including what's shipped versus what's still a gap.
 
 ## Status: all six build phases implemented

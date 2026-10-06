@@ -3,8 +3,8 @@
 How sign-up, sign-in, password reset, social login, biometrics, app lock, and the admin account
 actually work — pulled together in one place since the implementation is spread across roughly a
 dozen files. For the database-level security model (RLS, encryption, admin's data model), see
-[`SECURITY.md`](../SECURITY.md) and [`ARCHITECTURE.md`](ARCHITECTURE.md); for auth's entry points
-specifically mapped against risk, see [`THREAT_MODEL.md`](../THREAT_MODEL.md).
+[`SECURITY.md`](SECURITY.md) and [`ARCHITECTURE.md`](ARCHITECTURE.md); for auth's entry points
+specifically mapped against risk, see [`THREAT_MODEL.md`](THREAT_MODEL.md).
 
 ## Provider: Supabase Auth, PKCE everywhere
 

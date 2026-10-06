@@ -27,34 +27,27 @@ export type AdminProfileRow = {
   created_at: string;
 };
 
-/** Full user directory. Only returns every row when the caller is an admin
- * — the `admin can read all profiles` RLS policy is what actually makes
- * this different from a normal advocate's own-row-only view; this function
- * doesn't need to (and can't) check admin status itself. */
+/** Full user directory, via the admin_list_profiles() function rather than
+ * an RLS policy on advocate_profiles — so an ordinary user's own profile
+ * read never carries any admin-related check, and this capability lives
+ * entirely on its own instead of being woven into the main user table. */
 export async function listProfiles(search?: string): Promise<AdminProfileRow[]> {
-  let query = supabase
-    .from("advocate_profiles")
-    .select("id, full_name, city, state, verification_status, is_blocked, blocked_reason, created_at")
-    .order("created_at", { ascending: false });
-  if (search?.trim()) query = query.ilike("full_name", `%${search.trim()}%`);
-  const { data, error } = await query;
+  const { data, error } = await supabase.rpc("admin_list_profiles", { search: search?.trim() || null });
   if (error) throw new Error(error.message);
   return data;
 }
 
+/** Blocking lives in its own `blocked_users` table (see
+ * supabase/migrations/0048_decouple_admin.sql), not a flag on
+ * advocate_profiles — admin is a separate entity, not mixed into the
+ * user's own data. */
 export async function blockUser(targetId: string, reason?: string): Promise<void> {
-  const { error } = await supabase
-    .from("advocate_profiles")
-    .update({ is_blocked: true, blocked_at: new Date().toISOString(), blocked_reason: reason?.trim() || null })
-    .eq("id", targetId);
+  const { error } = await supabase.rpc("admin_block_user", { target_id: targetId, block_reason: reason?.trim() || null });
   if (error) throw new Error(error.message);
 }
 
 export async function unblockUser(targetId: string): Promise<void> {
-  const { error } = await supabase
-    .from("advocate_profiles")
-    .update({ is_blocked: false, blocked_at: null, blocked_reason: null })
-    .eq("id", targetId);
+  const { error } = await supabase.rpc("admin_unblock_user", { target_id: targetId });
   if (error) throw new Error(error.message);
 }
 
@@ -69,16 +62,12 @@ export type AdminReportRow = {
 };
 
 export async function listReports(): Promise<AdminReportRow[]> {
-  const { data, error } = await supabase
-    .from("reports")
-    .select("id, reporter_id, target_type, target_id, reason, status, created_at")
-    .order("created_at", { ascending: false })
-    .limit(50);
+  const { data, error } = await supabase.rpc("admin_list_reports");
   if (error) throw new Error(error.message);
   return data;
 }
 
 export async function setReportStatus(reportId: string, status: AdminReportRow["status"]): Promise<void> {
-  const { error } = await supabase.from("reports").update({ status }).eq("id", reportId);
+  const { error } = await supabase.rpc("admin_set_report_status", { report_id: reportId, new_status: status });
   if (error) throw new Error(error.message);
 }

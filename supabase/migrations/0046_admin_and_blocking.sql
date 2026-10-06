@@ -184,11 +184,18 @@ declare
   admin_password text := 'REPLACE_WITH_A_REAL_PASSWORD_BEFORE_RUNNING';
 begin
   if not exists (select 1 from auth.users where id = admin_id) then
+    -- confirmation_token/recovery_token/email_change_token_new/email_change
+    -- are nullable in the table but GoTrue scans them into plain (non-null)
+    -- Go strings when it loads a user to authenticate — leaving them NULL
+    -- (the column default) makes every login attempt fail with "Database
+    -- error querying schema". A normal sign-up never hits this because
+    -- GoTrue's own insert path always sets '', not NULL.
     insert into auth.users (
       instance_id, id, aud, role, email, encrypted_password,
       email_confirmed_at, created_at, updated_at,
       raw_app_meta_data, raw_user_meta_data,
-      is_sso_user, is_anonymous
+      is_sso_user, is_anonymous,
+      confirmation_token, recovery_token, email_change_token_new, email_change
     ) values (
       '00000000-0000-0000-0000-000000000000',
       admin_id, 'authenticated', 'authenticated', admin_email,
@@ -196,7 +203,8 @@ begin
       now(), now(), now(),
       '{"provider": "email", "providers": ["email"]}'::jsonb,
       '{"full_name": "Admin"}'::jsonb,
-      false, false
+      false, false,
+      '', '', '', ''
     );
 
     insert into auth.identities (

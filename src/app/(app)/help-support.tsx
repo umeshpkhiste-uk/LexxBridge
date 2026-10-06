@@ -1,7 +1,8 @@
+import { router } from "expo-router";
 import { useState } from "react";
 import { Text } from "react-native";
 import { countWords, FEEDBACK_MAX_WORDS, submitFeedback } from "@/features/feedback/api";
-import { alertMessage } from "@/shared/lib/alert";
+import { alertMessage, confirmAlert } from "@/shared/lib/alert";
 import { Button } from "@/shared/ui/Button";
 import { ScreenContainer } from "@/shared/ui/ScreenContainer";
 import { TextField } from "@/shared/ui/TextField";
@@ -20,7 +21,11 @@ export default function HelpSupportScreen() {
     try {
       await submitFeedback(comment);
       setComment("");
-      alertMessage("Thanks!", "Your comment has been sent. We read every one.");
+      // Tapping OK is what was leaving people stuck on this screen before —
+      // go back to Profile right after they acknowledge it.
+      confirmAlert("Thanks!", "Your comment has been sent. We read every one.", [
+        { text: "OK", onPress: () => router.back() },
+      ]);
     } catch (err) {
       alertMessage("Couldn't send", err instanceof Error ? err.message : "Something went wrong");
     } finally {

@@ -67,9 +67,9 @@ What's actually worth protecting, roughly in order of sensitivity.
 | R3 | `send-account-notice`, `send-push` | No caller verification — anyone who discovers the function URL could call it directly with a crafted payload. | **Fixed.** Both now require an `x-internal-secret` header (timing-safe compared, not `===`) matching a shared secret kept in Supabase Vault and set as each function's `INTERNAL_FUNCTION_SECRET` env var — only the database triggers know it. `0054_secure_internal_functions_and_bucket_limits.sql`. |
 | R4 | `send-feedback` | Spam / cost abuse of the Resend quota by a signed-in but malicious user | **Mitigated.** Requires a real JWT (traceable to one account), 500-word cap enforced server-side (not just client-side). |
 | R5 | `admin_*` RPC functions | Privilege escalation if `is_admin()` had a bug, since these are grantable to `authenticated` at the Postgres level | **Mitigated, documented.** Each function re-checks `is_admin(auth.uid())` internally and raises on failure; `admins` table itself has no insert/update/delete policy at all (grants only via direct SQL). Already called out as an intentional pattern in `SECURITY.md`. |
-| R6 | Connection requests, follows, messages (no admin block) | Spam — a malicious account mass-sending connection requests or messages | **Partially mitigated.** Admin can block a specific abusive account after the fact (`is_blocked_by_admin()`); there's no rate limit stopping the *first* wave before someone reports it. |
+| R6 | Connection requests, follows, messages | Spam — a malicious account mass-sending connection requests or messages | **Fixed.** Per-sender rate limits (20 connection requests/hour, 50 follows/hour, 60 messages/5min), enforced as Postgres triggers — `0055_rate_limits_mime_types_admin_audit.sql`, applied live. Admin's after-the-fact block (`is_blocked_by_admin()`) remains the backstop for an account that stays under these limits but is still abusive in other ways. |
 | R7 | Storage uploads (`profile-photos`, `post-images`) | Unbounded file size — these were the only 2 of 6 buckets with no `file_size_limit` set at the Storage layer | **Fixed.** Both capped at 10 MB (`0054_secure_internal_functions_and_bucket_limits.sql`) — generous for a photo, closes the "upload anything, any size" gap. All 6 buckets now have a Storage-level cap. |
-| R8 | Any upload bucket | Malicious file content (not just size) — no content-type/malware scanning | **Open gap.** `post-videos` restricts `allowed_mime_types` to `video/*` at the Storage layer; no other bucket does, and none of them scan content. Low-moderate severity: files are never executed server-side, only ever downloaded/displayed by other users' clients. |
+| R8 | Any upload bucket | Malicious file content (not just size) — no content-type/malware scanning | **Partially mitigated.** All 6 buckets now restrict `allowed_mime_types` (`0055_rate_limits_mime_types_admin_audit.sql`, applied live) — images only for `profile-photos`/`post-images`, documents+images+zip for the 3 document-style buckets, `video/*` for `post-videos`. No malware/virus scanning exists or is planned (would need a third-party service); accepted as low-moderate severity since files are never executed server-side. |
 | R9 | Admin account itself | Single admin login, no MFA, password-based | **Known, accepted for now.** Same password policy as every other account (8-char minimum; leaked-password check blocked by Supabase's Free plan — see `docs/AUTH.md`). A compromised admin account can block/unblock users and read the directory + reports, but **cannot** read any advocate's private practice data (R1's protection applies to admin too). |
 | R10 | Deep link PKCE code exchange | Auth code interception/replay | **Mitigated.** PKCE flow (code + verifier, not the older implicit/hash flow); refresh tokens live in the OS keychain (`expo-secure-store`), not in plain storage. |
 | R11 | OS notification tray | Push notification title/body (e.g. "New message from X") visible on a locked device's lock screen | **Accepted trade-off**, not fixed — standard for any app with push notifications; outside this app's control once it's in the OS notification layer. |
@@ -119,14 +119,15 @@ per-risk, since most protections cover more than one risk at once.
 
 ## 5. Open gaps and recommended next steps
 
-R3 and R7 are now fixed (see the risk table above). Remaining, in priority order:
+R3, R6, R7, and R8 (content-type restriction specifically) are now fixed — see the risk table
+above. Remaining:
 
-1. **R6 — no rate limiting on connection requests / messages / follows.** Would need either a
-   Postgres-level throttle (e.g. a trigger counting recent inserts) or an application-level one.
-   Not urgent — admin's after-the-fact block is the current mitigation — but worth planning before
-   real abuse shows up.
-2. **R8 — no content-type restriction or malware scanning on most upload buckets.** Lower
-   priority given files are never executed server-side; still worth an `allowed_mime_types`
-   allow-list per bucket as a cheap improvement.
-3. **R9 — admin has no MFA.** Revisit once Supabase's plan allows it, or consider a TOTP-based
+1. **R8's malware-scanning half.** No virus/malware scanning on uploaded files — would need a
+   third-party scanning service; not currently planned, since files are never executed
+   server-side.
+2. **R9 — admin has no MFA.** Revisit once Supabase's plan allows it, or consider a TOTP-based
    app-level check for the admin account specifically.
+
+Also tracked in `SECURITY_CHECKLIST.md`: the admin-audit-logging fix (`log_audit_event()` calls
+inside the three `admin_*` functions) is written but needs a manual run via the Supabase SQL
+editor — `SECURITY DEFINER` function changes keep getting declined automatically in this session.

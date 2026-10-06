@@ -4,6 +4,10 @@ This maps LexxBridge's actual data handling to the questions Google Play
 Console asks under **App content → Data safety**. Use these answers when
 filling out the form; update this file first if data handling changes.
 
+For the underlying technical detail this is derived from (classification,
+encryption, retention, access control), see
+[`../DATA_SECURITY.md`](../DATA_SECURITY.md).
+
 ## Does your app collect or share any of the required user data types?
 **Yes.**
 

@@ -27,9 +27,11 @@ supported; please test against that before reporting.
 
 ## Security model
 
-Full detail lives in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) and, for everything
+Full detail lives in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), for everything
 authentication-specific (sign-up/in, password reset, deep links, biometrics, app lock, the admin
-account), [`docs/AUTH.md`](docs/AUTH.md). The short version:
+account), [`docs/AUTH.md`](docs/AUTH.md), and for how personal/payment/credential data
+specifically is classified, protected, retained, and access-limited,
+[`DATA_SECURITY.md`](DATA_SECURITY.md). The short version:
 
 - **Database-enforced isolation.** Every table with owner-specific data has Row Level Security
   enabled, and ownership is checked in Postgres itself (`auth.uid() = owner_id`), not just in

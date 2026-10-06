@@ -19,32 +19,12 @@
 --   - Every other admin capability (directory, reports) moves to
 --     dedicated admin_* functions instead of extra RLS policies, so
 --     advocate_profiles/reports carry no admin-shaped weight at all.
-
--- Undo 0046/0047's coupling into advocate_profiles --------------------
-
-drop trigger if exists advocate_profiles_protect_admin_scope on public.advocate_profiles;
-drop function if exists public.protect_admin_block_update();
-
--- 0046 only ever ADDED these two alongside the original 0001 policies — it
--- never touched "advocate can read own profile"/"advocate can update own
--- profile", so those are still live and correct as-is. Dropping just the
--- admin additions is enough to restore the original single-policy shape.
-drop policy if exists "admin can read all profiles" on public.advocate_profiles;
-drop policy if exists "admin can update block status" on public.advocate_profiles;
--- These two only exist if 0047 (never applied live) had been run first.
-drop policy if exists "advocate can read own profile or admin can read any" on public.advocate_profiles;
-drop policy if exists "advocate can update own profile or admin can update any" on public.advocate_profiles;
-
-alter table public.advocate_profiles
-  drop column if exists is_blocked,
-  drop column if exists blocked_at,
-  drop column if exists blocked_reason;
-
--- Same story: "advocate can read own reports" (from 0016) was never
--- touched by 0046, only added to.
-drop policy if exists "admin can read all reports" on public.reports;
-drop policy if exists "admin can review reports" on public.reports;
-drop policy if exists "advocate can read own reports or admin can read any" on public.reports;
+--
+-- Order matters here: the four social-graph policies have to stop
+-- referencing advocate_profiles.is_blocked (by switching to
+-- is_blocked_by_admin()) *before* that column can be dropped — dropping
+-- it first fails with "cannot drop column ... because other objects
+-- depend on it".
 
 -- The new, separate entity ---------------------------------------------
 
@@ -187,7 +167,8 @@ revoke all on function public.admin_set_report_status(uuid, public.report_status
 grant execute on function public.admin_set_report_status(uuid, public.report_status) to authenticated;
 
 -- Point the four social-graph insert policies at the new function instead
--- of the old advocate_profiles.is_blocked column.
+-- of the old advocate_profiles.is_blocked column — this has to happen
+-- before that column can be dropped below.
 
 alter policy "advocate can send connection request" on public.connections
   with check (
@@ -240,3 +221,30 @@ alter policy "advocate can send messages in own conversations" on public.message
     )
     and not public.is_blocked_by_admin(sender_id)
   );
+
+-- Undo 0046/0047's coupling into advocate_profiles ----------------------
+-- (Now safe: nothing references advocate_profiles.is_blocked anymore.)
+
+drop trigger if exists advocate_profiles_protect_admin_scope on public.advocate_profiles;
+drop function if exists public.protect_admin_block_update();
+
+-- 0046 only ever ADDED these two alongside the original 0001 policies — it
+-- never touched "advocate can read own profile"/"advocate can update own
+-- profile", so those are still live and correct as-is. Dropping just the
+-- admin additions is enough to restore the original single-policy shape.
+drop policy if exists "admin can read all profiles" on public.advocate_profiles;
+drop policy if exists "admin can update block status" on public.advocate_profiles;
+-- These two only exist if 0047 (never applied live) had been run first.
+drop policy if exists "advocate can read own profile or admin can read any" on public.advocate_profiles;
+drop policy if exists "advocate can update own profile or admin can update any" on public.advocate_profiles;
+
+alter table public.advocate_profiles
+  drop column if exists is_blocked,
+  drop column if exists blocked_at,
+  drop column if exists blocked_reason;
+
+-- Same story: "advocate can read own reports" (from 0016) was never
+-- touched by 0046, only added to.
+drop policy if exists "admin can read all reports" on public.reports;
+drop policy if exists "admin can review reports" on public.reports;
+drop policy if exists "advocate can read own reports or admin can read any" on public.reports;

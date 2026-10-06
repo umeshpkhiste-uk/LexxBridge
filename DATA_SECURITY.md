@@ -52,28 +52,23 @@ for the full secrets-handling policy.
 removes Storage files first, then a database function deletes the `auth.users` row, and
 `on delete cascade` removes every row chained from it across every table (`0020`/`0030` migrations).
 
-**The gap — being transparent about it:** outside of that on-demand deletion, **nothing in this
-app currently deletes data automatically on a schedule.** Every table — audit logs, read
-notifications, soft-deleted messages (content is actually overwritten to `[deleted]`, which is
-good, but the row itself persists indefinitely), old push tokens for devices no longer in use — is
-retained forever unless the whole account is deleted. This isn't a deliberate "keep everything"
-decision; it's simply not built yet.
+**Scheduled deletion is now live** (`supabase/migrations/0052_scheduled_data_retention.sql`), via
+`pg_cron`, running daily as `postgres` (bypassing RLS, same as any other maintenance job):
 
-**Recommended next step** (not yet implemented): a scheduled job — Supabase supports `pg_cron` —
-that purges data that's served its purpose, for example:
+| Job | Deletes | Retention window |
+|---|---|---|
+| `purge-old-audit-logs` | `public.audit_logs` rows | Older than **13 months** (not 12, so a full year stays available right after a monthly review) |
+| `purge-stale-push-tokens` | `public.push_tokens` rows | Not refreshed in **180 days** (almost certainly a reinstalled/replaced device — `send-push` already reactively removes tokens Expo reports as gone; this catches the ones that just went quiet instead) |
 
-```sql
--- Illustrative only — not yet applied.
-select cron.schedule('purge-old-audit-logs', '0 3 * * *', $$
-  delete from public.audit_logs where created_at < now() - interval '13 months';
-$$);
-select cron.schedule('purge-stale-push-tokens', '0 3 * * *', $$
-  delete from public.push_tokens where updated_at < now() - interval '180 days';
-$$);
-```
+Check what's scheduled at any time with `select * from cron.job;`; see run history with
+`select * from cron.job_run_details order by start_time desc limit 20;`.
 
-Exact retention windows (13 months for audit logs above is just an example) should be a deliberate
-product decision, not something assumed here.
+**Still not covered** (a smaller remaining gap, not a blocker): read notifications and
+soft-deleted messages (content is already overwritten to `[deleted]`, so no sensitive data
+remains — just an empty row) aren't purged yet. Can be added the same way if wanted.
+
+Retention windows above are a product decision, adjustable in the migration if the business wants
+something different — not a fixed security requirement.
 
 ## 4. Limit access
 
@@ -106,7 +101,7 @@ any purpose beyond operating the app.
 
 ## Open items
 
-- **No scheduled data retention/deletion** — see §3 above. Account-level deletion works; row-level
-  expiry doesn't exist yet for any table.
+- **Scheduled retention covers audit logs and stale push tokens** (see §3); read notifications and
+  soft-deleted message rows aren't purged yet — a smaller remaining gap, not a blocker.
 - **Independent security review:** not yet commissioned (also declared as "No" in
   `legal/DATA_SAFETY.md`'s Play Store answers).

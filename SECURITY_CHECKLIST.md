@@ -6,7 +6,7 @@ A single checkable list pulling together what's actually been verified (or is st
 confirmed, live state — checked via the Supabase advisor, direct SQL verification, or an actual
 test call — not an assumption. Re-run this before any production release.
 
-**Open items right now:** 3 — see below, each with an owner-actionable next step.
+**Open items right now:** 2 — see below, each with an owner-actionable next step.
 
 ## Authentication & sessions
 
@@ -84,13 +84,10 @@ test call — not an assumption. Re-run this before any production release.
       table, not extra RLS policies on tables every ordinary user reads
 - [x] Admin cannot read any advocate's private practice data (clients/cases/documents/financials)
       — the same isolation that holds between any two advocates holds for admin too
-- [ ] **Admin actions aren't written to `audit_logs` yet.** The fix is written (`admin_block_user`,
-      `admin_unblock_user`, `admin_set_report_status` all now call `log_audit_event()` in
-      `0055_rate_limits_mime_types_admin_audit.sql`) but couldn't be applied automatically —
-      `SECURITY DEFINER` function changes keep getting declined in this session, same as some of
-      the admin-decoupling work earlier. *Next step: paste that migration's last section (the
-      three `create or replace function` blocks) into the Supabase SQL editor and run it — same
-      one-time manual step as `0048`.*
+- [x] Admin actions now write to `audit_logs` — `admin_block_user`, `admin_unblock_user`, and
+      `admin_set_report_status` all call `log_audit_event()`, applied via the Supabase SQL editor
+      and confirmed live (verified each function's source actually contains the call, not just
+      that the editor reported no error)
 - [x] Admin login itself follows the same password policy as every other account (see
       Authentication section above — same open items apply to it too)
 

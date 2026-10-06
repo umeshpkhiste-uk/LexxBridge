@@ -127,7 +127,3 @@ above. Remaining:
    server-side.
 2. **R9 — admin has no MFA.** Revisit once Supabase's plan allows it, or consider a TOTP-based
    app-level check for the admin account specifically.
-
-Also tracked in `SECURITY_CHECKLIST.md`: the admin-audit-logging fix (`log_audit_event()` calls
-inside the three `admin_*` functions) is written but needs a manual run via the Supabase SQL
-editor — `SECURITY DEFINER` function changes keep getting declined automatically in this session.

@@ -2,17 +2,34 @@
 // Expo push service. Called by the notifications_send_push database trigger
 // with { notification_id }.
 //
-// It needs no caller JWT: it only ever sends a notification that already
+// It needs no caller JWT — it only ever sends a notification that already
 // exists, was created in the last few minutes and hasn't been pushed yet
 // (claimed atomically via pushed_at), so calling it can't forge content or
-// resend old notifications.
+// resend old notifications. It does need the shared secret the trigger
+// sends (kept in Supabase Vault as `internal_function_secret`), checked
+// against this function's own INTERNAL_FUNCTION_SECRET env var — without
+// that, anyone who found this URL could at least trigger a real push send
+// to whatever notification id they guessed, for free, repeatedly.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
 
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+
 Deno.serve(async (req) => {
   if (req.method !== "POST") return new Response("Method not allowed", { status: 405 });
+
+  const expectedSecret = Deno.env.get("INTERNAL_FUNCTION_SECRET");
+  const providedSecret = req.headers.get("x-internal-secret");
+  if (!expectedSecret || !providedSecret || !timingSafeEqual(providedSecret, expectedSecret)) {
+    return new Response("Unauthorized", { status: 401 });
+  }
 
   let notificationId: unknown;
   try {

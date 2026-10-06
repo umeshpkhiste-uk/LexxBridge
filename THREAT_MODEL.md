@@ -63,11 +63,11 @@ What's actually worth protecting, roughly in order of sensitivity.
 |---|---|---|---|
 | R1 | Any table's RLS policy | Cross-tenant data leak — advocate A reads advocate B's private data | **Mitigated.** RLS on every table, enforced in Postgres, plus an automated test (`authorization.test.ts`) asserting it. |
 | R2 | `public_advocate_profiles` | Bulk scraping of the public directory | **Partially mitigated.** No pagination abuse limit beyond the app's own `.limit(30)` query shape — nothing stops a direct API call from paging through everyone. Low severity: this view already excludes sensitive fields by design. |
-| R3 | `send-account-notice`, `send-push` | **No caller JWT at all** (`verify_jwt: false`) — anyone who discovers the function URL can call it directly with a crafted payload. `send-account-notice` would send a "your password was changed" / "your email was changed" style email, branded as LexxBridge, to **any address of the caller's choosing**. | **Open gap.** Each function does validate its own input shape (email format, enum `type`, matched notification id + recency for `send-push`), which limits *what* can be sent, but neither verifies the caller is who it claims. See §5. |
+| R3 | `send-account-notice`, `send-push` | No caller verification — anyone who discovers the function URL could call it directly with a crafted payload. | **Fixed.** Both now require an `x-internal-secret` header (timing-safe compared, not `===`) matching a shared secret kept in Supabase Vault and set as each function's `INTERNAL_FUNCTION_SECRET` env var — only the database triggers know it. `0054_secure_internal_functions_and_bucket_limits.sql`. |
 | R4 | `send-feedback` | Spam / cost abuse of the Resend quota by a signed-in but malicious user | **Mitigated.** Requires a real JWT (traceable to one account), 500-word cap enforced server-side (not just client-side). |
 | R5 | `admin_*` RPC functions | Privilege escalation if `is_admin()` had a bug, since these are grantable to `authenticated` at the Postgres level | **Mitigated, documented.** Each function re-checks `is_admin(auth.uid())` internally and raises on failure; `admins` table itself has no insert/update/delete policy at all (grants only via direct SQL). Already called out as an intentional pattern in `SECURITY.md`. |
 | R6 | Connection requests, follows, messages (no admin block) | Spam — a malicious account mass-sending connection requests or messages | **Partially mitigated.** Admin can block a specific abusive account after the fact (`is_blocked_by_admin()`); there's no rate limit stopping the *first* wave before someone reports it. |
-| R7 | Storage uploads (`profile-photos`, `post-images`) | Unbounded file size — these 2 of 6 buckets have **no `file_size_limit` set** at the Storage layer, unlike the other 4 | **Open gap.** Relies entirely on client-side behavior (image picker defaults); a direct API call could upload an arbitrarily large file. See §5. |
+| R7 | Storage uploads (`profile-photos`, `post-images`) | Unbounded file size — these were the only 2 of 6 buckets with no `file_size_limit` set at the Storage layer | **Fixed.** Both capped at 10 MB (`0054_secure_internal_functions_and_bucket_limits.sql`) — generous for a photo, closes the "upload anything, any size" gap. All 6 buckets now have a Storage-level cap. |
 | R8 | Any upload bucket | Malicious file content (not just size) — no content-type/malware scanning | **Open gap.** `post-videos` restricts `allowed_mime_types` to `video/*` at the Storage layer; no other bucket does, and none of them scan content. Low-moderate severity: files are never executed server-side, only ever downloaded/displayed by other users' clients. |
 | R9 | Admin account itself | Single admin login, no MFA, password-based | **Known, accepted for now.** Same password policy as every other account (8-char minimum; leaked-password check blocked by Supabase's Free plan — see `docs/AUTH.md`). A compromised admin account can block/unblock users and read the directory + reports, but **cannot** read any advocate's private practice data (R1's protection applies to admin too). |
 | R10 | Deep link PKCE code exchange | Auth code interception/replay | **Mitigated.** PKCE flow (code + verifier, not the older implicit/hash flow); refresh tokens live in the OS keychain (`expo-secure-store`), not in plain storage. |
@@ -118,24 +118,14 @@ per-risk, since most protections cover more than one risk at once.
 
 ## 5. Open gaps and recommended next steps
 
-In priority order:
+R3 and R7 are now fixed (see the risk table above). Remaining, in priority order:
 
-1. **R3 — unauthenticated Edge Functions can be called directly.** Add a shared-secret header
-   (stored as an Edge Function secret, checked by the function, sent only by the database trigger
-   via `net.http_post`'s `headers` argument) to `send-push` and `send-account-notice`. Low effort,
-   closes a real spoofing/abuse vector. Not done yet because it mirrors an existing pre-this-session
-   pattern (`send-push` was already unauthenticated) rather than being a new decision — worth
-   revisiting both together.
-2. **R7 — two Storage buckets have no file size limit.** Set `file_size_limit` on `profile-photos`
-   and `post-images` the same way the other 4 buckets already have it (a single
-   `update storage.buckets set file_size_limit = ... where id = ...` migration, same shape as
-   `0050_post_attachment_20mb.sql`).
-3. **R6 — no rate limiting on connection requests / messages / follows.** Would need either a
+1. **R6 — no rate limiting on connection requests / messages / follows.** Would need either a
    Postgres-level throttle (e.g. a trigger counting recent inserts) or an application-level one.
    Not urgent — admin's after-the-fact block is the current mitigation — but worth planning before
    real abuse shows up.
-4. **R8 — no content-type restriction or malware scanning on most upload buckets.** Lower
+2. **R8 — no content-type restriction or malware scanning on most upload buckets.** Lower
    priority given files are never executed server-side; still worth an `allowed_mime_types`
    allow-list per bucket as a cheap improvement.
-5. **R9 — admin has no MFA.** Revisit once Supabase's plan allows it, or consider a TOTP-based
+3. **R9 — admin has no MFA.** Revisit once Supabase's plan allows it, or consider a TOTP-based
    app-level check for the admin account specifically.

@@ -2,12 +2,24 @@
 // that Supabase Auth has no email-template slot for — it only emails for
 // the *request* to change something, never for the change completing.
 // Called only by the three database triggers in
-// supabase/migrations/0051_account_change_notices.sql (net.http_post, no
-// caller JWT — same pattern send-push already uses), never directly by
-// the client.
+// supabase/migrations/0051_account_change_notices.sql / 0054 (net.http_post,
+// no caller JWT, since this is never invoked by the client). Instead, the
+// trigger proves it's really us by sending the shared secret kept in
+// Supabase Vault (`internal_function_secret`) — this function checks it
+// against the same value set as its own INTERNAL_FUNCTION_SECRET env
+// var. Without this, anyone who found this function's URL could call it
+// directly to send a LexxBridge-branded "security notice" email to any
+// address of their choosing.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
 const RESEND_API_URL = "https://api.resend.com/emails";
+
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
 
 function isEmail(value: unknown): value is string {
   return typeof value === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
@@ -43,6 +55,12 @@ const SECURITY_NOTICE =
 
 Deno.serve(async (req) => {
   if (req.method !== "POST") return new Response("Method not allowed", { status: 405 });
+
+  const expectedSecret = Deno.env.get("INTERNAL_FUNCTION_SECRET");
+  const providedSecret = req.headers.get("x-internal-secret");
+  if (!expectedSecret || !providedSecret || !timingSafeEqual(providedSecret, expectedSecret)) {
+    return new Response("Unauthorized", { status: 401 });
+  }
 
   let payload: unknown;
   try {

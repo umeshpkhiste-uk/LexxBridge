@@ -181,7 +181,7 @@ export default function ProfileScreen() {
         <SettingsGroup title="Support">
           <SettingsRow icon="help-circle-outline" label="FAQ" onPress={() => router.push("/(app)/faq")} />
           <SettingsRow icon="information-circle-outline" label="About app" onPress={() => router.push("/(app)/about")} />
-          <SettingsRow icon="chatbubble-ellipses-outline" label="Help & support" onPress={comingSoon("Help and support")} />
+          <SettingsRow icon="chatbubble-ellipses-outline" label="Help & support" onPress={() => router.push("/(app)/help-support")} />
         </SettingsGroup>
 
         <SettingsGroup>

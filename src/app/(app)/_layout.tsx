@@ -61,6 +61,7 @@ export default function AppLayout() {
         <Stack.Screen name="app-lock" options={{ headerShown: true, title: "App lock" }} />
         <Stack.Screen name="about" options={{ headerShown: true, title: "About LexxBridge" }} />
         <Stack.Screen name="faq" options={{ headerShown: true, title: "FAQ" }} />
+        <Stack.Screen name="help-support" options={{ headerShown: true, title: "Help & support" }} />
         {/* Draws its own header (client + case summary) with a back arrow. */}
         <Stack.Screen name="ledger" />
       </Stack>

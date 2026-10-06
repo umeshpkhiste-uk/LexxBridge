@@ -44,6 +44,9 @@ Supabase project ref: `ujrosfflqevkytburevc` (used throughout migrations/Edge Fu
 - `docs/AUTH.md` — full auth implementation reference (sign-up/in, password reset, deep links,
   biometrics, app lock, the admin account's creation quirk).
 - `docs/BACKEND_SETUP.md`, `docs/DEPLOYMENT.md`, `docs/TESTING.md` — exactly what they say.
+- `docs/DESIGN.md` — the actual design tokens (`theme.ts`) and UI primitives (`src/shared/ui/`) —
+  read before adding a screen or component, so it reuses existing tokens/primitives instead of a
+  one-off styled component.
 - `SECURITY.md`, `DATA_SECURITY.md`, `THREAT_MODEL.md`, `SECURITY_CHECKLIST.md` — the security
   documentation set, cross-linked with each other. Start at `SECURITY_CHECKLIST.md` for current
   open items.

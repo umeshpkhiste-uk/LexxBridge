@@ -116,4 +116,6 @@ browser; the rest of the app works the same.
 `design/Auth UI Design.png` and `design/Profile Page.png` are layout/style
 references (from a generic UI kit) — the shipped screens follow their
 structure but are restyled to the spec's professional/minimal visual
-language (no illustrations, no bright gradients).
+language (no illustrations, no bright gradients). See
+[`docs/DESIGN.md`](docs/DESIGN.md) for the actual design tokens and UI
+primitives this restyling is built from.

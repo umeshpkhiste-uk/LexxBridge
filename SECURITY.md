@@ -30,9 +30,10 @@ supported; please test against that before reporting.
 Full detail lives in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), for everything
 authentication-specific (sign-up/in, password reset, deep links, biometrics, app lock, the admin
 account), [`docs/AUTH.md`](docs/AUTH.md), for how personal/payment/credential data specifically is
-classified, protected, retained, and access-limited, [`DATA_SECURITY.md`](DATA_SECURITY.md), and
-for a full map of every entry point, what's at risk, and what protects it,
-[`THREAT_MODEL.md`](THREAT_MODEL.md). The short version:
+classified, protected, retained, and access-limited, [`DATA_SECURITY.md`](DATA_SECURITY.md), for a
+full map of every entry point, what's at risk, and what protects it,
+[`THREAT_MODEL.md`](THREAT_MODEL.md), and for a single checkable list of what's actually been
+verified vs. still open, [`SECURITY_CHECKLIST.md`](SECURITY_CHECKLIST.md). The short version:
 
 - **Database-enforced isolation.** Every table with owner-specific data has Row Level Security
   enabled, and ownership is checked in Postgres itself (`auth.uid() = owner_id`), not just in

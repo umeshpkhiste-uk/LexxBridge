@@ -1,0 +1,119 @@
+# Security Checklist
+
+A single checkable list pulling together what's actually been verified (or is still open) across
+[`SECURITY.md`](SECURITY.md), [`DATA_SECURITY.md`](DATA_SECURITY.md),
+[`THREAT_MODEL.md`](THREAT_MODEL.md), and [`docs/AUTH.md`](docs/AUTH.md). Each item reflects
+confirmed, live state — checked via the Supabase advisor, direct SQL verification, or an actual
+test call — not an assumption. Re-run this before any production release.
+
+**Open items right now:** 5 — see below, each with an owner-actionable next step.
+
+## Authentication & sessions
+
+- [x] Email/password + Google/Facebook/Apple OAuth, all via Supabase Auth PKCE flow
+- [x] Minimum password length raised to 8 (matches client-side validation)
+- [ ] **Leaked-password protection (HaveIBeenPwned check)** — toggle exists but is grayed out on
+      the Supabase Free plan. *Next step: enable after upgrading to Pro or above.*
+- [x] Sessions stored in OS keychain (`expo-secure-store`) on native, not plain storage
+- [x] Deep links use PKCE (code + verifier), not the older implicit/hash flow
+- [x] Biometric login and app-lock PIN/pattern are device-local only — never transmitted
+- [x] Password/email/phone-change security notices actually send (verified live via a direct
+      test call — see `THREAT_MODEL.md` R3 history)
+- [ ] **No MFA** on any account, including admin. *Next step: revisit once needed; no current
+      Supabase plan blocker for TOTP specifically, just not built.*
+
+## Database & Row Level Security
+
+- [x] RLS enabled on every table holding owner-specific data
+- [x] Automated cross-tenant test (`npm run test:integration`,
+      `src/__tests__/integration/authorization.test.ts`)
+- [x] `public_advocate_profiles` / `advocate_network_stats`'s `security_invoker = false` is
+      documented as intentional (not a bug to "fix")
+- [x] Every `SECURITY DEFINER` function performs its own internal authorization check, not just
+      relying on who's allowed to call it (verified for all `admin_*`, `is_admin`,
+      `is_blocked_by_admin`)
+- [x] No "multiple permissive policies" performance/security smell — confirmed via Supabase
+      advisor after the admin feature was decoupled (`0048_decouple_admin.sql`)
+
+## Data protection
+
+- [x] TLS everywhere (Supabase API/Storage/Realtime, Edge Functions, Resend, Expo)
+- [x] At-rest encryption via Supabase's managed infrastructure
+- [x] Messages end-to-end encrypted client-side (`tweetnacl`) — server only ever sees ciphertext
+- [x] Scheduled data retention live: 4 `pg_cron` jobs purging audit logs (13mo), stale push
+      tokens (180d), read notifications (90d), soft-deleted messages (24mo)
+- [x] Account deletion is complete (Storage files, then `auth.users` row, then full cascade)
+
+## API & Edge Functions
+
+- [x] `send-feedback` requires a real caller JWT, traceable to one account
+- [x] `send-push` and `send-account-notice` require a shared secret
+      (`x-internal-secret`, timing-safe compared) — **verified working via a direct test call**,
+      not just assumed from the code
+- [x] Secret itself lives in Supabase Vault + the functions' own env var, never in git
+- [ ] **No rate limiting** on connection requests, follows, or messages — a malicious signed-in
+      account could spam before anyone reports it. *Next step: a Postgres-level throttle (trigger
+      counting recent inserts) or application-level one — see `THREAT_MODEL.md` R6.*
+
+## Storage / file uploads
+
+- [x] All 6 Storage buckets now have a `file_size_limit` set (`profile-photos`/`post-images`
+      fixed last — see `THREAT_MODEL.md` R7 history)
+- [x] `documents` bucket is private; every read goes through a short-lived signed URL
+- [x] Storage-level RLS requires the uploader's `auth.uid()` to match the owning folder,
+      independent of any application-level check
+- [ ] **No content-type allow-list or malware scanning** on most buckets (`post-videos` is the
+      one exception, restricted to `video/*`). Lower priority — files are never executed
+      server-side. *Next step: `allowed_mime_types` per bucket, see `THREAT_MODEL.md` R8.*
+
+## Secrets management
+
+- [x] `.env` never committed — confirmed across full git history, not just the current tree
+- [x] No service-role key, Resend key, or other secret ever appears in any commit (full-history
+      grep for JWT/AWS/Stripe/Slack/private-key patterns, clean)
+- [x] Service-role access confined to 3 narrowly-scoped Edge Functions, never shipped to a client
+- [x] `RESEND_API_KEY` and `INTERNAL_FUNCTION_SECRET` both live only as Edge Function
+      secrets/Vault entries, set via the dashboard, never in source
+
+## Admin & privileged access
+
+- [x] Admin is a separate entity (`admins`, `blocked_users` tables) — not a column on the user
+      table, not extra RLS policies on tables every ordinary user reads
+- [x] Admin cannot read any advocate's private practice data (clients/cases/documents/financials)
+      — the same isolation that holds between any two advocates holds for admin too
+- [ ] **Admin actions aren't written to `audit_logs`.** `admin_block_user`, `admin_unblock_user`,
+      and `admin_set_report_status` all execute without calling `log_audit_event()` — found while
+      compiling this checklist, not previously documented anywhere. There's currently no record
+      of *who* blocked *whom* and *when*, beyond `blocked_users.blocked_by`/`created_at` itself
+      (which only shows the current state, not history — an unblock followed by a re-block from a
+      different admin loses the first admin's identity). *Next step: add a
+      `log_audit_event('admin_block_user', 'advocate_profiles', target_id, ...)` call (and
+      equivalents) inside each `admin_*` function.*
+- [x] Admin login itself follows the same password policy as every other account (see
+      Authentication section above — same open items apply to it too)
+
+## Third-party / vendor exposure
+
+- [x] Documented exactly what each vendor sees: Resend (email subject/body only), Expo (push
+      token + notification title/body, never message content) — see `DATA_SECURITY.md`
+- [x] No analytics SDKs, no advertising ID, no third-party trackers
+- [x] No data sold or shared beyond what's needed to run the app
+
+## Documentation itself
+
+- [x] `SECURITY.md` — vulnerability reporting + security model overview
+- [x] `DATA_SECURITY.md` — classify/protect/retain/limit for personal, payment, and credential data
+- [x] `THREAT_MODEL.md` — every entry point mapped against risk and protection
+- [x] `docs/AUTH.md` — full authentication implementation reference
+- [x] This file, cross-linked from all four above
+
+## Not yet done — pre-production-launch only
+
+These matter before a real public launch, not for ongoing development:
+
+- [ ] Independent third-party security review (declared "No" in `legal/DATA_SAFETY.md`'s Play
+      Store answers — accurate, not yet commissioned)
+- [ ] Separate production Supabase project from the development one currently in use (see
+      `docs/DEPLOYMENT.md` §6 — explicitly flagged there as not yet split)
+- [ ] Crash/error monitoring (Sentry or equivalent) — explicitly not installed yet
+      (`docs/DEPLOYMENT.md` §4), to avoid destabilizing active Expo Go testing

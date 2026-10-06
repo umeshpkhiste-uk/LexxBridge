@@ -1,9 +1,10 @@
 # Threat Model
 
 Map the app → assess what could go wrong at each point → confirm (or flag) what actually stops it.
-This is the companion to [`SECURITY.md`](SECURITY.md) (vulnerability reporting, high-level model)
-and [`DATA_SECURITY.md`](DATA_SECURITY.md) (classify/protect/retain/limit for data specifically);
-this document is about *entry points and attack surface*, not data categories.
+This is the companion to [`SECURITY.md`](SECURITY.md) (vulnerability reporting, high-level model),
+[`DATA_SECURITY.md`](DATA_SECURITY.md) (classify/protect/retain/limit for data specifically), and
+[`SECURITY_CHECKLIST.md`](SECURITY_CHECKLIST.md) (the checkable, run-before-release summary of all
+three); this document is about *entry points and attack surface*, not data categories.
 
 Built from the actual schema, RLS policies, and Edge Functions as they exist today — not a
 generic template. Re-derive the "Entry points" and "Protections" tables whenever a migration or

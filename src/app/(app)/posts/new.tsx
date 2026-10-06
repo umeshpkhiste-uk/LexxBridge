@@ -31,7 +31,7 @@ export default function NewPostScreen() {
     if (result.canceled) return;
     const tooLarge = result.assets.find((a) => a.size && a.size > MAX_ATTACHMENT_BYTES);
     if (tooLarge) {
-      Alert.alert("File too large", `${tooLarge.name} is over the 25 MB attachment limit.`);
+      Alert.alert("File too large", `${tooLarge.name} is over the 20 MB attachment limit.`);
       return;
     }
     setFiles((prev) => [...prev, ...result.assets.map((a) => ({ uri: a.uri, name: a.name, mimeType: a.mimeType, size: a.size }))]);

@@ -6,7 +6,7 @@ const BUCKET = "post-images";
 const VIDEO_BUCKET = "post-videos";
 const ATTACHMENT_BUCKET = "post-attachments";
 export const MAX_VIDEO_BYTES = 50 * 1024 * 1024;
-export const MAX_ATTACHMENT_BYTES = 25 * 1024 * 1024;
+export const MAX_ATTACHMENT_BYTES = 20 * 1024 * 1024;
 
 export type PostAttachment = {
   id: string;
@@ -256,7 +256,7 @@ export async function createPost(input: {
 }
 
 async function addPostAttachment(postId: string, authorId: string, file: PickedFile): Promise<void> {
-  if (file.size && file.size > MAX_ATTACHMENT_BYTES) throw new Error(`${file.name} is larger than the 25 MB attachment limit.`);
+  if (file.size && file.size > MAX_ATTACHMENT_BYTES) throw new Error(`${file.name} is larger than the 20 MB attachment limit.`);
   const safeName = file.name.replace(/[^\w.\-]+/g, "_").slice(-80) || "file";
   const path = `${authorId}/${postId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${safeName}`;
   const base64 = await FileSystem.readAsStringAsync(file.uri, { encoding: "base64" });

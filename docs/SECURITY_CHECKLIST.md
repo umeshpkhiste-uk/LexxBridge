@@ -104,7 +104,9 @@ test call — not an assumption. Re-run this before any production release.
 - [x] `DATA_SECURITY.md` — classify/protect/retain/limit for personal, payment, and credential data
 - [x] `THREAT_MODEL.md` — every entry point mapped against risk and protection
 - [x] `docs/AUTH.md` — full authentication implementation reference
-- [x] This file, cross-linked from all four above
+- [x] `docs/RULES.md` — hard rules distilled from all of the above plus git/secrets/doc-placement
+      hygiene, so there's one enforceable list instead of five cross-linked narratives
+- [x] This file, cross-linked from all five above
 
 ## Not yet done — pre-production-launch only
 

@@ -47,6 +47,10 @@ Supabase project ref: `ujrosfflqevkytburevc` (used throughout migrations/Edge Fu
 - `SECURITY.md`, `DATA_SECURITY.md`, `THREAT_MODEL.md`, `SECURITY_CHECKLIST.md` — the security
   documentation set, cross-linked with each other. Start at `SECURITY_CHECKLIST.md` for current
   open items.
+- `docs/RULES.md` — hard rules, not lessons: git hygiene, architecture invariants (admin
+  separation, practice/network isolation, E2E encryption), migration constraints, secrets, and doc
+  placement. If something below reads like a lesson learned, it's probably promoted to a rule
+  there instead — check it before any commit or schema change.
 - `legal/` — Play Store submission material (Privacy Policy, Terms, Data Safety form answers).
 
 ## Operational lessons (learned the hard way this session — don't re-learn these)

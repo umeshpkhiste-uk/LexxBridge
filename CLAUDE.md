@@ -1,5 +1,6 @@
 @AGENTS.md
 @docs/MEMORY.md
+@docs/RULES.md
 
 <!-- code-review-graph MCP tools -->
 ## MCP Tools: code-review-graph

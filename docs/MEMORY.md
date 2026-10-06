@@ -47,6 +47,10 @@ Supabase project ref: `ujrosfflqevkytburevc` (used throughout migrations/Edge Fu
 - `docs/DESIGN.md` — the actual design tokens (`theme.ts`) and UI primitives (`src/shared/ui/`) —
   read before adding a screen or component, so it reuses existing tokens/primitives instead of a
   one-off styled component.
+- `docs/TASK.md` — every open/partial item from `PRD.md`, the security docs, `AUTH.md`,
+  `ARCHITECTURE.md`, `DEPLOYMENT.md`, and `legal/` pulled into one backlog, split by who can act
+  on it (you vs. engineering work) — check here before assuming something is still open or before
+  starting unprompted "fix a gap" work; it also lists what's deliberately deferred, not forgotten.
 - `SECURITY.md`, `DATA_SECURITY.md`, `THREAT_MODEL.md`, `SECURITY_CHECKLIST.md` — the security
   documentation set, cross-linked with each other. Start at `SECURITY_CHECKLIST.md` for current
   open items.

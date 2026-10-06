@@ -6,7 +6,8 @@ around four things: **classify** what's sensitive, **protect** it in transit and
 approved. The guiding principle: collect less, protect what we do collect, delete it on schedule.
 
 This is the data-focused companion to [`SECURITY.md`](SECURITY.md) (vulnerability reporting,
-overall security model) and [`docs/AUTH.md`](docs/AUTH.md) (how credentials and sessions work).
+overall security model), [`docs/AUTH.md`](docs/AUTH.md) (how credentials and sessions work), and
+[`THREAT_MODEL.md`](THREAT_MODEL.md) (entry points, assets, risks, and protections end to end).
 
 ## 1. Classify
 

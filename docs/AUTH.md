@@ -28,8 +28,8 @@ session doesn't silently expire while the app is suspended.
 
 - Validated client-side by `signUpSchema` (`src/features/auth/schemas.ts`): full name, a valid
   email, and a password that's ≥8 characters with at least one uppercase letter and one digit.
-  This is a UX check only — Supabase's own password policy (length, leaked-password check if
-  enabled) is the real enforcement.
+  This is a UX check only — Supabase's own password policy (minimum length is set to match this,
+  8 characters; leaked-password check if enabled) is the real enforcement.
 - `emailRedirectTo` is explicitly set to `authRedirect("verify-email")` (see "Deep links" below).
   Without this, Supabase falls back to the project's Site URL, which has nothing to do with this
   app.
@@ -177,8 +177,9 @@ also use.
 
 ## Known gaps
 
-- **Leaked password protection is off** (Supabase dashboard toggle, HaveIBeenPwned check). See
-  `SECURITY.md`.
+- **Leaked password protection is off, and blocked on the Free plan** (Supabase dashboard toggle,
+  HaveIBeenPwned check — grayed out until the project is on Pro or above). Minimum password
+  length is set to 8, matching the app's own sign-up validation. See `SECURITY.md`.
 - **No MFA.** Not implemented; email/password (or social OAuth) plus optional device-local
   biometrics/PIN is the full story today.
 - **No dedicated "change email" screen in the app yet** — the Supabase template and the

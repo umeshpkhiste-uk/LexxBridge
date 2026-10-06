@@ -79,9 +79,15 @@ report can go straight to "is the reasoning actually wrong?" instead of "did the
 ## Open item — not yet enabled
 
 **Leaked password protection** (Supabase's HaveIBeenPwned check on sign-up/password-change) is
-currently **off**. This is a dashboard toggle, not something in this codebase — enable it at
-Authentication → Policies (Attack Protection) in the Supabase dashboard. Tracked here so it isn't
-forgotten, not because it's been assessed as low-risk.
+currently **off**, and the toggle (Authentication → Policies → Email → "Prevent use of leaked
+passwords") is **grayed out on the Free plan** — it requires upgrading to Supabase Pro or above.
+Tracked here so it isn't forgotten and so the reason it's off is clear (a plan limit, not an
+oversight).
+
+**Fixed:** minimum password length was raised from the default of 6 to **8**, matching what the
+app's own sign-up form already required client-side (`signUpSchema` in
+`src/features/auth/schemas.ts`). Before this, the server was actually laxer than the app — a
+direct API call bypassing the app's form could set a 6-character password.
 
 ## Scope
 

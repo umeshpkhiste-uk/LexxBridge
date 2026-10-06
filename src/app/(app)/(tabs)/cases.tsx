@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
-import { router, useFocusEffect } from "expo-router";
-import { useCallback, useState } from "react";
+import { router, useFocusEffect, useNavigation } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Alert, FlatList, Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CaseSummary, listCases } from "@/features/cases/api";
@@ -29,6 +29,20 @@ export default function CasesScreen() {
   const [error, setError] = useState<string | null>(null);
   const [clientMenu, setClientMenu] = useState<{ title: string; actions: SheetAction[] } | null>(null);
   const swipeHandlers = useSwipeTabs(CASES_SEGMENTS, segment, setSegment);
+  const navigation = useNavigation();
+
+  // Tapping the Cases tab button — whether switching to it from elsewhere or
+  // re-tapping it while already here — resets to the default segment, so
+  // leaving it on "clients" and coming back later doesn't leave the picker
+  // stuck there. This only fires for the tab button itself, not for
+  // returning via the back arrow from a case/client detail screen.
+  useEffect(() => {
+    // expo-router's useNavigation() is typed generically and doesn't know
+    // this screen sits directly under the bottom-tab navigator, so it
+    // doesn't know about "tabPress" — it exists at runtime regardless.
+    const unsubscribe = (navigation as any).addListener("tabPress", () => setSegment("cases"));
+    return unsubscribe;
+  }, [navigation]);
 
   const load = useCallback(() => {
     setIsLoading(true);

@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { router, useFocusEffect, useLocalSearchParams, useNavigation } from "expo-router";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -140,6 +140,24 @@ export default function NetworkScreen() {
     clearSearch();
   };
   const swipeHandlers = useSwipeTabs(SEGMENTS, segment, changeSegment);
+  const navigation = useNavigation();
+
+  // Tapping the Network tab button — switching to it or re-tapping it while
+  // already here — resets to Feed, so leaving it on Messages and coming
+  // back later doesn't leave it stuck there. Doesn't fire for the
+  // /network?segment=messages deep link (that's programmatic navigation,
+  // not a tab-bar press) or for returning via the back arrow from a post/
+  // profile screen.
+  useEffect(() => {
+    // expo-router's useNavigation() is typed generically and doesn't know
+    // this screen sits directly under the bottom-tab navigator, so it
+    // doesn't know about "tabPress" — it exists at runtime regardless.
+    const unsubscribe = (navigation as any).addListener("tabPress", () => changeSegment("feed"));
+    return unsubscribe;
+    // changeSegment is re-created every render but only ever does the same
+    // two setState calls — depending on it here would resubscribe constantly.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [navigation]);
 
   const onSearchChange = (text: string) => {
     setSearch(text);

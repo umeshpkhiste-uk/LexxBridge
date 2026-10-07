@@ -53,9 +53,9 @@ for the full secrets-handling policy.
 removes Storage files first, then a database function deletes the `auth.users` row, and
 `on delete cascade` removes every row chained from it across every table (`0020`/`0030` migrations).
 
-**Scheduled deletion is now live** (`0052_scheduled_data_retention.sql` and
-`0053_retention_notifications_messages.sql`), via `pg_cron`, running daily as `postgres`
-(bypassing RLS, same as any other maintenance job):
+**Scheduled deletion is now live** (`0052_scheduled_data_retention.sql`,
+`0053_retention_notifications_messages.sql`, and `0056_feedback_rate_limit.sql`), via `pg_cron`,
+running daily as `postgres` (bypassing RLS, same as any other maintenance job):
 
 | Job | Deletes | Retention window |
 |---|---|---|
@@ -63,6 +63,7 @@ removes Storage files first, then a database function deletes the `auth.users` r
 | `purge-stale-push-tokens` | `public.push_tokens` rows | Not refreshed in **180 days** (almost certainly a reinstalled/replaced device — `send-push` already reactively removes tokens Expo reports as gone; this catches the ones that just went quiet instead) |
 | `purge-read-notifications` | `public.notifications` rows already marked read | Older than **90 days** (unread ones are never touched, regardless of age — they still need to surface to the user) |
 | `purge-old-deleted-messages` | `public.messages` rows already soft-deleted (`is_deleted = true`) | Older than **24 months** (content is already overwritten to `[deleted]` at delete time, so this removes an empty placeholder row, not real conversation history; `reply_to_id` is `on delete set null`, so a reply to a purged message just loses its "replying to" pointer rather than breaking) |
+| `purge-old-feedback-submissions` | `public.feedback_submissions` rows (the `send-feedback` rate-limit ledger) | Older than **30 days** — it's a frequency counter, not content anyone needs to keep |
 
 Check what's scheduled at any time with `select * from cron.job;`; see run history with
 `select * from cron.job_run_details order by start_time desc limit 20;`.

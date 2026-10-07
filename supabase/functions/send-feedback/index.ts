@@ -40,6 +40,16 @@ Deno.serve(async (req) => {
   const { data: userData, error: userError } = await userClient.auth.getUser();
   if (userError || !userData.user) return new Response("Unauthorized", { status: 401 });
 
+  // Logs this submission and enforces the per-user rate limit in one step —
+  // the insert itself raises (via a database trigger) once the sender has
+  // logged 5 submissions in the last hour, before any Resend quota is spent.
+  const { error: rateLimitError } = await userClient
+    .from("feedback_submissions")
+    .insert({ user_id: userData.user.id });
+  if (rateLimitError) {
+    return new Response(JSON.stringify({ error: rateLimitError.message }), { status: 429 });
+  }
+
   const { data: profile } = await userClient
     .from("advocate_profiles")
     .select("full_name")

@@ -40,20 +40,23 @@ test call — not an assumption. Re-run this before any production release.
 - [x] TLS everywhere (Supabase API/Storage/Realtime, Edge Functions, Resend, Expo)
 - [x] At-rest encryption via Supabase's managed infrastructure
 - [x] Messages end-to-end encrypted client-side (`tweetnacl`) — server only ever sees ciphertext
-- [x] Scheduled data retention live: 4 `pg_cron` jobs purging audit logs (13mo), stale push
-      tokens (180d), read notifications (90d), soft-deleted messages (24mo)
+- [x] Scheduled data retention live: 5 `pg_cron` jobs purging audit logs (13mo), stale push
+      tokens (180d), read notifications (90d), soft-deleted messages (24mo), feedback
+      rate-limit log rows (30d)
 - [x] Account deletion is complete (Storage files, then `auth.users` row, then full cascade)
 
 ## API & Edge Functions
 
-- [x] `send-feedback` requires a real caller JWT, traceable to one account
+- [x] `send-feedback` requires a real caller JWT, traceable to one account, and now a 5/hour
+      per-sender rate limit (`0056_feedback_rate_limit.sql`, applied live)
 - [x] `send-push` and `send-account-notice` require a shared secret
       (`x-internal-secret`, timing-safe compared) — **verified working via a direct test call**,
       not just assumed from the code
 - [x] Secret itself lives in Supabase Vault + the functions' own env var, never in git
 - [x] Per-sender rate limits now enforced in Postgres: 20 connection requests/hour, 50
-      follows/hour, 60 messages/5min — generous for real use, blocks a scripted burst
-      (`0055_rate_limits_mime_types_admin_audit.sql`, applied live)
+      follows/hour, 60 messages/5min, 5 feedback submissions/hour — generous for real use,
+      blocks a scripted burst (`0055_rate_limits_mime_types_admin_audit.sql`,
+      `0056_feedback_rate_limit.sql`, applied live)
 
 ## Storage / file uploads
 

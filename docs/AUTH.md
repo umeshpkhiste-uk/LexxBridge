@@ -52,7 +52,13 @@ biometric re-login later (see below).
 ## Password reset
 
 1. `requestPasswordReset(email)` → `supabase.auth.resetPasswordForEmail()` with
-   `redirectTo: authRedirect("reset-password")`.
+   `redirectTo: authRedirect("reset-password")`. The UI (`src/app/(auth)/forgot-password.tsx`)
+   shows the same neutral "reset link is on its way" message whether the call succeeds or fails,
+   and never surfaces Supabase's own error text — `resetPasswordForEmail` is deliberately built to
+   never reveal whether an email has an account (it returns success either way), and surfacing an
+   error here would undo that and let the form be used to enumerate registered emails
+   (OWASP/CWE-204). A genuine send failure (rate limit, SMTP outage) is still visible in
+   Supabase's own Auth logs, just not to the person submitting the form.
 2. User gets an email (template: Supabase dashboard → Authentication → Email Templates → "Reset
    Password" — branded LexxBridge HTML, see below) with a link back into the app.
 3. Clicking it fires `PASSWORD_RECOVERY` on `onAuthStateChange` (`AuthProvider.tsx`) — this **does**

@@ -12,7 +12,6 @@ import { useTheme } from "@/shared/ui/theme";
 
 export default function ForgotPasswordScreen() {
   const { colors, spacing, typography } = useTheme();
-  const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
 
@@ -25,15 +24,17 @@ export default function ForgotPasswordScreen() {
     defaultValues: { email: "" },
   });
 
+  /** Always shows the same neutral result, whether or not the email has an
+   * account — Supabase's resetPasswordForEmail is deliberately built not to
+   * reveal that distinction (it returns success either way), so surfacing
+   * its error here would both contradict that and let a password-reset
+   * attempt be used to find out which emails are registered. A genuine send
+   * failure (rate limit, SMTP outage) still reaches this same message; it's
+   * visible in Supabase's own Auth logs if it needs investigating. */
   const onSubmit = async (values: ForgotPasswordValues) => {
-    setSubmitError(null);
     setIsSubmitting(true);
-    const { error } = await requestPasswordReset(values.email);
+    await requestPasswordReset(values.email);
     setIsSubmitting(false);
-    if (error) {
-      setSubmitError(error);
-      return;
-    }
     setSent(true);
   };
 
@@ -62,14 +63,9 @@ export default function ForgotPasswordScreen() {
         )}
       />
 
-      {submitError ? (
-        <Text style={[typography.caption, { color: colors.danger, marginBottom: spacing.md }]}>
-          {submitError}
-        </Text>
-      ) : null}
       {sent ? (
         <Text style={[typography.caption, { color: colors.success, marginBottom: spacing.md }]}>
-          Reset link sent. Check your email.
+          If that email has an account, a reset link is on its way.
         </Text>
       ) : null}
 

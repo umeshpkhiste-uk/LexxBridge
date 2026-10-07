@@ -107,7 +107,13 @@ export default function AdminScreen() {
 
   return (
     <ScreenContainer scroll>
-      <TextField label="Search by name" value={search} onChangeText={setSearch} placeholder="Search advocates" autoCapitalize="none" />
+      <TextField
+        label="Search by name or email"
+        value={search}
+        onChangeText={setSearch}
+        placeholder="Search advocates"
+        autoCapitalize="none"
+      />
 
       {error ? <Text style={[typography.body, { color: colors.danger, marginBottom: spacing.md }]}>{error}</Text> : null}
 
@@ -141,7 +147,9 @@ export default function AdminScreen() {
               key={profile.id}
               icon={profile.is_blocked ? "ban-outline" : "person-outline"}
               label={profile.full_name}
-              subtitle={[profile.city, profile.state].filter(Boolean).join(", ") || profile.verification_status}
+              subtitle={[[profile.city, profile.state].filter(Boolean).join(", ") || profile.verification_status, profile.email]
+                .filter(Boolean)
+                .join(" · ")}
               onPress={() => handleToggleBlock(profile)}
               destructive={profile.is_blocked}
               right={

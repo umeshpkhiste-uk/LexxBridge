@@ -97,8 +97,10 @@ false`: the view runs as its owner, which bypasses the base table's RLS,
 and the view's *own* definition becomes the sole security boundary instead:
 
 - `public_advocate_profiles` only ever selects non-sensitive columns (no
-  bar registration number, verification notes, or `verified_at`) and
-  filters to `profile_visibility in ('public', 'connections_only')`.
+  bar registration number, verification notes, `verified_at`, phone, or
+  **email** — added to `advocate_profiles` in `0057_advocate_profiles_email_column.sql`
+  purely so admin's own directory RPC can show it, and deliberately never
+  added to this view) and filters to `profile_visibility in ('public', 'connections_only')`.
 - `advocate_network_stats` only ever exposes aggregate counts, never raw
   follow/connection rows.
 

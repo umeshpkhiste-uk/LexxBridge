@@ -19,6 +19,7 @@ export async function isCurrentUserAdmin(): Promise<boolean> {
 export type AdminProfileRow = {
   id: string;
   full_name: string;
+  email: string;
   city: string | null;
   state: string | null;
   verification_status: "unverified" | "pending" | "verified" | "rejected" | "expired";

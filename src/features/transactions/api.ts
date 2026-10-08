@@ -1,4 +1,5 @@
 import { decode } from "base64-arraybuffer";
+import * as Crypto from "expo-crypto";
 import * as FileSystem from "expo-file-system/legacy";
 import { supabase } from "@/shared/lib/supabase";
 
@@ -285,7 +286,17 @@ export async function listPendingPayments(): Promise<PendingPayment[]> {
  * transaction row) rather than being silently dropped — see migration 0012.
  */
 /** Marks a pending fee (fully or partly) as received, optionally with how it
- * was paid and a receipt / screenshot. */
+ * was paid and a receipt / screenshot.
+ *
+ * Generates one fresh idempotency key per call (not per retry of that same
+ * call — a caller that wants its own retry to be safe should call this once
+ * and let its own retry logic re-invoke this same function again, which
+ * mints a new key each time it runs). The server uses that key to make a
+ * replayed/duplicated request — a resent network call, a double-tap, or a
+ * captured-and-resent request — a no-op instead of recording the same
+ * payment twice. See migration 0058 for why this mattered: a partial
+ * payment leaves the transaction "pending" (just with a reduced amount), so
+ * without this a replay could keep crediting the same payment repeatedly. */
 export async function recordPartialPayment(
   transactionId: string,
   amountReceived: number,
@@ -302,6 +313,7 @@ export async function recordPartialPayment(
     p_amount_received: amountReceived,
     p_payment_method: options.paymentMethod ?? null,
     p_receipt_path: receiptPath,
+    p_idempotency_key: Crypto.randomUUID(),
   });
   if (error) {
     if (receiptPath) await supabase.storage.from(RECEIPT_BUCKET).remove([receiptPath]);

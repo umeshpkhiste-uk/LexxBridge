@@ -13,11 +13,13 @@ import {
   KeyboardAvoidingView,
   Linking,
   Modal,
+  NativeSyntheticEvent,
   Platform,
   Pressable,
   StyleSheet,
   Text,
   TextInput,
+  TextInputKeyPressEventData,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -218,6 +220,19 @@ export default function ChatScreen() {
     queueMessage(id, temp, file).catch((err) => {
       alertMessage("Couldn't send message", err instanceof Error ? err.message : "Something went wrong");
     });
+  };
+
+  /** Web only — a hardware keyboard makes Enter a natural "send" shortcut,
+   * the way every web chat app treats it (Shift+Enter still inserts a
+   * newline). Native keeps Enter as a newline: there's no keyboard-driven
+   * send convention on a phone, and the on-screen return key already does
+   * what users expect for a multiline message box. */
+  const onComposerKeyPress = (event: NativeSyntheticEvent<TextInputKeyPressEventData>) => {
+    if (Platform.OS !== "web") return;
+    const nativeEvent = event.nativeEvent as unknown as { key: string; shiftKey?: boolean };
+    if (nativeEvent.key !== "Enter" || nativeEvent.shiftKey) return;
+    event.preventDefault();
+    if (canSend) handleSend();
   };
 
   const retry = (message: ChatMessage) => {
@@ -520,6 +535,7 @@ export default function ChatScreen() {
             ref={inputRef}
             value={draft}
             onChangeText={onChangeDraft}
+            onKeyPress={onComposerKeyPress}
             placeholder={attachment ? "Add a caption" : "Message"}
             placeholderTextColor={colors.textSecondary}
             multiline

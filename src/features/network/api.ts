@@ -25,12 +25,24 @@ async function currentUserId(): Promise<string> {
   return data.user.id;
 }
 
+/** PostgREST's .or()/.filter() raw-string syntax treats comma, period,
+ * colon, asterisk, and parentheses as filter-structure characters — a
+ * search term containing any of those would otherwise be parsed as
+ * additional/malformed filter clauses instead of literal text. Wrapping the
+ * whole value in double quotes (per PostgREST's url_grammar) makes
+ * everything inside literal; only an embedded backslash or double quote
+ * needs escaping once quoted. */
+function escapeOrFilterValue(value: string): string {
+  return `"${value.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
+}
+
 export async function searchAdvocates(query: string): Promise<PublicProfile[]> {
   const me = await currentUserId();
   const trimmed = query.trim();
   let q = supabase.from("public_advocate_profiles").select(PROFILE_COLUMNS).neq("id", me).limit(30);
   if (trimmed) {
-    q = q.or(`full_name.ilike.%${trimmed}%,city.ilike.%${trimmed}%,state.ilike.%${trimmed}%`);
+    const pattern = escapeOrFilterValue(`%${trimmed}%`);
+    q = q.or(`full_name.ilike.${pattern},city.ilike.${pattern},state.ilike.${pattern}`);
   }
   const { data, error } = await q;
   if (error) throw new Error(error.message);

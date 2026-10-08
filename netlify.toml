@@ -38,3 +38,11 @@
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "camera=(self), microphone=(), geolocation=()"
+    # index.html references each build's hashed bundle filename, so it must
+    # never be cached — otherwise a browser can keep serving a stale
+    # index.html (pointing at an old, since-superseded bundle hash)
+    # indefinitely, even though a newer build is already live on the
+    # server. The hashed /_expo/static/* and /assets/* files above are the
+    # only things safe to cache forever, since their filename itself
+    # changes on every new build.
+    Cache-Control = "no-cache"

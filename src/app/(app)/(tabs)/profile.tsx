@@ -156,6 +156,15 @@ export default function ProfileScreen() {
           />
         </SettingsGroup>
 
+        <SettingsGroup>
+          <SettingsRow
+            icon="card-outline"
+            label="Plan & Subscription"
+            subtitle="Free plan"
+            onPress={comingSoon("Paid plans and subscription management")}
+          />
+        </SettingsGroup>
+
         <SettingsGroup title={t("settings.account")}>
           <SettingsRow
             icon="eye-outline"
@@ -182,6 +191,7 @@ export default function ProfileScreen() {
           <SettingsRow icon="help-circle-outline" label="FAQ" onPress={() => router.push("/(app)/faq")} />
           <SettingsRow icon="information-circle-outline" label="About app" onPress={() => router.push("/(app)/about")} />
           <SettingsRow icon="chatbubble-ellipses-outline" label="Help & support" onPress={() => router.push("/(app)/help-support")} />
+          <SettingsRow icon="document-text-outline" label="Privacy Policy" onPress={() => router.push("/legal/privacy")} />
         </SettingsGroup>
 
         <SettingsGroup>

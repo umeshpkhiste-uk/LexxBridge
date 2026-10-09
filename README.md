@@ -109,6 +109,12 @@ settings typed in by hand.
    `https://lexxbridge.app/**` to **Redirect URLs**, so sign-up
    confirmation and password-reset emails open the website.
 
+If a deployment fails with "This deployment couldn't be built because the
+project was paused" — Vercel's Hobby plan can auto-pause a project after a
+period of inactivity. **Project → Settings → General → Resume Project**,
+then push a new commit (a blocked build can't be redeployed directly —
+Vercel requires a fresh one).
+
 Build the web version locally with `npm run build:web` (output in `dist/`).
 
 Phone-only features — Face ID / fingerprint, PIN or pattern app lock,

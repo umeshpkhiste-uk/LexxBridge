@@ -4,7 +4,7 @@ Google Play requires that any app allowing account creation also offer a
 way to delete the account and its data — reachable both **inside the app**
 and from a **public web page**, without needing to log in first. This file
 is the source for that public page (rendered at `/legal/delete-account`,
-e.g. `https://lexxbridge.netlify.app/legal/delete-account`).
+e.g. `https://lexxbridge.app/legal/delete-account`).
 
 ## Option 1 — delete it yourself, in the app (immediate)
 

@@ -86,7 +86,7 @@ return `lexxbridge://${path}`;
 Configuration:**
 
 - **Redirect URLs** includes `lexxbridge://**` (native) and your web domain, e.g.
-  `https://<your-site>.netlify.app/**` (web).
+  `https://lexxbridge.app/**` (web).
 - **Site URL** is set to your real web domain — if the redirect URL isn't in the allow-list,
   Supabase silently falls back to Site URL instead of erroring, which is why a bad link can
   "work" but land somewhere that looks wrong (we hit exactly this once — see commit history around

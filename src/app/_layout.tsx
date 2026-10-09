@@ -127,7 +127,7 @@ function RootNavigator() {
       {/* Social sign-in redirect target; just forwards into the app. */}
       <Stack.Screen name="auth-callback" />
       {/* Public legal pages (Privacy Policy, Terms, account deletion) — kept
-          outside the (auth)/(app) guards so their Netlify URLs work for
+          outside the (auth)/(app) guards so their Vercel URLs work for
           signed-out visitors and Play Store review. */}
       <Stack.Screen name="legal" />
     </Stack>

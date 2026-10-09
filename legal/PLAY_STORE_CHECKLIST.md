@@ -30,14 +30,13 @@ needs a real value before you publish. Search for `[` in `legal/*.md` and
 the corresponding `src/app/legal/*.tsx` screens to find them all.
 
 ### 2. Deploy the legal pages so the URLs are live
-The Netlify web build already serves these at:
-- `https://lexxbridge.netlify.app/legal/privacy`
-- `https://lexxbridge.netlify.app/legal/terms`
-- `https://lexxbridge.netlify.app/legal/delete-account`
+The Vercel web build already serves these at:
+- `https://lexxbridge.app/legal/privacy`
+- `https://lexxbridge.app/legal/terms`
+- `https://lexxbridge.app/legal/delete-account`
 
-Confirm your actual Netlify domain and use that exact URL in Play Console.
-Google reviews the Privacy Policy URL, so double-check it loads without
-login before submitting.
+Use that exact URL in Play Console. Google reviews the Privacy Policy URL,
+so double-check it loads without login before submitting.
 
 ### 3. Google Play Console setup
 - Create a developer account (one-time $25 fee) if you don't have one.

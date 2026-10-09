@@ -85,24 +85,28 @@ git push -u origin main
 `.env` (your Supabase keys) is git-ignored and never pushed; `.env.example`
 shows which variables are needed.
 
-### Deploy the web version to Netlify
+### Deploy the web version to Vercel
 
-The repo includes [`netlify.toml`](netlify.toml), so Netlify needs no build
+The repo includes [`vercel.json`](vercel.json), so Vercel needs no build
 settings typed in by hand.
 
-1. Netlify → **Add new site → Import an existing project → GitHub**, pick
-   this repository. Build command (`npx expo export --platform web`),
-   publish folder (`dist`) and Node version (22) come from `netlify.toml`.
-2. **Site configuration → Environment variables**, add:
+1. Vercel → **Add New → Project → Import Git Repository**, pick this
+   repository. Build command (`npx expo export --platform web`), output
+   directory (`dist`) and the SPA/caching rules come from `vercel.json`;
+   set Node.js Version to 22.x in Project Settings.
+2. **Settings → Environments → Production → Domains / Environment
+   Variables**, add:
    - `EXPO_PUBLIC_SUPABASE_URL`
    - `EXPO_PUBLIC_SUPABASE_ANON_KEY`
 
    (same values as your local `.env`; they're baked in at build time, so
-   redeploy after changing them).
+   redeploy after changing them). Type these as **Config**, not **Secret** —
+   `EXPO_PUBLIC_*` variables are inlined into the client bundle at build
+   time, so they're never actually hidden regardless of type.
 3. Deploy. Every push to `main` redeploys automatically.
 4. In **Supabase → Authentication → URL Configuration**, set **Site URL**
-   to your Netlify address (e.g. `https://lexxbridge.netlify.app`) and add
-   `https://lexxbridge.netlify.app/**` to **Redirect URLs**, so sign-up
+   to your domain (e.g. `https://lexxbridge.app`) and add
+   `https://lexxbridge.app/**` to **Redirect URLs**, so sign-up
    confirmation and password-reset emails open the website.
 
 Build the web version locally with `npm run build:web` (output in `dist/`).

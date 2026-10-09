@@ -3,7 +3,7 @@ import { HeaderBackButton } from "@/shared/ui/HeaderBackButton";
 import { useTheme } from "@/shared/ui/theme";
 
 /** Public legal pages — reachable at /legal/* without signing in, so the
- * Netlify-hosted URLs work as the Privacy Policy / account-deletion links
+ * Vercel-hosted URLs work as the Privacy Policy / account-deletion links
  * Google Play requires. */
 export default function LegalLayout() {
   const { colors } = useTheme();

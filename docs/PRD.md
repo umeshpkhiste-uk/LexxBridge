@@ -54,7 +54,7 @@ advocate accounts, confirm A cannot read B's private data") is automated and pas
 ## 3. Platform & localization
 
 - ✅ iOS, Android, and **web** (the original spec only required Android/iOS with web as a later
-  architectural option — web shipped alongside, via `react-native-web`, deployed to Netlify).
+  architectural option — web shipped alongside, via `react-native-web`, deployed to Vercel).
 - ✅ INR currency default, `Asia/Kolkata` handling, no hard-coded single city/state.
 - 🔶 Indian court/state/city data is free-text input, not a curated reference dataset — advocates
   type their own values rather than selecting from a maintained list.

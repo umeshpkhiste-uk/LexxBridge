@@ -77,7 +77,7 @@ case data to train any third-party AI model.
   processing terms.
 - **Other advocates you connect with**: only the profile fields you choose
   to make visible, and messages you choose to send them.
-- **Service providers** that keep the app running (e.g. Netlify for web
+- **Service providers** that keep the app running (e.g. Vercel for web
   hosting, push-notification delivery services).
 - We do not share your client, case or financial data with any other third
   party, and we do not sell personal information to anyone.

@@ -46,7 +46,7 @@ export const PRIVACY_SECTIONS: LegalSection[] = [
     paragraphs: [
       "• Supabase, our backend provider, hosts our database, authentication and file storage under its own data-processing terms.",
       "• Other advocates you connect with see only the profile fields you make visible, and messages you choose to send them.",
-      "• Service providers that keep the app running (e.g. Netlify web hosting, push-notification delivery).",
+      "• Service providers that keep the app running (e.g. Vercel web hosting, push-notification delivery).",
       "We don't share your client, case or financial data with anyone else, and never sell personal information. We may disclose information if required by law.",
     ],
   },

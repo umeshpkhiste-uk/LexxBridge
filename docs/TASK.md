@@ -17,7 +17,7 @@ a flagged gap in another doc before this file consolidated them.
 | Separate production Supabase project | Create a second project, apply all migrations, wire EAS secrets — steps already written out | [`DEPLOYMENT.md`](DEPLOYMENT.md) §6 |
 | Apple Developer Program ($99/yr) + Google Play Console ($25 one-time) | Required before any store build/submission | [`DEPLOYMENT.md`](DEPLOYMENT.md) §7, [`legal/PLAY_STORE_CHECKLIST.md`](../legal/PLAY_STORE_CHECKLIST.md) |
 | Fill in every `[bracketed placeholder]` in the legal docs | Real company name, support email, postal address, jurisdiction | [`legal/PLAY_STORE_CHECKLIST.md`](../legal/PLAY_STORE_CHECKLIST.md) §1 |
-| Confirm real Netlify domain in Play Console / App Store Connect | Google/Apple review the live Privacy Policy URL | [`legal/PLAY_STORE_CHECKLIST.md`](../legal/PLAY_STORE_CHECKLIST.md) §2 |
+| Enter `https://lexxbridge.app` in Play Console / App Store Connect | Google/Apple review the live Privacy Policy URL — domain is live on Vercel, nothing left to confirm | [`legal/PLAY_STORE_CHECKLIST.md`](../legal/PLAY_STORE_CHECKLIST.md) §2 |
 | Design a 1024×500 feature graphic + phone/tablet screenshots | Not in this repo; store listing assets | [`legal/PLAY_STORE_CHECKLIST.md`](../legal/PLAY_STORE_CHECKLIST.md) §3 |
 | Change `com.lexxbridge.app` bundle identifier if you don't control that domain | Can't be changed once published — must happen before first submission | [`DEPLOYMENT.md`](DEPLOYMENT.md) §7 |
 | Commission an independent security review | Currently declared "No" in the Play Store data-safety answers, accurately | [`SECURITY_CHECKLIST.md`](SECURITY_CHECKLIST.md) |

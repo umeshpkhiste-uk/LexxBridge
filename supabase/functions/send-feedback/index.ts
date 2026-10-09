@@ -10,26 +10,41 @@ const RESEND_API_URL = "https://api.resend.com/emails";
 const RECIPIENT = "deepomeshcreation@gmail.com";
 const MAX_WORDS = 500;
 
+// The only one of the 3 Edge Functions this app calls directly from the
+// client's browser/app, rather than a database trigger — so it's the only
+// one that needs CORS headers (a trigger-invoked function never faces a
+// browser's preflight check at all).
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
+function json(body: unknown, status: number) {
+  return new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+}
+
 Deno.serve(async (req) => {
-  if (req.method !== "POST") return new Response("Method not allowed", { status: 405 });
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  if (req.method !== "POST") return new Response("Method not allowed", { status: 405, headers: corsHeaders });
 
   let comment: unknown;
   try {
     ({ comment } = await req.json());
   } catch {
-    return new Response("Bad request", { status: 400 });
+    return new Response("Bad request", { status: 400, headers: corsHeaders });
   }
   if (typeof comment !== "string" || !comment.trim()) {
-    return new Response("Bad request", { status: 400 });
+    return new Response("Bad request", { status: 400, headers: corsHeaders });
   }
   const trimmed = comment.trim();
   const wordCount = trimmed.split(/\s+/).filter(Boolean).length;
   if (wordCount > MAX_WORDS) {
-    return new Response(JSON.stringify({ error: `Comment exceeds ${MAX_WORDS} words` }), { status: 400 });
+    return json({ error: `Comment exceeds ${MAX_WORDS} words` }, 400);
   }
 
   const authHeader = req.headers.get("Authorization");
-  if (!authHeader) return new Response("Unauthorized", { status: 401 });
+  if (!authHeader) return new Response("Unauthorized", { status: 401, headers: corsHeaders });
 
   // Acts as the caller (their own JWT, not the service role), so this can
   // never read or impersonate anyone else's identity.
@@ -38,7 +53,7 @@ Deno.serve(async (req) => {
     auth: { persistSession: false },
   });
   const { data: userData, error: userError } = await userClient.auth.getUser();
-  if (userError || !userData.user) return new Response("Unauthorized", { status: 401 });
+  if (userError || !userData.user) return new Response("Unauthorized", { status: 401, headers: corsHeaders });
 
   // Logs this submission and enforces the per-user rate limit in one step —
   // the insert itself raises (via a database trigger) once the sender has
@@ -47,7 +62,7 @@ Deno.serve(async (req) => {
     .from("feedback_submissions")
     .insert({ user_id: userData.user.id });
   if (rateLimitError) {
-    return new Response(JSON.stringify({ error: rateLimitError.message }), { status: 429 });
+    return json({ error: rateLimitError.message }, 429);
   }
 
   const { data: profile } = await userClient
@@ -58,7 +73,7 @@ Deno.serve(async (req) => {
   const fullName = profile?.full_name ?? "Advocate";
 
   const resendKey = Deno.env.get("RESEND_API_KEY");
-  if (!resendKey) return new Response(JSON.stringify({ error: "Email service not configured" }), { status: 500 });
+  if (!resendKey) return json({ error: "Email service not configured" }, 500);
 
   const res = await fetch(RESEND_API_URL, {
     method: "POST",
@@ -74,8 +89,8 @@ Deno.serve(async (req) => {
 
   if (!res.ok) {
     const errText = await res.text().catch(() => "");
-    return new Response(JSON.stringify({ error: `Failed to send: ${errText}` }), { status: 502 });
+    return json({ error: `Failed to send: ${errText}` }, 502);
   }
 
-  return Response.json({ sent: true });
+  return new Response(JSON.stringify({ sent: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
 });

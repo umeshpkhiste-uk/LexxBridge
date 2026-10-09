@@ -65,7 +65,7 @@ export default function CaseDetailScreen() {
                   }}
                   hitSlop={10}
                   accessibilityLabel="Edit case"
-                  style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
+                  style={{ flexDirection: "row", alignItems: "center", gap: 4, paddingRight: spacing.sm }}
                 >
                   <Ionicons name="create-outline" size={20} color={colors.brand} />
                   <Text style={[typography.bodyStrong, { color: colors.brand }]}>Edit</Text>

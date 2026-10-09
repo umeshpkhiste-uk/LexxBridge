@@ -152,11 +152,16 @@ export default function TransactionDetailsScreen() {
           title: isExpense ? "Expense details" : "Payment details",
           headerRight: () =>
             isEditing ? (
-              <Pressable onPress={() => setIsEditing(false)} hitSlop={10} accessibilityLabel="Cancel editing">
+              <Pressable
+                onPress={() => setIsEditing(false)}
+                hitSlop={10}
+                accessibilityLabel="Cancel editing"
+                style={{ paddingRight: spacing.sm }}
+              >
                 <Text style={[typography.body, { color: colors.textSecondary }]}>Cancel</Text>
               </Pressable>
             ) : (
-              <View style={styles.headerActions}>
+              <View style={[styles.headerActions, { paddingRight: spacing.sm }]}>
                 <Pressable onPress={startEditing} hitSlop={10} accessibilityLabel="Edit entry" disabled={isDeleting}>
                   <Ionicons name="create-outline" size={22} color={colors.brand} />
                 </Pressable>

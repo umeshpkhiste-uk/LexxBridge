@@ -401,7 +401,12 @@ export default function ChatScreen() {
             </Pressable>
           ) : null,
         headerRight: () => (
-          <Pressable onPress={() => setChatMenuOpen(true)} hitSlop={10} accessibilityLabel="Chat options">
+          <Pressable
+            onPress={() => setChatMenuOpen(true)}
+            hitSlop={10}
+            accessibilityLabel="Chat options"
+            style={{ paddingRight: spacing.sm }}
+          >
             <Ionicons name="ellipsis-vertical" size={20} color={colors.textPrimary} />
           </Pressable>
         ),

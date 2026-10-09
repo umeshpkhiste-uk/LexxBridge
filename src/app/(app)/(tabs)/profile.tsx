@@ -187,11 +187,16 @@ export default function ProfileScreen() {
           />
         </SettingsGroup>
 
+        <SettingsGroup title="Legal">
+          <SettingsRow icon="document-text-outline" label="Privacy Policy" onPress={() => router.push("/legal/privacy")} />
+          <SettingsRow icon="reader-outline" label="Terms of Service" onPress={() => router.push("/legal/terms")} />
+          <SettingsRow icon="trash-outline" label="Delete account & data" onPress={() => router.push("/legal/delete-account")} />
+        </SettingsGroup>
+
         <SettingsGroup title="Support">
           <SettingsRow icon="help-circle-outline" label="FAQ" onPress={() => router.push("/(app)/faq")} />
           <SettingsRow icon="information-circle-outline" label="About app" onPress={() => router.push("/(app)/about")} />
           <SettingsRow icon="chatbubble-ellipses-outline" label="Help & support" onPress={() => router.push("/(app)/help-support")} />
-          <SettingsRow icon="document-text-outline" label="Privacy Policy" onPress={() => router.push("/legal/privacy")} />
         </SettingsGroup>
 
         <SettingsGroup>

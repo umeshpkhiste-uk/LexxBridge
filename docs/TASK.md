@@ -18,7 +18,6 @@ a flagged gap in another doc before this file consolidated them.
 | Apple Developer Program ($99/yr) + Google Play Console ($25 one-time) | Required before any store build/submission | [`DEPLOYMENT.md`](DEPLOYMENT.md) §7, [`legal/PLAY_STORE_CHECKLIST.md`](../legal/PLAY_STORE_CHECKLIST.md) |
 | Enter `https://lexxbridge.app` in Play Console / App Store Connect | Google/Apple review the live Privacy Policy URL — domain is live on Vercel, nothing left to confirm | [`legal/PLAY_STORE_CHECKLIST.md`](../legal/PLAY_STORE_CHECKLIST.md) §2 |
 | Design a 1024×500 feature graphic + phone/tablet screenshots | Not in this repo; store listing assets | [`legal/PLAY_STORE_CHECKLIST.md`](../legal/PLAY_STORE_CHECKLIST.md) §3 |
-| Change `com.lexxbridge.app` bundle identifier if you don't control that domain | Can't be changed once published — must happen before first submission | [`DEPLOYMENT.md`](DEPLOYMENT.md) §7 |
 | Commission an independent security review | Currently declared "No" in the Play Store data-safety answers, accurately | [`SECURITY_CHECKLIST.md`](SECURITY_CHECKLIST.md) |
 | Install crash/error monitoring (Sentry or equivalent) | Deliberately skipped so far to avoid destabilizing active Expo Go testing | [`SECURITY_CHECKLIST.md`](SECURITY_CHECKLIST.md), [`DEPLOYMENT.md`](DEPLOYMENT.md) §4 |
 

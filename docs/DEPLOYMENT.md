@@ -93,12 +93,12 @@ billing plan) is your call, not something to do silently.
 
 Configured, not yet run:
 
-- `app.json` now has real identifiers: `com.lexxbridge.app` for both
+- `app.json` has real identifiers: `com.lexxbridge.app` for both
   `ios.bundleIdentifier` and `android.package`, version 1.0.0,
   `buildNumber`/`versionCode` 1, and an `NSPhotoLibraryUsageDescription`
-  for the post-image picker. **`com.lexxbridge.app` is a placeholder —
-  change it before your first store submission if you don't control that
-  domain; bundle identifiers can't be changed once published.**
+  for the post-image picker. `lexxbridge.app` is registered and live
+  (Vercel), so this identifier is final — bundle identifiers can't be
+  changed once published, and nothing further is needed here.
 - `eas.json` has `development`/`preview`/`production` build profiles.
 
 What only you can do (needs accounts I don't have access to):

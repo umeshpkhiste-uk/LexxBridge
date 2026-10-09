@@ -5,7 +5,7 @@
  *
  * Replace every [bracketed placeholder] with real details before release. */
 
-export const LEGAL_UPDATED = "30 September 2026";
+export const LEGAL_UPDATED = "10 October 2026";
 export const SUPPORT_EMAIL = "[support@yourdomain.com]";
 export const COMPANY_NAME = "[Your company / developer name]";
 
@@ -53,7 +53,9 @@ export const PRIVACY_SECTIONS: LegalSection[] = [
   {
     heading: "5. Data security",
     paragraphs: [
-      "Passwords are hashed. Chat messages are end-to-end encrypted. Data in transit is encrypted (HTTPS/TLS) and data at rest is encrypted by our backend provider. Row-level access controls keep your clients, cases, hearings, tasks and payments visible only to your account. No system is 100% secure and we cannot guarantee absolute security.",
+      "Passwords are hashed. Chat messages are end-to-end encrypted. Data in transit is encrypted (HTTPS/TLS) and data at rest is encrypted by our backend provider. Row-level access controls keep your clients, cases, hearings, tasks and payments visible only to your account.",
+      "No system is 100% secure, and we cannot guarantee absolute security. By using the Service, you acknowledge and accept the inherent risk of unauthorized access, hacking, data breaches or data loss that can occur despite these safeguards — including risks arising from your own device, credentials or network being compromised. To the maximum extent permitted by applicable law, we are not liable for loss or unauthorized disclosure of information resulting from circumstances beyond our reasonable control, except where caused by our own gross negligence or willful misconduct, or where such liability cannot be excluded by law.",
+      "This does not affect our legal obligations as a data fiduciary under India's Digital Personal Data Protection Act, 2023 — including notifying you and the relevant authority in the event of a personal data breach, as required by law.",
     ],
   },
   {
@@ -134,35 +136,49 @@ export const TERMS_SECTIONS: LegalSection[] = [
     ],
   },
   {
-    heading: "7. Availability and changes",
+    heading: "7. Security, data loss and unauthorized access",
+    paragraphs: [
+      "We implement reasonable technical and organizational safeguards to protect the Service and Your Content — including encryption in transit and at rest, end-to-end encryption for chat messages, and row-level access controls (see our Privacy Policy, §5). However, no method of transmission or storage is completely secure, and we cannot and do not guarantee that unauthorized access, hacking, malware, device loss or theft, or other security incidents will never occur.",
+      "By using the Service, you acknowledge and accept this inherent risk. To the maximum extent permitted by applicable law, LexxBridge and its developers are not liable for any loss of, unauthorized access to, or disclosure of Your Content or personal data resulting from circumstances beyond our reasonable control — including cyberattacks, hacking, phishing, compromised or shared login credentials, a lost or stolen device, or a vulnerability in a third-party service we rely on (e.g. our cloud infrastructure provider) — except where such loss results from our own gross negligence or willful misconduct, or where liability cannot be excluded under applicable law.",
+      "You are solely responsible for keeping your account credentials, device, and any biometric, PIN or pattern unlock secure, and for promptly notifying us if you suspect unauthorized access to your account.",
+    ],
+  },
+  {
+    heading: "8. Availability and changes",
     paragraphs: [
       "We aim to keep the Service available and reliable but don't guarantee uninterrupted access. We may modify, suspend or discontinue any part of it, and may update these Terms from time to time; continued use after an update means you accept the revised Terms.",
     ],
   },
   {
-    heading: "8. Termination",
+    heading: "9. Termination",
     paragraphs: [
       "You may stop using the Service and delete your account at any time from Profile → Settings → Delete account, which permanently erases your data as described in our Privacy Policy. We may suspend or terminate accounts that violate these Terms.",
     ],
   },
   {
-    heading: "9. Disclaimers",
+    heading: "10. Disclaimers",
     paragraphs: [
-      "The Service is provided \"as is\" without warranties of any kind. LexxBridge is a practice-management tool, not a source of legal advice, and doesn't review, verify or take responsibility for the legal accuracy of anything you record in it.",
+      "The Service is provided \"as is\" and \"as available,\" without warranties of any kind, express or implied. LexxBridge is a practice-management tool, not a source of legal advice, and doesn't review, verify or take responsibility for the legal accuracy of anything you record in it. We do not warrant that the Service will be error-free, uninterrupted, or free from viruses or other harmful components, or that any security breach, unauthorized access or data loss will never occur.",
     ],
   },
   {
-    heading: "10. Limitation of liability",
+    heading: "11. Limitation of liability",
     paragraphs: [
-      "To the maximum extent permitted by law, LexxBridge and its developers are not liable for indirect, incidental, special or consequential damages, or for loss of data, profits or business, arising from your use of the Service.",
+      "To the maximum extent permitted by applicable law, LexxBridge and its developers will not be liable for any indirect, incidental, special, consequential or exemplary damages, or for loss of data, profits, business or goodwill, or for any unauthorized access to, alteration of, or disclosure of Your Content — whether arising from breach of contract, tort, negligence or otherwise — arising from your use of the Service, even if we have been advised of the possibility of such damages. This limitation does not apply to damages caused by our own gross negligence or willful misconduct, or to any liability that cannot be limited or excluded under applicable law.",
     ],
   },
   {
-    heading: "11. Governing law",
+    heading: "12. Indemnification",
+    paragraphs: [
+      "You agree to indemnify and hold harmless LexxBridge, its developers and affiliates from any claim, demand, loss or damage (including reasonable legal fees) arising out of: (a) Your Content or your use of the Service; (b) your violation of these Terms or any applicable law or professional-conduct rule; (c) your violation of any confidentiality obligation you owe a client or other third party; or (d) unauthorized access to your account resulting from your failure to safeguard your credentials or device.",
+    ],
+  },
+  {
+    heading: "13. Governing law",
     paragraphs: ["These Terms are governed by the laws of [your jurisdiction], without regard to conflict-of-law principles."],
   },
   {
-    heading: "12. Contact us",
+    heading: "14. Contact us",
     paragraphs: [`${COMPANY_NAME}\nEmail: ${SUPPORT_EMAIL}`],
   },
 ];

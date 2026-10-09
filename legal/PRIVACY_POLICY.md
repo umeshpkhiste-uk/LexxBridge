@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**Last updated: 30 September 2026**
+**Last updated: 10 October 2026**
 
 This Privacy Policy explains how LexxBridge ("LexxBridge", "we", "us") collects,
 uses and protects information when you use the LexxBridge app and website
@@ -93,7 +93,19 @@ case data to train any third-party AI model.
   backend provider.
 - Row-level access controls ensure your clients, cases, hearings, tasks and
   payments are visible only to your account.
-- No system is 100% secure, and we cannot guarantee absolute security.
+- No system is 100% secure, and we cannot guarantee absolute security. By
+  using the Service, you acknowledge and accept the inherent risk of
+  unauthorized access, hacking, data breaches or data loss that can occur
+  despite these safeguards — including risks arising from your own device,
+  credentials or network being compromised. To the maximum extent permitted
+  by applicable law, we are not liable for loss or unauthorized disclosure
+  of information resulting from circumstances beyond our reasonable
+  control, except where caused by our own gross negligence or willful
+  misconduct, or where such liability cannot be excluded by law.
+- This does not affect our legal obligations as a data fiduciary under
+  India's Digital Personal Data Protection Act, 2023 — including notifying
+  you and the relevant authority in the event of a personal data breach, as
+  required by law.
 
 ## 6. Your choices and rights
 

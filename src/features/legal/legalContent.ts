@@ -1,13 +1,11 @@
 /** Structured copy for the public /legal/* pages. Keep this in sync with the
  * canonical markdown in the repo's legal/ folder — this is the version that
  * actually ships in the app and on the web, which is what Google Play's
- * reviewer and users will read.
- *
- * Replace every [bracketed placeholder] with real details before release. */
+ * reviewer and users will read. */
 
 export const LEGAL_UPDATED = "10 October 2026";
-export const SUPPORT_EMAIL = "[support@yourdomain.com]";
-export const COMPANY_NAME = "[Your company / developer name]";
+export const SUPPORT_EMAIL = "deepomeshcreation@gmail.com";
+export const COMPANY_NAME = "LexxBridge";
 
 export type LegalSection = { heading: string; paragraphs: string[] };
 
@@ -175,7 +173,7 @@ export const TERMS_SECTIONS: LegalSection[] = [
   },
   {
     heading: "13. Governing law",
-    paragraphs: ["These Terms are governed by the laws of [your jurisdiction], without regard to conflict-of-law principles."],
+    paragraphs: ["These Terms are governed by the laws of India, without regard to conflict-of-law principles."],
   },
   {
     heading: "14. Contact us",

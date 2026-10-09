@@ -23,11 +23,13 @@ Console / Google Cloud (things no amount of code can finish for you).
 
 ## Still needed before submitting (must be done by you, outside this repo)
 
-### 1. Fill in real contact details
-Every `[bracketed placeholder]` in the three legal docs above (developer/
-company name, support email, postal address, governing-law jurisdiction)
-needs a real value before you publish. Search for `[` in `legal/*.md` and
-the corresponding `src/app/legal/*.tsx` screens to find them all.
+### 1. Fill in real contact details — done
+Developer name (**LexxBridge**), support email
+(**deepomeshcreation@gmail.com** — matches the Google Play Console
+account), and governing-law jurisdiction (**India**) are filled in across
+`legal/*.md` and `src/features/legal/legalContent.ts`. No postal address
+is listed — not required for the Play Store submission, and omitted
+rather than publishing a placeholder or fabricated one.
 
 ### 2. Deploy the legal pages so the URLs are live
 The Vercel web build already serves these at:

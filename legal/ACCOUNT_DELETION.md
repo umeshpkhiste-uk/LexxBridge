@@ -25,7 +25,7 @@ This immediately and permanently deletes:
 ## Option 2 — request deletion by email (no app access needed)
 
 If you no longer have access to the app or your device, email
-**[support@yourdomain.com]** from the email address on your account and ask
+**deepomeshcreation@gmail.com** from the email address on your account and ask
 us to delete your account. Include your registered email address and
 phone number so we can verify it's you. We will delete your account and
 associated data within **30 days** and confirm by email once it's done.
@@ -41,4 +41,4 @@ associated data within **30 days** and confirm by email once it's done.
 
 If you'd like specific data deleted (e.g. a single client or case) without
 deleting your whole account, you can remove it directly in the app, or
-email us at **[support@yourdomain.com]** with what you'd like removed.
+email us at **deepomeshcreation@gmail.com** with what you'd like removed.

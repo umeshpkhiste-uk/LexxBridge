@@ -11,15 +11,10 @@ messaging.
 This is also published in-app and on the web at `/legal/privacy` so it is
 reachable without signing in, as required for the Google Play Store listing.
 
-> ⚠️ Replace the placeholders marked `[ ]` below (company/developer name,
-> support email, postal address, jurisdiction) with your real details before
-> submitting to Google Play or the App Store.
-
 ## 1. Who we are
 
-LexxBridge is developed and operated by **[Your company / developer name]**.
-Contact us at **[support@yourdomain.com]** for any privacy question or
-request.
+LexxBridge is developed and operated by **LexxBridge**. Contact us at
+**deepomeshcreation@gmail.com** for any privacy question or request.
 
 ## 2. Information we collect
 
@@ -123,7 +118,7 @@ for how to request deletion by email instead.
 
 Depending on where you live, you may have additional rights (e.g. under
 GDPR or the CCPA) to access, correct, port or restrict processing of your
-personal data. Contact us at **[support@yourdomain.com]** to exercise these
+personal data. Contact us at **deepomeshcreation@gmail.com** to exercise these
 rights.
 
 ## 7. Data retention
@@ -152,6 +147,5 @@ We may update this Privacy Policy from time to time. We will update the
 
 ## 11. Contact us
 
-**[Your company / developer name]**
-**[Postal address]**
-Email: **[support@yourdomain.com]**
+**LexxBridge**
+Email: **deepomeshcreation@gmail.com**

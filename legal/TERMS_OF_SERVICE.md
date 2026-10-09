@@ -3,13 +3,9 @@
 **Last updated: 10 October 2026**
 
 These Terms of Service ("Terms") govern your use of the LexxBridge app and
-website (the "Service"), operated by **[Your company / developer name]**
-("LexxBridge", "we", "us"). By creating an account or using the Service, you
-agree to these Terms.
-
-> ⚠️ Replace the placeholders marked `[ ]` below (company/developer name,
-> support email, jurisdiction/governing law) with your real details before
-> submitting to Google Play or the App Store.
+website (the "Service"), operated by **LexxBridge** ("LexxBridge", "we",
+"us"). By creating an account or using the Service, you agree to these
+Terms.
 
 ## 1. Who can use LexxBridge
 
@@ -147,10 +143,10 @@ credentials or device.
 
 ## 13. Governing law
 
-These Terms are governed by the laws of **[your jurisdiction, e.g. India /
-State of ...]**, without regard to conflict-of-law principles.
+These Terms are governed by the laws of **India**, without regard to
+conflict-of-law principles.
 
 ## 14. Contact us
 
-**[Your company / developer name]**
-Email: **[support@yourdomain.com]**
+**LexxBridge**
+Email: **deepomeshcreation@gmail.com**

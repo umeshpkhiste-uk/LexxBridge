@@ -13,6 +13,8 @@ import { SettingsGroup, SettingsRow } from "@/shared/ui/SettingsGroup";
 import { useTheme } from "@/shared/ui/theme";
 import { getThemePreference, setThemePreference, ThemePreference, themePreferenceLabel } from "@/shared/ui/themePreference";
 
+const comingSoon = (what: string) => () => alertMessage("Coming soon", `${what} arrive in a later phase.`);
+
 /** Device / app-level settings. Account settings (profile visibility,
  * password, notifications, language) live on the Profile tab instead — see
  * profile.tsx's "Account" section. */
@@ -132,6 +134,18 @@ export default function SettingsScreen() {
           label={t("settings.exportData")}
           subtitle={isExporting ? t("settings.exportDataPreparing") : t("settings.exportDataSubtitle")}
           onPress={handleExportData}
+        />
+        <SettingsRow
+          icon="cloud-upload-outline"
+          label="Import Data"
+          subtitle="Bring in clients, cases and records from a file"
+          onPress={comingSoon("Importing data")}
+        />
+        <SettingsRow
+          icon="time-outline"
+          label="Backup & Restore"
+          subtitle="Save a full backup, or restore from one"
+          onPress={comingSoon("Backup and restore")}
         />
       </SettingsGroup>
 

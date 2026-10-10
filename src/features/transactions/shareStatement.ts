@@ -148,6 +148,7 @@ export function buildStatement({
     caseTitle && oppositeParty ? `Opposite party: ${oppositeParty}` : null,
     caseTitle && filingDate ? `Filed: ${formatDay(filingDate)}` : null,
     caseTitle && agreedFee != null ? `Agreed fee: ${formatINR(agreedFee)}` : null,
+    caseTitle && agreedFee != null && overallExpenses > 0 ? `Total (agreed fee + expenses): ${formatINR(agreedFee + overallExpenses)}` : null,
     !caseTitle && cases?.length ? "Cases:" : null,
     ...(!caseTitle && cases?.length
       ? cases.map((c) => `  • ${c.title}${c.caseNumber ? ` (${c.caseNumber})` : ""} — agreed fee: ${c.agreedFee != null ? formatINR(c.agreedFee) : "not set"}`)
@@ -306,6 +307,7 @@ export function buildStatementHtml({
         oppositeParty ? ["Opposite party", oppositeParty] : null,
         filingDate ? ["Filed", formatDay(filingDate)] : null,
         agreedFee != null ? ["Agreed fee", formatINR(agreedFee)] : null,
+        agreedFee != null && overallExpenses > 0 ? ["Total (agreed fee + expenses)", formatINR(agreedFee + overallExpenses)] : null,
       ].filter((r): r is [string, string] => r !== null)
     : [];
 

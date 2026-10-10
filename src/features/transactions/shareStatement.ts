@@ -131,23 +131,14 @@ export function buildStatement({
     ...(range ? ["", `Received in this period: ${formatINR(periodReceived)}`] : []),
     "",
     "Details:",
-    ...(periodFees.length === 0
-      ? [range ? "No fee entries in this period." : "No fee entries yet."]
-      : [...periodFees]
+    ...(periodFees.length === 0 && periodExpenses.length === 0
+      ? [range ? "No entries in this period." : "No entries yet."]
+      : [...periodFees, ...periodExpenses]
           .sort((a, b) => a.transaction_date.localeCompare(b.transaction_date))
-          .map(
-            (t) =>
-              `• ${formatDay(t.transaction_date)} — ${t.category}${!caseTitle && t.cases?.title ? ` (${t.cases.title})` : ""}: ${formatINR(Number(t.amount))} ${t.status === "pending" ? "(due)" : "(received)"}`
-          )),
-    ...(periodExpenses.length
-      ? [
-          "",
-          "Expenses:",
-          ...[...periodExpenses]
-            .sort((a, b) => a.transaction_date.localeCompare(b.transaction_date))
-            .map((t) => `• ${formatDay(t.transaction_date)} — ${t.category}: ${formatINR(Number(t.amount))}`),
-        ]
-      : []),
+          .map((t) => {
+            const statusLabel = t.type === "expense" ? "(expense)" : t.status === "pending" ? "(due)" : "(received)";
+            return `• ${formatDay(t.transaction_date)} — ${t.category}${!caseTitle && t.cases?.title ? ` (${t.cases.title})` : ""}: ${formatINR(Number(t.amount))} ${statusLabel}`;
+          })),
     "",
     advocateName ? `Regards,` : null,
     advocateName ? advocateName : null,
@@ -212,19 +203,25 @@ export function buildStatementHtml({
   const periodPending = periodFees.filter((t) => t.status === "pending").reduce((s, t) => s + Number(t.amount), 0);
   const closingBalance = openingBalance - periodReceived;
 
+  // Expenses are merged into the same chronological ledger as fee entries
+  // (not a separate table) so they're not easy to miss — they just don't
+  // move the running balance themselves, since it already started out
+  // including every logged expense (see openingBalance above).
   let runningBalance = openingBalance;
-  const ledgerRows = periodFees.map((t) => {
-    if (t.status === "completed") runningBalance -= Number(t.amount);
+  const combinedEntries = [...periodFees, ...periodExpenses].sort((a, b) => a.transaction_date.localeCompare(b.transaction_date));
+  const ledgerRows = combinedEntries.map((t) => {
+    if (t.type === "income" && t.status === "completed") runningBalance -= Number(t.amount);
     return { t, balance: runningBalance };
   });
 
-  const monthGroups = new Map<string, { rows: typeof ledgerRows; received: number; pending: number }>();
+  const monthGroups = new Map<string, { rows: typeof ledgerRows; received: number; pending: number; expenses: number }>();
   for (const row of ledgerRows) {
     const key = row.t.transaction_date.slice(0, 7);
-    if (!monthGroups.has(key)) monthGroups.set(key, { rows: [], received: 0, pending: 0 });
+    if (!monthGroups.has(key)) monthGroups.set(key, { rows: [], received: 0, pending: 0, expenses: 0 });
     const group = monthGroups.get(key)!;
     group.rows.push(row);
-    if (row.t.status === "completed") group.received += Number(row.t.amount);
+    if (row.t.type === "expense") group.expenses += Number(row.t.amount);
+    else if (row.t.status === "completed") group.received += Number(row.t.amount);
     else group.pending += Number(row.t.amount);
   }
 
@@ -272,35 +269,24 @@ export function buildStatementHtml({
         </table></div>`
       : "";
 
-  const expensesTable = periodExpenses.length
-    ? `<div class="box"><div class="box-title">Expenses</div><table class="cases">
-          <thead><tr><th>Date</th><th>Category</th><th class="amount">Amount</th></tr></thead>
-          <tbody>${periodExpenses
-            .map(
-              (t) =>
-                `<tr><td>${escapeHtml(formatShortDay(t.transaction_date))}</td><td>${escapeHtml(t.category)}</td><td class="amount">${escapeHtml(formatINR(Number(t.amount)))}</td></tr>`
-            )
-            .join("")}</tbody>
-        </table></div>`
-    : "";
-
   const ledgerTable =
     ledgerRows.length === 0
-      ? `<p class="empty">${range ? "No fee entries in this period." : "No fee entries yet."}</p>`
+      ? `<p class="empty">${range ? "No entries in this period." : "No entries yet."}</p>`
       : `<table class="ledger">
-          <thead><tr><th>Date</th><th>Details</th><th class="amount">Pending(-)</th><th class="amount">Received(+)</th><th class="amount">Balance</th></tr></thead>
+          <thead><tr><th>Date</th><th>Details</th><th class="amount">Pending(-)</th><th class="amount">Received(+)</th><th class="amount">Expense</th><th class="amount">Balance</th></tr></thead>
           ${[...monthGroups.entries()]
             .map(
               ([key, group]) => `
             <tbody>
-              <tr class="month-header"><td colspan="5">${escapeHtml(formatMonth(key))}</td></tr>
+              <tr class="month-header"><td colspan="6">${escapeHtml(formatMonth(key))}</td></tr>
               ${group.rows
                 .map(
                   ({ t, balance }) => `<tr>
                     <td>${escapeHtml(formatShortDay(t.transaction_date))}</td>
                     <td>${escapeHtml(t.category)}${!caseTitle && t.cases?.title ? ` <span class="muted">(${escapeHtml(t.cases.title)})</span>` : ""}</td>
-                    <td class="amount pending">${t.status === "pending" ? escapeHtml(formatINR(Number(t.amount))) : ""}</td>
-                    <td class="amount received">${t.status === "completed" ? escapeHtml(formatINR(Number(t.amount))) : ""}</td>
+                    <td class="amount pending">${t.type === "income" && t.status === "pending" ? escapeHtml(formatINR(Number(t.amount))) : ""}</td>
+                    <td class="amount received">${t.type === "income" && t.status === "completed" ? escapeHtml(formatINR(Number(t.amount))) : ""}</td>
+                    <td class="amount expense">${t.type === "expense" ? escapeHtml(formatINR(Number(t.amount))) : ""}</td>
                     <td class="amount">${escapeHtml(formatINR(balance))}</td>
                   </tr>`
                 )
@@ -309,6 +295,7 @@ export function buildStatementHtml({
                 <td colspan="2">${escapeHtml(formatMonth(key))} Total</td>
                 <td class="amount">${escapeHtml(formatINR(group.pending))}</td>
                 <td class="amount">${escapeHtml(formatINR(group.received))}</td>
+                <td class="amount">${escapeHtml(formatINR(group.expenses))}</td>
                 <td></td>
               </tr>
             </tbody>`
@@ -346,6 +333,7 @@ export function buildStatementHtml({
   table.ledger td.amount { text-align: right; font-variant-numeric: tabular-nums; }
   table.ledger td.pending { color: #B3261E; }
   table.ledger td.received { color: #15803D; }
+  table.ledger td.expense { color: #B45309; }
   tr.month-header td { background: #F8FAFC; font-weight: 600; font-size: 12px; padding: 8px 4px; border-bottom: 1px solid #E2E8F0; }
   tr.month-total td { font-weight: 600; background: #FAFAFA; border-bottom: 2px solid #E2E8F0; }
   .boxes-table { width: 100%; border-collapse: separate; border-spacing: 16px 0; margin: 0 0 24px; }
@@ -399,7 +387,6 @@ export function buildStatementHtml({
 
   <p class="entries-count">No. of entries: ${ledgerRows.length}${periodLabel ? ` (${escapeHtml(periodLabel)})` : ""}</p>
   ${ledgerTable}
-  ${expensesTable}
 
   ${
     advocateName

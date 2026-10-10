@@ -288,8 +288,8 @@ export function buildStatementHtml({
 
   const summaryCards: [string, string, string | null][] = [
     ["Opening Balance", formatINR(openingBalance), range ? `on ${formatDay(range.from)}` : null],
-    ["Total Pending(-)", formatINR(periodPending), null],
     ["Total Received(+)", formatINR(periodReceived), null],
+    ["Total Pending(-)", formatINR(periodPending), null],
     ["Balance Due", formatINR(closingBalance), closingBalance > 0 ? "Client owes" : "Fully paid"],
   ];
 

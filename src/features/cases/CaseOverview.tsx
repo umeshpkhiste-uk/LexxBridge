@@ -1,9 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
+import { useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { NextHearingSheet } from "@/features/hearings/NextHearingSheet";
 import { CaseDocument, deleteDocument, getDocumentSignedUrl, listDocumentsForCase, uploadDocument } from "@/features/documents/api";
+import { listTransactionsForCase } from "@/features/transactions/api";
+import { computeFeeTotals } from "@/features/transactions/feeTotals";
 import { CASE_TYPE_OPTIONS } from "@/shared/data/caseTypes";
 import { COURT_OPTIONS } from "@/shared/data/courts";
 import { formatHearingDate, formatINR } from "@/shared/lib/format";
@@ -58,6 +61,10 @@ export function CaseOverview({
   const [documents, setDocuments] = useState<CaseDocument[] | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [hearingSheetOpen, setHearingSheetOpen] = useState(false);
+  // "Total fees agreed" below folds in logged expenses too, matching the
+  // Financials tab — so it needs this case's own transactions, re-fetched
+  // on every focus since an expense is usually added from another screen.
+  const [expenses, setExpenses] = useState(0);
 
   const loadDocuments = useCallback(() => {
     listDocumentsForCase(caseDetail.id)
@@ -68,6 +75,20 @@ export function CaseOverview({
   useEffect(() => {
     loadDocuments();
   }, [loadDocuments]);
+
+  useFocusEffect(
+    useCallback(() => {
+      let isMounted = true;
+      listTransactionsForCase(caseDetail.id)
+        .then((transactions) => {
+          if (isMounted) setExpenses(computeFeeTotals([caseDetail], transactions).expenses);
+        })
+        .catch(() => {});
+      return () => {
+        isMounted = false;
+      };
+    }, [caseDetail]),
+  );
 
   const handleUpload = async () => {
     const result = await DocumentPicker.getDocumentAsync({ type: "*/*", copyToCacheDirectory: true });
@@ -174,7 +195,11 @@ export function CaseOverview({
         <DetailRow label="Bench" value={caseDetail.bench} />
         <DetailRow label="Case type" value={caseDetail.case_type} />
         <DetailRow label="Opposite party" value={caseDetail.opposite_party} />
-        <DetailRow label="Total fees agreed" value={caseDetail.agreed_fee !== null ? formatINR(Number(caseDetail.agreed_fee)) : null} last />
+        <DetailRow
+          label={`Total fees agreed${expenses > 0 ? " + expenses" : ""}`}
+          value={caseDetail.agreed_fee !== null ? formatINR(Number(caseDetail.agreed_fee) + expenses) : null}
+          last
+        />
       </View>
 
       {caseDetail.description ? (

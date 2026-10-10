@@ -440,7 +440,7 @@ export function buildStatementHtml({
       .map(
         ([label, value, note], i) => `<td><div class="card">
           <span class="card-label">${escapeHtml(label)}</span>
-          <span class="card-value ${i === 2 ? "credit" : i === 1 ? "debit" : ""}">${escapeHtml(value)}</span>
+          <span class="card-value ${i === 1 ? "credit" : i === 2 ? "debit" : ""}">${escapeHtml(value)}</span>
           ${note ? `<span class="card-note">${escapeHtml(note)}</span>` : ""}
         </div></td>`
       )

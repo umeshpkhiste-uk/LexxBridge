@@ -220,6 +220,10 @@ export function LedgerView({ clientId, caseId, variant = "screen" }: Props) {
     );
 
   const billed = totals.totalFees;
+  // Fee-only portion of `billed` — the "Total agreed" legend entry is the
+  // pure agreed fee (matching the case Overview tab exactly), not the
+  // combined fees+expenses figure the card below shows.
+  const agreedFeeOnly = billed - totals.expenses;
   const hasAgreedFee = scopeCases.some((c) => c.agreed_fee !== null);
   const isScreen = variant === "screen";
   const onHero = "#FFFFFF";
@@ -347,7 +351,7 @@ export function LedgerView({ clientId, caseId, variant = "screen" }: Props) {
               </Text>
             </DonutChart>
             <View style={{ flex: 1, marginLeft: spacing.lg, gap: spacing.md }}>
-              <Legend color={colors.brand} label="Total agreed" value={billed} />
+              <Legend color={colors.brand} label="Total agreed" value={agreedFeeOnly} />
               <Legend color={colors.success} label="Received" value={totals.received} />
               {totals.expenses > 0 ? <Legend color={colors.danger} label="Expenses" value={totals.expenses} /> : null}
               <Legend color={colors.warning} label="Pending" value={totals.pending} note="(Agreed fees + expenses − Received)" />

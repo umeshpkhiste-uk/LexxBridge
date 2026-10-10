@@ -72,3 +72,47 @@ export async function setReportStatus(reportId: string, status: AdminReportRow["
   const { error } = await supabase.rpc("admin_set_report_status", { report_id: reportId, new_status: status });
   if (error) throw new Error(error.message);
 }
+
+export type AdminVerificationRequest = {
+  id: string;
+  advocate_id: string;
+  full_name: string;
+  bar_registration_number: string;
+  bar_council_state: string;
+  document_storage_path: string;
+  status: "unverified" | "pending" | "verified" | "rejected" | "expired";
+  admin_notes: string | null;
+  reviewed_at: string | null;
+  created_at: string;
+};
+
+/** Review queue lives in its own `verification_requests` table (see
+ * supabase/migrations/0062_advocate_verification.sql), reached only
+ * through these two functions — same "admin is a separate entity" shape as
+ * listProfiles/listReports above; no RLS policy on advocate_profiles. */
+export async function listVerificationRequests(): Promise<AdminVerificationRequest[]> {
+  const { data, error } = await supabase.rpc("admin_list_verification_requests");
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function setVerificationStatus(
+  requestId: string,
+  status: "verified" | "rejected",
+  notes?: string
+): Promise<void> {
+  const { error } = await supabase.rpc("admin_set_verification_status", {
+    request_id: requestId,
+    new_status: status,
+    notes: notes?.trim() || null,
+  });
+  if (error) throw new Error(error.message);
+}
+
+/** Short-lived signed URL so an admin can view a submitted ID/certificate
+ * photo — mirrors getDocumentSignedUrl in features/documents/api.ts. */
+export async function getVerificationDocumentUrl(storagePath: string): Promise<string> {
+  const { data, error } = await supabase.storage.from("verification-documents").createSignedUrl(storagePath, 60 * 5);
+  if (error) throw new Error(error.message);
+  return data.signedUrl;
+}

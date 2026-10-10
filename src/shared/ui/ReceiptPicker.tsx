@@ -6,9 +6,17 @@ import { useTheme } from "@/shared/ui/theme";
 
 export type PickedReceipt = { uri: string; mimeType: string };
 
-/** "Take photo / Upload image" for a payment receipt or screenshot, then a
- * preview with Retake / Replace / Remove. */
-export function ReceiptPicker({ value, onChange }: { value: PickedReceipt | null; onChange: (value: PickedReceipt | null) => void }) {
+/** "Take photo / Upload image" for a photo attachment (payment receipt,
+ * identity document, etc.), then a preview with Retake / Replace / Remove. */
+export function ReceiptPicker({
+  value,
+  onChange,
+  label = "Receipt / payment screenshot (optional)",
+}: {
+  value: PickedReceipt | null;
+  onChange: (value: PickedReceipt | null) => void;
+  label?: string;
+}) {
   const { colors, spacing, radius, typography } = useTheme();
 
   const pick = async (source: "camera" | "library") => {
@@ -26,7 +34,7 @@ export function ReceiptPicker({ value, onChange }: { value: PickedReceipt | null
 
   return (
     <View style={{ marginBottom: spacing.md }}>
-      <Text style={[typography.label, { color: colors.textSecondary, marginBottom: spacing.xs }]}>Receipt / payment screenshot (optional)</Text>
+      <Text style={[typography.label, { color: colors.textSecondary, marginBottom: spacing.xs }]}>{label}</Text>
       {value ? (
         <View style={[styles.preview, { borderColor: colors.border, borderRadius: radius.lg }]}>
           <Image source={{ uri: value.uri }} style={{ width: "100%", height: 200 }} contentFit="cover" />

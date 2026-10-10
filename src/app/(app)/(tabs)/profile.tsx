@@ -152,7 +152,7 @@ export default function ProfileScreen() {
             icon="shield-checkmark-outline"
             label="Verification"
             subtitle={profile ? verificationLabel[profile.verification_status] : undefined}
-            onPress={comingSoon("The verification workflow and bar registration details")}
+            onPress={() => router.push("/(app)/verification")}
           />
         </SettingsGroup>
 

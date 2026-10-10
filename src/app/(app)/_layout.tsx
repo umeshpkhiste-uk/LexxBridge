@@ -53,6 +53,7 @@ export default function AppLayout() {
         <Stack.Screen name="reports/new" options={{ presentation: "modal", headerShown: true, title: "Report" }} />
         <Stack.Screen name="notifications" options={{ headerShown: true, title: "Notifications" }} />
         <Stack.Screen name="basic-info" options={{ headerShown: true, title: "Basic information" }} />
+        <Stack.Screen name="verification" options={{ headerShown: true, title: "Verification" }} />
         <Stack.Screen name="change-password" options={{ headerShown: true, title: "Change password" }} />
         <Stack.Screen name="manage-profile" options={{ headerShown: true, title: "Manage profile" }} />
         <Stack.Screen name="settings" options={{ headerShown: true, title: "Settings" }} />

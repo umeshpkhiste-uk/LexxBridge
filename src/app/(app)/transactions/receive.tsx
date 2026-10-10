@@ -9,7 +9,7 @@ import {
   TransactionDetail,
   updateTransactionCategory,
 } from "@/features/transactions/api";
-import { PickedReceipt, ReceiptPicker } from "@/features/transactions/ReceiptPicker";
+import { PickedReceipt, ReceiptPicker } from "@/shared/ui/ReceiptPicker";
 import { formatINR } from "@/shared/lib/format";
 import { Button } from "@/shared/ui/Button";
 import { ScreenContainer } from "@/shared/ui/ScreenContainer";

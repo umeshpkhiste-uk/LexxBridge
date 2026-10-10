@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { CaseSummary, listCases, updateCase } from "@/features/cases/api";
 import { createTransaction, EXPENSE_CATEGORIES, INCOME_CATEGORIES, PAYMENT_METHODS, TransactionType } from "@/features/transactions/api";
-import { ReceiptPicker } from "@/features/transactions/ReceiptPicker";
+import { ReceiptPicker } from "@/shared/ui/ReceiptPicker";
 import { Button } from "@/shared/ui/Button";
 import { ScreenContainer } from "@/shared/ui/ScreenContainer";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";

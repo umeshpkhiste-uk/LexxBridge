@@ -335,6 +335,7 @@ export function LedgerView({ clientId, caseId, variant = "screen" }: Props) {
               segments={[
                 { value: totals.received, color: colors.success },
                 { value: totals.pending, color: colors.warning },
+                { value: totals.expenses, color: colors.danger },
               ]}
             >
               <Text style={[typography.caption, { color: colors.textSecondary }]}>Yet to receive</Text>

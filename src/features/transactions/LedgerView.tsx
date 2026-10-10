@@ -347,9 +347,10 @@ export function LedgerView({ clientId, caseId, variant = "screen" }: Props) {
               </Text>
             </DonutChart>
             <View style={{ flex: 1, marginLeft: spacing.lg, gap: spacing.md }}>
+              <Legend color={colors.brand} label="Total agreed" value={billed} />
               <Legend color={colors.success} label="Received" value={totals.received} />
-              <Legend color={colors.warning} label="Pending" value={totals.pending} />
               {totals.expenses > 0 ? <Legend color={colors.danger} label="Expenses" value={totals.expenses} /> : null}
+              <Legend color={colors.warning} label="Pending" value={totals.pending} note="(Agreed fees + expenses − Received)" />
             </View>
           </View>
           <View style={[styles.cardFooter, { marginTop: spacing.md, paddingTop: spacing.md, borderTopColor: colors.border }]}>
@@ -573,13 +574,16 @@ function CustomRangeSheet({
   );
 }
 
-function Legend({ color, label, value }: { color: string; label: string; value: number }) {
+function Legend({ color, label, value, note }: { color: string; label: string; value: number; note?: string }) {
   const { colors, typography } = useTheme();
   return (
     <View style={styles.legend}>
       <View style={[styles.legendDot, { backgroundColor: color }]} />
       <View style={{ flex: 1 }}>
-        <Text style={[typography.caption, { color: colors.textSecondary }]}>{label}</Text>
+        <Text style={[typography.caption, { color: colors.textSecondary }]}>
+          {label}
+          {note ? ` ${note}` : ""}
+        </Text>
         <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>{formatINR(value)}</Text>
       </View>
     </View>

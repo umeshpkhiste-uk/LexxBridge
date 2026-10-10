@@ -50,6 +50,39 @@ function lastTransactionDate(fees: { transaction_date: string }[]): string | nul
   return fees.reduce<string | null>((latest, t) => (!latest || t.transaction_date > latest ? t.transaction_date : latest), null);
 }
 
+/** "YYYY-MM-DD" for today, matching the app's date-only convention. */
+function todayDateOnly(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+/** Shape the statement's merged entries list actually needs — real
+ * transactions satisfy this structurally, and it's also what the synthetic
+ * "outstanding balance" row below is built as, since that one has no real
+ * transaction id/case_id/etc. behind it. */
+type LedgerEntry = {
+  transaction_date: string;
+  category: string;
+  type: "income" | "expense";
+  status: "completed" | "pending";
+  amount: number;
+  cases?: { title: string } | null;
+};
+
+/**
+ * Most cases here track fees via an agreed amount minus what's been
+ * received (see feeTotals.ts), not by logging an explicit "pending"
+ * transaction for the rest — so a statement that only lists real
+ * transactions can under-represent (often show zero for) the pending
+ * balance even though the client genuinely still owes it. This fills that
+ * gap with one synthetic row for whatever part of `overallPending` isn't
+ * already accounted for by actual pending-status entries.
+ */
+function unitemizedPendingBalance(fees: { status: "completed" | "pending"; amount: number }[], overallPending: number): number {
+  const itemizedPending = fees.filter((t) => t.status === "pending").reduce((s, t) => s + Number(t.amount), 0);
+  return Math.max(0, overallPending - itemizedPending);
+}
+
 function formatDay(dateStr: string) {
   const [y, m, d] = dateStr.split("-").map(Number);
   return new Date(y, m - 1, d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
@@ -103,6 +136,7 @@ export function buildStatement({
   const overallTotal = totals?.totalFees ?? overallReceived + overallPending;
   const periodReceived = periodFees.filter((t) => t.status === "completed").reduce((s, t) => s + Number(t.amount), 0);
   const asOf = lastTransactionDate(fees);
+  const unitemizedPending = unitemizedPendingBalance(fees, overallPending);
 
   const lines = [
     `Payment statement — ${clientName}`,
@@ -131,7 +165,7 @@ export function buildStatement({
     ...(range ? ["", `Received in this period: ${formatINR(periodReceived)}`] : []),
     "",
     "Details:",
-    ...(periodFees.length === 0 && periodExpenses.length === 0
+    ...(periodFees.length === 0 && periodExpenses.length === 0 && unitemizedPending === 0
       ? [range ? "No entries in this period." : "No entries yet."]
       : [...periodFees, ...periodExpenses]
           .sort((a, b) => a.transaction_date.localeCompare(b.transaction_date))
@@ -139,6 +173,12 @@ export function buildStatement({
             const statusLabel = t.type === "expense" ? "(expense)" : t.status === "pending" ? "(due)" : "(received)";
             return `• ${formatDay(t.transaction_date)} — ${t.category}${!caseTitle && t.cases?.title ? ` (${t.cases.title})` : ""}: ${formatINR(Number(t.amount))} ${statusLabel}`;
           })),
+    // The part of "Balance due" above that isn't covered by an explicit
+    // pending entry — this app tracks most fees as agreed-amount-minus-
+    // received, so this is usually the whole balance, not itemized above.
+    ...(unitemizedPending > 0
+      ? [`• As of today — Outstanding balance (per agreed fee): ${formatINR(unitemizedPending)} (due)`]
+      : []),
     "",
     advocateName ? `Regards,` : null,
     advocateName ? advocateName : null,
@@ -189,6 +229,7 @@ export function buildStatementHtml({
     totals?.pending ?? fees.filter((t) => t.status === "pending").reduce((s, t) => s + Number(t.amount), 0) + overallExpenses;
   const overallTotal = totals?.totalFees ?? overallReceived + overallPending;
   const asOf = lastTransactionDate(fees);
+  const unitemizedPending = unitemizedPendingBalance(fees, overallPending);
 
   // Ledger-style running balance: starts at the total owed (fees + any
   // unreimbursed expenses, nothing paid down yet) and is reduced by each
@@ -200,15 +241,34 @@ export function buildStatementHtml({
     : 0;
   const openingBalance = overallTotal - priorReceived;
   const periodReceived = periodFees.filter((t) => t.status === "completed").reduce((s, t) => s + Number(t.amount), 0);
-  const periodPending = periodFees.filter((t) => t.status === "pending").reduce((s, t) => s + Number(t.amount), 0);
+  // Includes unitemizedPending — most cases here track fees as agreed
+  // amount minus received, with no explicit pending transaction logged for
+  // the rest, so limiting this to itemized entries alone would understate
+  // (often show ₹0 for) a real, substantial balance the client still owes.
+  const periodPending = periodFees.filter((t) => t.status === "pending").reduce((s, t) => s + Number(t.amount), 0) + unitemizedPending;
   const closingBalance = openingBalance - periodReceived;
 
   // Expenses are merged into the same chronological ledger as fee entries
   // (not a separate table) so they're not easy to miss — they just don't
   // move the running balance themselves, since it already started out
-  // including every logged expense (see openingBalance above).
+  // including every logged expense (see openingBalance above). The
+  // synthetic "outstanding balance" row (see unitemizedPendingBalance)
+  // makes the usually-implicit pending position visible too, dated today
+  // since it isn't tied to any one transaction.
   let runningBalance = openingBalance;
-  const combinedEntries = [...periodFees, ...periodExpenses].sort((a, b) => a.transaction_date.localeCompare(b.transaction_date));
+  const combinedEntries: LedgerEntry[] = [...periodFees, ...periodExpenses].sort((a, b) =>
+    a.transaction_date.localeCompare(b.transaction_date),
+  );
+  if (unitemizedPending > 0) {
+    combinedEntries.push({
+      transaction_date: todayDateOnly(),
+      category: "Outstanding balance (per agreed fee)",
+      type: "income",
+      status: "pending",
+      amount: unitemizedPending,
+      cases: null,
+    });
+  }
   const ledgerRows = combinedEntries.map((t) => {
     if (t.type === "income" && t.status === "completed") runningBalance -= Number(t.amount);
     return { t, balance: runningBalance };
@@ -329,6 +389,7 @@ export function buildStatementHtml({
   .card-note { display: block; font-size: 11px; color: #94A3B8; margin-top: 2px; }
   .entries-count { font-size: 12px; color: #475569; margin: 0 0 8px; }
   table.ledger th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: #64748B; padding: 8px 4px; border-bottom: 1px solid #CBD5E1; }
+  table.ledger th.amount { text-align: right; }
   table.ledger td { padding: 9px 4px; border-bottom: 1px solid #F1F5F9; }
   table.ledger td.amount { text-align: right; font-variant-numeric: tabular-nums; }
   table.ledger td.pending { color: #B3261E; }

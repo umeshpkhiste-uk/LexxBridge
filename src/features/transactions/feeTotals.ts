@@ -7,10 +7,13 @@ export type FeeTotals = { totalFees: number; received: number; pending: number; 
  * Fee position for a set of cases (mirrors the case_financial_summary view):
  * a case with an agreed fee owes that fee minus what's been received; a case
  * without one owes the sum of its pending fee entries. Entries not tied to
- * one of these cases count as they are. `totalFees` folds in `expenses` too,
- * at the caller's explicit request — it is also what client-facing payment
- * statements (shareStatement.ts) show as the overall total, so an advocate's
- * own expenses do become part of what a client sees as the "Total".
+ * one of these cases count as they are. `expenses` folds into both
+ * `totalFees` and `pending` (so `totalFees === received + pending` still
+ * holds), at the caller's explicit, repeated request — expenses are treated
+ * as reimbursable, so "yet to receive"/"pending" includes them everywhere
+ * this is shown, including client-facing payment statements
+ * (shareStatement.ts), where this is what "Balance due" / "Client owes"
+ * reflects too.
  */
 export function computeFeeTotals(cases: FeeCase[], transactions: FeeTransaction[]): FeeTotals {
   const byCase = new Map<string, { received: number; pendingEntries: number }>();
@@ -49,5 +52,5 @@ export function computeFeeTotals(cases: FeeCase[], transactions: FeeTransaction[
       pending += entry.pendingEntries;
     }
   }
-  return { totalFees: totalFees + expenses, received, pending, expenses };
+  return { totalFees: totalFees + expenses, received, pending: pending + expenses, expenses };
 }

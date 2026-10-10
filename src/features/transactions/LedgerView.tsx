@@ -220,9 +220,6 @@ export function LedgerView({ clientId, caseId, variant = "screen" }: Props) {
     );
 
   const billed = totals.totalFees;
-  // Fee-only portion of `billed` — "% paid" tracks fee payment progress and
-  // shouldn't be diluted just because an expense was logged.
-  const feeOnlyBilled = billed - totals.expenses;
   const hasAgreedFee = scopeCases.some((c) => c.agreed_fee !== null);
   const isScreen = variant === "screen";
   const onHero = "#FFFFFF";
@@ -334,7 +331,10 @@ export function LedgerView({ clientId, caseId, variant = "screen" }: Props) {
               trackColor={colors.surfaceAlt}
               segments={[
                 { value: totals.received, color: colors.success },
-                { value: totals.pending, color: colors.warning },
+                // totals.pending already folds in expenses (see
+                // feeTotals.ts) — split it back apart here so the two
+                // slices don't double-count the same rupees.
+                { value: totals.pending - totals.expenses, color: colors.warning },
                 { value: totals.expenses, color: colors.danger },
               ]}
             >
@@ -343,7 +343,7 @@ export function LedgerView({ clientId, caseId, variant = "screen" }: Props) {
                 {formatINR(totals.pending)}
               </Text>
               <Text style={[typography.caption, { color: colors.textSecondary }]}>
-                {feeOnlyBilled > 0 ? `${Math.round((totals.received / feeOnlyBilled) * 100)}% paid` : "No fees yet"}
+                {billed > 0 ? `${Math.round((totals.received / billed) * 100)}% paid` : "No fees yet"}
               </Text>
             </DonutChart>
             <View style={{ flex: 1, marginLeft: spacing.lg, gap: spacing.md }}>

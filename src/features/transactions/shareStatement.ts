@@ -32,9 +32,9 @@ type StatementInput = {
   /** Fee position from the agreed fees; defaults to summing the entries.
    * Always the running, all-time position — a period statement still shows
    * the real outstanding balance, not a balance scoped to that period.
-   * `totalFees` includes `expenses` (see feeTotals.ts); `received`/`pending`
-   * and the fee ledger below stay fee-only, so "Balance due" always
-   * reflects what the client actually still owes for fees, never expenses. */
+   * `expenses` folds into both `totalFees` and `pending` (see feeTotals.ts)
+   * — expenses are treated as reimbursable, so "Balance due" / "Client
+   * owes" includes them, not just the agreed fee balance. */
   totals?: { totalFees: number; received: number; pending: number; expenses?: number };
   /** Restricts the listed entries (and the "received in period" figure) to
    * this inclusive date range (YYYY-MM-DD). Omit for the complete history. */
@@ -96,10 +96,11 @@ export function buildStatement({
   const expensesList = transactions.filter((t) => t.type === "expense");
   const periodExpenses = range ? expensesList.filter((t) => t.transaction_date >= range.from && t.transaction_date <= range.to) : expensesList;
 
-  const overallReceived = totals?.received ?? fees.filter((t) => t.status === "completed").reduce((s, t) => s + Number(t.amount), 0);
-  const overallPending = totals?.pending ?? fees.filter((t) => t.status === "pending").reduce((s, t) => s + Number(t.amount), 0);
   const overallExpenses = totals?.expenses ?? expensesList.reduce((s, t) => s + Number(t.amount), 0);
-  const overallTotal = totals?.totalFees ?? overallReceived + overallPending + overallExpenses;
+  const overallReceived = totals?.received ?? fees.filter((t) => t.status === "completed").reduce((s, t) => s + Number(t.amount), 0);
+  const overallPending =
+    totals?.pending ?? fees.filter((t) => t.status === "pending").reduce((s, t) => s + Number(t.amount), 0) + overallExpenses;
+  const overallTotal = totals?.totalFees ?? overallReceived + overallPending;
   const periodReceived = periodFees.filter((t) => t.status === "completed").reduce((s, t) => s + Number(t.amount), 0);
   const asOf = lastTransactionDate(fees);
 
@@ -125,7 +126,7 @@ export function buildStatement({
       ? [`  Agreed fees: ${formatINR(overallTotal - overallExpenses)}`, `  Expenses: ${formatINR(overallExpenses)}`]
       : []),
     `Received so far: ${formatINR(overallReceived)}`,
-    `Balance due (fees): ${formatINR(overallPending)}`,
+    `Balance due: ${formatINR(overallPending)}`,
     asOf ? `As of last transaction (${formatDay(asOf)})` : null,
     ...(range ? ["", `Received in this period: ${formatINR(periodReceived)}`] : []),
     "",
@@ -191,24 +192,22 @@ export function buildStatementHtml({
   const sortedExpenses = [...expensesList].sort((a, b) => a.transaction_date.localeCompare(b.transaction_date));
   const periodExpenses = range ? sortedExpenses.filter((t) => t.transaction_date >= range.from && t.transaction_date <= range.to) : sortedExpenses;
 
-  const overallReceived = totals?.received ?? fees.filter((t) => t.status === "completed").reduce((s, t) => s + Number(t.amount), 0);
-  const overallPending = totals?.pending ?? fees.filter((t) => t.status === "pending").reduce((s, t) => s + Number(t.amount), 0);
   const overallExpenses = totals?.expenses ?? expensesList.reduce((s, t) => s + Number(t.amount), 0);
-  const overallTotal = totals?.totalFees ?? overallReceived + overallPending + overallExpenses;
+  const overallReceived = totals?.received ?? fees.filter((t) => t.status === "completed").reduce((s, t) => s + Number(t.amount), 0);
+  const overallPending =
+    totals?.pending ?? fees.filter((t) => t.status === "pending").reduce((s, t) => s + Number(t.amount), 0) + overallExpenses;
+  const overallTotal = totals?.totalFees ?? overallReceived + overallPending;
   const asOf = lastTransactionDate(fees);
 
-  // Ledger-style running balance: starts at the total agreed fee (nothing
-  // paid down yet) and is reduced by each payment actually received. A
-  // period statement's opening balance already accounts for payments made
-  // before that period, so the closing balance still lines up with the
-  // real, current balance due. Deliberately fee-only (not overallTotal,
-  // which also includes expenses) — "Balance Due" is what the client still
-  // owes for fees, never for the advocate's own expenses.
-  const feeOnlyTotal = overallReceived + overallPending;
+  // Ledger-style running balance: starts at the total owed (fees + any
+  // unreimbursed expenses, nothing paid down yet) and is reduced by each
+  // fee payment actually received. A period statement's opening balance
+  // already accounts for payments made before that period, so the closing
+  // balance still lines up with the real, current balance due.
   const priorReceived = range
     ? sortedFees.filter((t) => t.status === "completed" && t.transaction_date < range.from).reduce((s, t) => s + Number(t.amount), 0)
     : 0;
-  const openingBalance = feeOnlyTotal - priorReceived;
+  const openingBalance = overallTotal - priorReceived;
   const periodReceived = periodFees.filter((t) => t.status === "completed").reduce((s, t) => s + Number(t.amount), 0);
   const periodPending = periodFees.filter((t) => t.status === "pending").reduce((s, t) => s + Number(t.amount), 0);
   const closingBalance = openingBalance - periodReceived;

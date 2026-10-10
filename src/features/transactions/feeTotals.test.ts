@@ -32,6 +32,8 @@ describe("computeFeeTotals", () => {
       ],
       [inc("a", 5000), inc("b", 2000, "pending"), inc(null, 1000), { case_id: "a", type: "expense", status: "completed", amount: 300 }],
     );
-    expect(totals).toEqual({ totalFees: 23000, received: 6000, pending: 17000, expenses: 300 });
+    // totalFees folds expenses in (23000 fees + 300 expenses) — see the
+    // doc comment on computeFeeTotals for why.
+    expect(totals).toEqual({ totalFees: 23300, received: 6000, pending: 17000, expenses: 300 });
   });
 });

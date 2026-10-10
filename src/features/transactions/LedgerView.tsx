@@ -168,7 +168,7 @@ export function LedgerView({ clientId, caseId, variant = "screen" }: Props) {
     advocatePhone: advocate.phone,
     advocateAddress: advocate.address,
     transactions,
-    totals: { totalFees: totals.totalFees, received: totals.received, pending: totals.pending },
+    totals: { totalFees: totals.totalFees, received: totals.received, pending: totals.pending, expenses: totals.expenses },
     range: sharePeriod.range,
     periodLabel: sharePeriod.label,
   });
@@ -220,6 +220,9 @@ export function LedgerView({ clientId, caseId, variant = "screen" }: Props) {
     );
 
   const billed = totals.totalFees;
+  // Fee-only portion of `billed` — "% paid" tracks fee payment progress and
+  // shouldn't be diluted just because an expense was logged.
+  const feeOnlyBilled = billed - totals.expenses;
   const hasAgreedFee = scopeCases.some((c) => c.agreed_fee !== null);
   const isScreen = variant === "screen";
   const onHero = "#FFFFFF";
@@ -339,7 +342,7 @@ export function LedgerView({ clientId, caseId, variant = "screen" }: Props) {
                 {formatINR(totals.pending)}
               </Text>
               <Text style={[typography.caption, { color: colors.textSecondary }]}>
-                {billed > 0 ? `${Math.round((totals.received / billed) * 100)}% paid` : "No fees yet"}
+                {feeOnlyBilled > 0 ? `${Math.round((totals.received / feeOnlyBilled) * 100)}% paid` : "No fees yet"}
               </Text>
             </DonutChart>
             <View style={{ flex: 1, marginLeft: spacing.lg, gap: spacing.md }}>
@@ -350,7 +353,10 @@ export function LedgerView({ clientId, caseId, variant = "screen" }: Props) {
           </View>
           <View style={[styles.cardFooter, { marginTop: spacing.md, paddingTop: spacing.md, borderTopColor: colors.border }]}>
             <View style={{ flex: 1 }}>
-              <Text style={[typography.caption, { color: colors.textSecondary }]}>Total fees{hasAgreedFee ? " (agreed)" : ""}</Text>
+              <Text style={[typography.caption, { color: colors.textSecondary }]}>
+                Total{hasAgreedFee ? " (agreed fees" : " (fees"}
+                {totals.expenses > 0 ? " + expenses)" : ")"}
+              </Text>
               <Text style={[typography.title, { color: colors.brand, fontSize: 22 }]}>{formatINR(billed)}</Text>
               {!hasAgreedFee ? (
                 <Text style={[typography.caption, { color: colors.textSecondary, fontSize: 11 }]}>

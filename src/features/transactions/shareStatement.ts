@@ -31,8 +31,11 @@ type StatementInput = {
   transactions: (Transaction & { cases?: { title: string } | null })[];
   /** Fee position from the agreed fees; defaults to summing the entries.
    * Always the running, all-time position — a period statement still shows
-   * the real outstanding balance, not a balance scoped to that period. */
-  totals?: { totalFees: number; received: number; pending: number };
+   * the real outstanding balance, not a balance scoped to that period.
+   * `totalFees` includes `expenses` (see feeTotals.ts); `received`/`pending`
+   * and the fee ledger below stay fee-only, so "Balance due" always
+   * reflects what the client actually still owes for fees, never expenses. */
+  totals?: { totalFees: number; received: number; pending: number; expenses?: number };
   /** Restricts the listed entries (and the "received in period" figure) to
    * this inclusive date range (YYYY-MM-DD). Omit for the complete history. */
   range?: StatementRange | null;
@@ -90,10 +93,13 @@ export function buildStatement({
 }: StatementInput): string {
   const fees = transactions.filter((t) => t.type === "income");
   const periodFees = range ? fees.filter((t) => t.transaction_date >= range.from && t.transaction_date <= range.to) : fees;
+  const expensesList = transactions.filter((t) => t.type === "expense");
+  const periodExpenses = range ? expensesList.filter((t) => t.transaction_date >= range.from && t.transaction_date <= range.to) : expensesList;
 
   const overallReceived = totals?.received ?? fees.filter((t) => t.status === "completed").reduce((s, t) => s + Number(t.amount), 0);
   const overallPending = totals?.pending ?? fees.filter((t) => t.status === "pending").reduce((s, t) => s + Number(t.amount), 0);
-  const overallTotal = totals?.totalFees ?? overallReceived + overallPending;
+  const overallExpenses = totals?.expenses ?? expensesList.reduce((s, t) => s + Number(t.amount), 0);
+  const overallTotal = totals?.totalFees ?? overallReceived + overallPending + overallExpenses;
   const periodReceived = periodFees.filter((t) => t.status === "completed").reduce((s, t) => s + Number(t.amount), 0);
   const asOf = lastTransactionDate(fees);
 
@@ -114,9 +120,12 @@ export function buildStatement({
     `Period: ${periodLabel ?? "Complete transaction history"}`,
     `Date: ${new Date().toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}`,
     "",
-    `Total amount decided (agreed fees): ${formatINR(overallTotal)}`,
+    `Total (fees${overallExpenses > 0 ? " + expenses" : ""}): ${formatINR(overallTotal)}`,
+    ...(overallExpenses > 0
+      ? [`  Agreed fees: ${formatINR(overallTotal - overallExpenses)}`, `  Expenses: ${formatINR(overallExpenses)}`]
+      : []),
     `Received so far: ${formatINR(overallReceived)}`,
-    `Balance due: ${formatINR(overallPending)}`,
+    `Balance due (fees): ${formatINR(overallPending)}`,
     asOf ? `As of last transaction (${formatDay(asOf)})` : null,
     ...(range ? ["", `Received in this period: ${formatINR(periodReceived)}`] : []),
     "",
@@ -129,6 +138,15 @@ export function buildStatement({
             (t) =>
               `• ${formatDay(t.transaction_date)} — ${t.category}${!caseTitle && t.cases?.title ? ` (${t.cases.title})` : ""}: ${formatINR(Number(t.amount))} ${t.status === "pending" ? "(due)" : "(received)"}`
           )),
+    ...(periodExpenses.length
+      ? [
+          "",
+          "Expenses:",
+          ...[...periodExpenses]
+            .sort((a, b) => a.transaction_date.localeCompare(b.transaction_date))
+            .map((t) => `• ${formatDay(t.transaction_date)} — ${t.category}: ${formatINR(Number(t.amount))}`),
+        ]
+      : []),
     "",
     advocateName ? `Regards,` : null,
     advocateName ? advocateName : null,
@@ -169,21 +187,28 @@ export function buildStatementHtml({
   const fees = transactions.filter((t) => t.type === "income");
   const sortedFees = [...fees].sort((a, b) => a.transaction_date.localeCompare(b.transaction_date));
   const periodFees = range ? sortedFees.filter((t) => t.transaction_date >= range.from && t.transaction_date <= range.to) : sortedFees;
+  const expensesList = transactions.filter((t) => t.type === "expense");
+  const sortedExpenses = [...expensesList].sort((a, b) => a.transaction_date.localeCompare(b.transaction_date));
+  const periodExpenses = range ? sortedExpenses.filter((t) => t.transaction_date >= range.from && t.transaction_date <= range.to) : sortedExpenses;
 
   const overallReceived = totals?.received ?? fees.filter((t) => t.status === "completed").reduce((s, t) => s + Number(t.amount), 0);
   const overallPending = totals?.pending ?? fees.filter((t) => t.status === "pending").reduce((s, t) => s + Number(t.amount), 0);
-  const overallTotal = totals?.totalFees ?? overallReceived + overallPending;
+  const overallExpenses = totals?.expenses ?? expensesList.reduce((s, t) => s + Number(t.amount), 0);
+  const overallTotal = totals?.totalFees ?? overallReceived + overallPending + overallExpenses;
   const asOf = lastTransactionDate(fees);
 
   // Ledger-style running balance: starts at the total agreed fee (nothing
   // paid down yet) and is reduced by each payment actually received. A
   // period statement's opening balance already accounts for payments made
   // before that period, so the closing balance still lines up with the
-  // real, current balance due.
+  // real, current balance due. Deliberately fee-only (not overallTotal,
+  // which also includes expenses) — "Balance Due" is what the client still
+  // owes for fees, never for the advocate's own expenses.
+  const feeOnlyTotal = overallReceived + overallPending;
   const priorReceived = range
     ? sortedFees.filter((t) => t.status === "completed" && t.transaction_date < range.from).reduce((s, t) => s + Number(t.amount), 0)
     : 0;
-  const openingBalance = overallTotal - priorReceived;
+  const openingBalance = feeOnlyTotal - priorReceived;
   const periodReceived = periodFees.filter((t) => t.status === "completed").reduce((s, t) => s + Number(t.amount), 0);
   const periodPending = periodFees.filter((t) => t.status === "pending").reduce((s, t) => s + Number(t.amount), 0);
   const closingBalance = openingBalance - periodReceived;
@@ -247,6 +272,18 @@ export function buildStatementHtml({
             .join("")}</tbody>
         </table></div>`
       : "";
+
+  const expensesTable = periodExpenses.length
+    ? `<div class="box"><div class="box-title">Expenses</div><table class="cases">
+          <thead><tr><th>Date</th><th>Category</th><th class="amount">Amount</th></tr></thead>
+          <tbody>${periodExpenses
+            .map(
+              (t) =>
+                `<tr><td>${escapeHtml(formatShortDay(t.transaction_date))}</td><td>${escapeHtml(t.category)}</td><td class="amount">${escapeHtml(formatINR(Number(t.amount)))}</td></tr>`
+            )
+            .join("")}</tbody>
+        </table></div>`
+    : "";
 
   const ledgerTable =
     ledgerRows.length === 0
@@ -336,6 +373,11 @@ export function buildStatementHtml({
     (${escapeHtml(periodLabel ?? "Complete transaction history")}) ·
     ${new Date().toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
   </p>
+  ${
+    overallExpenses > 0
+      ? `<p class="as-of">Total (fees + expenses): ${escapeHtml(formatINR(overallTotal))} — Agreed fees ${escapeHtml(formatINR(overallTotal - overallExpenses))}, Expenses ${escapeHtml(formatINR(overallExpenses))}</p>`
+      : ""
+  }
 
   <table class="boxes-table"><tr>
     <td>${detailBox("Client details", [["Name", clientName], ...clientDetailRows])}</td>
@@ -358,6 +400,7 @@ export function buildStatementHtml({
 
   <p class="entries-count">No. of entries: ${ledgerRows.length}${periodLabel ? ` (${escapeHtml(periodLabel)})` : ""}</p>
   ${ledgerTable}
+  ${expensesTable}
 
   ${
     advocateName

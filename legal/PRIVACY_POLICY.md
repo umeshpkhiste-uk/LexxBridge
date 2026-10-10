@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**Last updated: 10 October 2026**
+**Last updated: 11 October 2026**
 
 This Privacy Policy explains how LexxBridge ("LexxBridge", "we", "us") collects,
 uses and protects information when you use the LexxBridge app and website
@@ -36,8 +36,10 @@ LexxBridge is developed and operated by **LexxBridge**. Contact us at
 - **Support requests**: anything you send us directly by email.
 
 ### b) Information collected automatically
-- **Usage & diagnostic data**: basic device information (OS, app version)
-  and error logs, used to keep the Service reliable.
+- **Usage & diagnostic data**: basic device information (device type,
+  operating system, app version), crash and error logs, and IP address
+  (captured in ordinary server/network logs for security, fraud prevention
+  and troubleshooting), used to keep the Service reliable and secure.
 - **Biometric authentication**: if you enable Face ID / fingerprint / Touch
   ID login, your device's operating system handles the biometric match
   locally. LexxBridge never receives, stores or transmits biometric data —
@@ -62,8 +64,10 @@ We use the information above to:
 - Diagnose and fix bugs, and improve performance and reliability.
 - Comply with legal obligations.
 
-We do not sell your personal information, and we do not use your client or
-case data to train any third-party AI model.
+We do not sell your personal information, we do not use your client or case
+data to train any third-party AI model, and we do not use your data —
+including message content, client or case data — to build an advertising
+profile or show you targeted ads.
 
 ## 4. Who we share information with
 
@@ -79,7 +83,14 @@ case data to train any third-party AI model.
 - We may disclose information if required by law, or to protect the rights,
   property or safety of LexxBridge, our users, or the public.
 
-## 5. Data security
+## 5. Cookies and similar technologies
+
+The web version of LexxBridge (`lexxbridge.app`) uses only essential local
+storage (such as your session token, so you stay signed in) and no
+third-party advertising or tracking cookies. We do not use cookies or
+similar technologies to track you across other websites or apps.
+
+## 6. Data security
 
 - Passwords are hashed and never stored in plain text.
 - Chat messages are end-to-end encrypted; the decryption key never leaves
@@ -102,7 +113,7 @@ case data to train any third-party AI model.
   you and the relevant authority in the event of a personal data breach, as
   required by law.
 
-## 6. Your choices and rights
+## 7. Your choices and rights
 
 From **Profile → Settings** in the app you can, at any time:
 - **Export your data** — download a full copy of everything associated with
@@ -116,36 +127,56 @@ From **Profile → Settings** in the app you can, at any time:
 If you can't access the app, see [`/legal/delete-account`](./ACCOUNT_DELETION.md)
 for how to request deletion by email instead.
 
-Depending on where you live, you may have additional rights (e.g. under
-GDPR or the CCPA) to access, correct, port or restrict processing of your
-personal data. Contact us at **deepomeshcreation@gmail.com** to exercise these
-rights.
+As a Data Principal under India's Digital Personal Data Protection Act,
+2023, you have the right to obtain a summary of the personal data we hold
+about you and how it's processed, to have inaccurate or incomplete data
+corrected and updated, to have your personal data erased, and to a
+readily-available means of grievance redressal (see "Grievance Officer"
+below). Depending on where you live, you may have additional rights (e.g.
+under GDPR or the CCPA) to access, correct, port or restrict processing of
+your personal data. Contact us at **deepomeshcreation@gmail.com** to
+exercise any of these rights.
 
-## 7. Data retention
+## 8. Data retention
 
 We keep your data for as long as your account is active. If you delete your
 account, your data is permanently removed from our production systems,
 subject to any residual copies in encrypted backups, which are purged on
 our normal backup rotation schedule.
 
-## 8. Children's privacy
+## 9. Children's privacy
 
 LexxBridge is intended for licensed advocates, lawyers and legal
 professionals and is not directed at children. We do not knowingly collect
 information from anyone under 18.
 
-## 9. International transfers
+## 10. International transfers
 
 Your information may be processed in a country other than the one you live
 in. We take steps to ensure it receives an adequate level of protection
 wherever it is processed.
 
-## 10. Changes to this policy
+## 11. Grievance Officer
+
+In accordance with the Information Technology Act, 2000 and the rules made
+thereunder, and India's Digital Personal Data Protection Act, 2023, the
+contact details of the Grievance Officer are provided below. If you have
+any complaint or grievance regarding the processing of your personal data,
+please write to:
+
+**Grievance Officer**
+LexxBridge
+Email: **deepomeshcreation@gmail.com**
+
+We will acknowledge your complaint and aim to resolve it within the
+timelines required by applicable Indian law.
+
+## 12. Changes to this policy
 
 We may update this Privacy Policy from time to time. We will update the
 "Last updated" date above and, for material changes, notify you in-app.
 
-## 11. Contact us
+## 13. Contact us
 
 **LexxBridge**
 Email: **deepomeshcreation@gmail.com**

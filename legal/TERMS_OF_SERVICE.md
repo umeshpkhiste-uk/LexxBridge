@@ -73,7 +73,7 @@ you and your clients.
 We implement reasonable technical and organizational safeguards to protect
 the Service and Your Content — including encryption in transit and at
 rest, end-to-end encryption for chat messages, and row-level access
-controls (see our [Privacy Policy](./PRIVACY_POLICY.md) §5). However, no
+controls (see our [Privacy Policy](./PRIVACY_POLICY.md) §6). However, no
 method of transmission or storage is completely secure, and we cannot and
 do not guarantee that unauthorized access, hacking, malware, device loss
 or theft, or other security incidents will never occur.

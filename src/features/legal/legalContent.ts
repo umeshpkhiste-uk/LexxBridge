@@ -3,7 +3,7 @@
  * actually ships in the app and on the web, which is what Google Play's
  * reviewer and users will read. */
 
-export const LEGAL_UPDATED = "10 October 2026";
+export const LEGAL_UPDATED = "11 October 2026";
 export const SUPPORT_EMAIL = "deepomeshcreation@gmail.com";
 export const COMPANY_NAME = "LexxBridge";
 
@@ -27,7 +27,7 @@ export const PRIVACY_SECTIONS: LegalSection[] = [
       "• Files & photos — documents, receipts and images you attach to cases, chats, posts or your profile.",
       "• Support requests — anything you send us directly.",
       "Information collected automatically:",
-      "• Usage & diagnostic data — basic device info and error logs, used to keep the app reliable.",
+      "• Usage & diagnostic data — device type, OS, app version, crash/error logs, and IP address (captured in ordinary server/network logs for security, fraud prevention and troubleshooting), used to keep the app reliable and secure.",
       "• Biometric authentication — if you enable Face ID / fingerprint login, your device's OS handles the match locally. We never receive, store or transmit biometric data.",
       "We do not collect location data and do not use advertising SDKs or advertising identifiers.",
     ],
@@ -36,7 +36,7 @@ export const PRIVACY_SECTIONS: LegalSection[] = [
     heading: "3. How we use information",
     paragraphs: [
       "We use this information to provide and secure the Service (storing your clients, cases, hearings, tasks and payments; delivering messages; sending notifications), let advocates you connect with see the profile fields you've chosen to share, send account emails and optional notifications, diagnose and fix bugs, and comply with legal obligations.",
-      "We do not sell your personal information, and we never use your client or case data to train any third-party AI model.",
+      "We do not sell your personal information, we never use your client or case data to train any third-party AI model, and we do not use your data — including message content, client or case data — to build an advertising profile or show you targeted ads.",
     ],
   },
   {
@@ -49,7 +49,13 @@ export const PRIVACY_SECTIONS: LegalSection[] = [
     ],
   },
   {
-    heading: "5. Data security",
+    heading: "5. Cookies and similar technologies",
+    paragraphs: [
+      "The web version of LexxBridge (lexxbridge.app) uses only essential local storage (such as your session token, so you stay signed in) and no third-party advertising or tracking cookies. We do not use cookies or similar technologies to track you across other websites or apps.",
+    ],
+  },
+  {
+    heading: "6. Data security",
     paragraphs: [
       "Passwords are hashed. Chat messages are end-to-end encrypted. Data in transit is encrypted (HTTPS/TLS) and data at rest is encrypted by our backend provider. Row-level access controls keep your clients, cases, hearings, tasks and payments visible only to your account.",
       "No system is 100% secure, and we cannot guarantee absolute security. By using the Service, you acknowledge and accept the inherent risk of unauthorized access, hacking, data breaches or data loss that can occur despite these safeguards — including risks arising from your own device, credentials or network being compromised. To the maximum extent permitted by applicable law, we are not liable for loss or unauthorized disclosure of information resulting from circumstances beyond our reasonable control, except where caused by our own gross negligence or willful misconduct, or where such liability cannot be excluded by law.",
@@ -57,39 +63,48 @@ export const PRIVACY_SECTIONS: LegalSection[] = [
     ],
   },
   {
-    heading: "6. Your choices and rights",
+    heading: "7. Your choices and rights",
     paragraphs: [
       "From Profile → Settings in the app you can, at any time, export a full copy of your data, delete your account permanently (profile, clients, cases, hearings, documents, payments, posts, chats, connections, notifications and every uploaded file), change your profile visibility, or turn off notifications.",
       "If you can't access the app, see our account-deletion page for how to request deletion by email instead.",
-      `Depending on where you live, you may have rights under laws like GDPR or the CCPA to access, correct, port or restrict your data — contact ${SUPPORT_EMAIL} to exercise them.`,
+      "As a Data Principal under India's Digital Personal Data Protection Act, 2023, you have the right to obtain a summary of the personal data we hold about you, to have inaccurate or incomplete data corrected and updated, to have your personal data erased, and to a readily-available means of grievance redressal (see \"Grievance Officer\" below).",
+      `Depending on where you live, you may have additional rights under laws like GDPR or the CCPA to access, correct, port or restrict your data — contact ${SUPPORT_EMAIL} to exercise them.`,
     ],
   },
   {
-    heading: "7. Data retention",
+    heading: "8. Data retention",
     paragraphs: [
       "We keep your data while your account is active. Deleting your account permanently removes your data from production systems, subject to residual copies in encrypted backups, purged on our normal rotation schedule.",
     ],
   },
   {
-    heading: "8. Children's privacy",
+    heading: "9. Children's privacy",
     paragraphs: [
       "LexxBridge is intended for licensed advocates, lawyers and legal professionals, and is not directed at children. We do not knowingly collect information from anyone under 18.",
     ],
   },
   {
-    heading: "9. International transfers",
+    heading: "10. International transfers",
     paragraphs: [
       "Your information may be processed in a country other than the one you live in. We take steps to protect it wherever it is processed.",
     ],
   },
   {
-    heading: "10. Changes to this policy",
+    heading: "11. Grievance Officer",
+    paragraphs: [
+      "In accordance with the Information Technology Act, 2000 and the rules made thereunder, and India's Digital Personal Data Protection Act, 2023, the contact details of the Grievance Officer are provided below. If you have any complaint or grievance regarding the processing of your personal data, please write to:",
+      `Grievance Officer\n${COMPANY_NAME}\nEmail: ${SUPPORT_EMAIL}`,
+      "We will acknowledge your complaint and aim to resolve it within the timelines required by applicable Indian law.",
+    ],
+  },
+  {
+    heading: "12. Changes to this policy",
     paragraphs: [
       "We may update this Privacy Policy from time to time. We'll update the date above and notify you in-app for material changes.",
     ],
   },
   {
-    heading: "11. Contact us",
+    heading: "13. Contact us",
     paragraphs: [`${COMPANY_NAME}\nEmail: ${SUPPORT_EMAIL}`],
   },
 ];
@@ -136,7 +151,7 @@ export const TERMS_SECTIONS: LegalSection[] = [
   {
     heading: "7. Security, data loss and unauthorized access",
     paragraphs: [
-      "We implement reasonable technical and organizational safeguards to protect the Service and Your Content — including encryption in transit and at rest, end-to-end encryption for chat messages, and row-level access controls (see our Privacy Policy, §5). However, no method of transmission or storage is completely secure, and we cannot and do not guarantee that unauthorized access, hacking, malware, device loss or theft, or other security incidents will never occur.",
+      "We implement reasonable technical and organizational safeguards to protect the Service and Your Content — including encryption in transit and at rest, end-to-end encryption for chat messages, and row-level access controls (see our Privacy Policy, §6). However, no method of transmission or storage is completely secure, and we cannot and do not guarantee that unauthorized access, hacking, malware, device loss or theft, or other security incidents will never occur.",
       "By using the Service, you acknowledge and accept this inherent risk. To the maximum extent permitted by applicable law, LexxBridge and its developers are not liable for any loss of, unauthorized access to, or disclosure of Your Content or personal data resulting from circumstances beyond our reasonable control — including cyberattacks, hacking, phishing, compromised or shared login credentials, a lost or stolen device, or a vulnerability in a third-party service we rely on (e.g. our cloud infrastructure provider) — except where such loss results from our own gross negligence or willful misconduct, or where liability cannot be excluded under applicable law.",
       "You are solely responsible for keeping your account credentials, device, and any biometric, PIN or pattern unlock secure, and for promptly notifying us if you suspect unauthorized access to your account.",
     ],

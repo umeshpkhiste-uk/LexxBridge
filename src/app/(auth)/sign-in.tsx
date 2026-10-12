@@ -1,5 +1,6 @@
+import { Ionicons } from "@expo/vector-icons";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Link } from "expo-router";
+import { Link, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Text, View } from "react-native";
@@ -13,7 +14,8 @@ import { AppLogo } from "@/shared/ui/AppLogo";
 import { useTheme } from "@/shared/ui/theme";
 
 export default function SignInScreen() {
-  const { colors, spacing, typography } = useTheme();
+  const { colors, spacing, radius, typography } = useTheme();
+  const { justSignedUp } = useLocalSearchParams<{ justSignedUp?: string }>();
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -47,6 +49,25 @@ export default function SignInScreen() {
       <Text style={[typography.body, { color: colors.textSecondary, marginBottom: spacing.xl, textAlign: "center" }]}>
         Login to access your LexxBridge account.
       </Text>
+
+      {justSignedUp ? (
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "flex-start",
+            gap: spacing.sm,
+            backgroundColor: colors.surfaceAlt,
+            borderRadius: radius.lg,
+            padding: spacing.md,
+            marginBottom: spacing.lg,
+          }}
+        >
+          <Ionicons name="mail-outline" size={20} color={colors.brand} />
+          <Text style={[typography.caption, { color: colors.textPrimary, flex: 1 }]}>
+            Account created. We sent a confirmation link to your email — verify it, then sign in below.
+          </Text>
+        </View>
+      ) : null}
 
       <Controller
         control={control}

@@ -20,13 +20,10 @@ export type Client = {
   photo_path: string | null;
   /** Organization clients only. */
   contact_person_name: string | null;
-  contact_person_designation: string | null;
-  gstin: string | null;
-  registration_number: string | null;
 };
 
 const CLIENT_COLUMNS =
-  "id, full_name, client_type, phone, email, address, notes, is_archived, created_at, photo_path, contact_person_name, contact_person_designation, gstin, registration_number";
+  "id, full_name, client_type, phone, email, address, notes, is_archived, created_at, photo_path, contact_person_name";
 
 export type ClientCaseBrief = { id: string; title: string; court: string | null; created_at: string; is_archived: boolean };
 export type ClientListItem = Client & { cases: ClientCaseBrief[] };
@@ -62,9 +59,6 @@ export async function createClientRecord(input: {
   address?: string;
   notes?: string;
   contactPersonName?: string;
-  contactPersonDesignation?: string;
-  gstin?: string;
-  registrationNumber?: string;
 }): Promise<Client> {
   const { data: userData, error: userError } = await supabase.auth.getUser();
   if (userError || !userData.user) throw new Error(userError?.message ?? "Not signed in");
@@ -81,9 +75,6 @@ export async function createClientRecord(input: {
       address: input.address?.trim() || null,
       notes: input.notes?.trim() || null,
       contact_person_name: isOrg ? input.contactPersonName?.trim() || null : null,
-      contact_person_designation: isOrg ? input.contactPersonDesignation?.trim() || null : null,
-      gstin: isOrg ? input.gstin?.trim() || null : null,
-      registration_number: isOrg ? input.registrationNumber?.trim() || null : null,
     })
     .select(CLIENT_COLUMNS)
     .single();
@@ -109,9 +100,6 @@ export async function updateClient(
     address: string | null;
     notes: string | null;
     contactPersonName: string | null;
-    contactPersonDesignation: string | null;
-    gstin: string | null;
-    registrationNumber: string | null;
   }>
 ): Promise<void> {
   const { error } = await supabase
@@ -124,9 +112,6 @@ export async function updateClient(
       ...(patch.address !== undefined ? { address: patch.address } : {}),
       ...(patch.notes !== undefined ? { notes: patch.notes } : {}),
       ...(patch.contactPersonName !== undefined ? { contact_person_name: patch.contactPersonName } : {}),
-      ...(patch.contactPersonDesignation !== undefined ? { contact_person_designation: patch.contactPersonDesignation } : {}),
-      ...(patch.gstin !== undefined ? { gstin: patch.gstin } : {}),
-      ...(patch.registrationNumber !== undefined ? { registration_number: patch.registrationNumber } : {}),
     })
     .eq("id", id);
 

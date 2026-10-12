@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, Alert, Pressable, Text, View } from "react-native";
 import { Client, ClientType, createClientRecord, getClient, updateClient, uploadClientPhoto } from "@/features/clients/api";
 import { ClientAvatar } from "@/features/clients/ClientAvatar";
-import { gstinError, mobileError, normalizeGstin, normalizeIndianMobile } from "@/shared/lib/validation";
+import { mobileError, normalizeIndianMobile } from "@/shared/lib/validation";
 import { Button } from "@/shared/ui/Button";
 import { ScreenContainer } from "@/shared/ui/ScreenContainer";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
@@ -27,17 +27,13 @@ export default function NewClientScreen() {
   const [address, setAddress] = useState("");
   const [notes, setNotes] = useState("");
   const [contactPersonName, setContactPersonName] = useState("");
-  const [contactPersonDesignation, setContactPersonDesignation] = useState("");
-  const [gstin, setGstin] = useState("");
-  const [registrationNumber, setRegistrationNumber] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [touched, setTouched] = useState<{ fullName?: boolean; phone?: boolean; gstin?: boolean }>({});
+  const [touched, setTouched] = useState<{ fullName?: boolean; phone?: boolean }>({});
 
   const isOrganization = clientType === "organization";
   const fullNameError = touched.fullName && !fullName.trim() ? "Client name is required" : null;
   const phoneErr = touched.phone ? mobileError(phone) : null;
-  const gstinErr = touched.gstin ? gstinError(gstin) : null;
 
   useEffect(() => {
     if (!id) return;
@@ -51,15 +47,12 @@ export default function NewClientScreen() {
         setAddress(c.address ?? "");
         setNotes(c.notes ?? "");
         setContactPersonName(c.contact_person_name ?? "");
-        setContactPersonDesignation(c.contact_person_designation ?? "");
-        setGstin(c.gstin ?? "");
-        setRegistrationNumber(c.registration_number ?? "");
       })
       .catch((err) => setLoadError(err instanceof Error ? err.message : "Couldn't load this client"));
   }, [id]);
 
   const handleSave = async () => {
-    setTouched({ fullName: true, phone: true, gstin: true });
+    setTouched({ fullName: true, phone: true });
     if (!fullName.trim()) {
       setError("Client name is required");
       return;
@@ -68,14 +61,9 @@ export default function NewClientScreen() {
       setError("Enter a valid mobile number, or leave it blank");
       return;
     }
-    if (isOrganization && gstinError(gstin)) {
-      setError(`GSTIN: ${gstinError(gstin)}`);
-      return;
-    }
     setError(null);
     setIsSubmitting(true);
     const phoneValue = phone.trim() ? normalizeIndianMobile(phone) : null;
-    const gstinValue = isOrganization && gstin.trim() ? normalizeGstin(gstin) : null;
     try {
       if (existing) {
         await updateClient(existing.id, {
@@ -86,9 +74,6 @@ export default function NewClientScreen() {
           address: address.trim() || null,
           notes: notes.trim() || null,
           contactPersonName: isOrganization ? contactPersonName.trim() || null : null,
-          contactPersonDesignation: isOrganization ? contactPersonDesignation.trim() || null : null,
-          gstin: gstinValue,
-          registrationNumber: isOrganization ? registrationNumber.trim() || null : null,
         });
         if (photo) {
           await uploadClientPhoto(existing, photo.uri, photo.mimeType).catch(() =>
@@ -106,9 +91,6 @@ export default function NewClientScreen() {
         address,
         notes,
         contactPersonName,
-        contactPersonDesignation,
-        gstin: gstinValue ?? "",
-        registrationNumber,
       });
       if (photo) {
         // The client is saved either way; a failed photo can be added later.
@@ -199,6 +181,15 @@ export default function NewClientScreen() {
         autoCapitalize="words"
         error={fullNameError ?? undefined}
       />
+      {isOrganization ? (
+        <TextField
+          label="Contact person name"
+          placeholder="e.g. Priya Mehta"
+          value={contactPersonName}
+          onChangeText={setContactPersonName}
+          autoCapitalize="words"
+        />
+      ) : null}
       <TextField
         label="Phone"
         placeholder="e.g. 98765 43210"
@@ -229,49 +220,6 @@ export default function NewClientScreen() {
         multiline
         numberOfLines={2}
       />
-      {isOrganization ? (
-        <>
-          <Text style={[typography.subtitle, { color: colors.brand, marginTop: spacing.sm, marginBottom: spacing.sm }]}>
-            Organization details
-          </Text>
-          <TextField
-            label="Contact person name"
-            placeholder="e.g. Priya Mehta"
-            value={contactPersonName}
-            onChangeText={setContactPersonName}
-            autoCapitalize="words"
-          />
-          <TextField
-            label="Contact person designation"
-            placeholder="e.g. Legal Manager"
-            value={contactPersonDesignation}
-            onChangeText={setContactPersonDesignation}
-          />
-          <TextField
-            label="GSTIN"
-            placeholder="e.g. 27AAAAA0000A1Z5"
-            value={gstin}
-            onChangeText={setGstin}
-            onBlur={() => {
-              setTouched((t) => ({ ...t, gstin: true }));
-              const tidy = normalizeGstin(gstin);
-              if (tidy) setGstin(tidy);
-            }}
-            autoCapitalize="characters"
-            autoCorrect={false}
-            maxLength={15}
-            error={gstinErr ?? undefined}
-          />
-          <TextField
-            label="Registration / CIN number"
-            placeholder="e.g. U74999MH2015PTC123456"
-            value={registrationNumber}
-            onChangeText={setRegistrationNumber}
-            autoCapitalize="characters"
-          />
-        </>
-      ) : null}
-
       <TextField
         label="Notes"
         placeholder="e.g. Prefers WhatsApp updates after 6 PM"

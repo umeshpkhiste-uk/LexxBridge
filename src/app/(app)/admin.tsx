@@ -246,6 +246,7 @@ export default function AdminScreen() {
             <SettingsRow
               key={profile.id}
               icon={profile.is_blocked ? "ban-outline" : "person-outline"}
+              avatarUri={profile.is_blocked ? null : profile.profile_photo_url}
               label={profile.full_name}
               subtitle={[[profile.city, profile.state].filter(Boolean).join(", ") || profile.verification_status, profile.email]
                 .filter(Boolean)

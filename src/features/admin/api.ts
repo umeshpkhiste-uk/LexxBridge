@@ -22,6 +22,7 @@ export type AdminProfileRow = {
   email: string;
   city: string | null;
   state: string | null;
+  profile_photo_url: string | null;
   verification_status: "unverified" | "pending" | "verified" | "rejected" | "expired";
   is_blocked: boolean;
   blocked_reason: string | null;

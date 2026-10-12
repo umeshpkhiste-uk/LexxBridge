@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { Children, Fragment, PropsWithChildren, ReactNode } from "react";
 import { Pressable, StyleSheet, Switch, Text, View } from "react-native";
 import { useTheme } from "./theme";
@@ -34,6 +35,10 @@ export function SettingsGroup({ title, children }: PropsWithChildren<{ title?: s
 
 type RowProps = {
   icon: keyof typeof Ionicons.glyphMap;
+  /** When set, renders this photo in a circle instead of `icon` — the
+   * user's own uploaded profile photo, when they have one. `icon` is still
+   * required as the fallback for rows with no photo. */
+  avatarUri?: string | null;
   label: string;
   subtitle?: string;
   onPress?: () => void;
@@ -45,7 +50,7 @@ type RowProps = {
   showChevron?: boolean;
 };
 
-export function SettingsRow({ icon, label, subtitle, onPress, destructive, toggle, right, showChevron = true }: RowProps) {
+export function SettingsRow({ icon, avatarUri, label, subtitle, onPress, destructive, toggle, right, showChevron = true }: RowProps) {
   const { colors, spacing, typography } = useTheme();
   const tint = destructive ? colors.danger : colors.textSecondary;
 
@@ -66,7 +71,11 @@ export function SettingsRow({ icon, label, subtitle, onPress, destructive, toggl
       disabled={!onPress && !toggle}
       style={({ pressed }) => [styles.row, { paddingVertical: spacing.md, opacity: pressed ? 0.6 : 1 }]}
     >
-      <Ionicons name={icon} size={22} color={tint} style={{ width: 36 }} />
+      {avatarUri ? (
+        <Image source={{ uri: avatarUri }} style={{ width: 28, height: 28, borderRadius: 14, marginRight: 8 }} contentFit="cover" />
+      ) : (
+        <Ionicons name={icon} size={22} color={tint} style={{ width: 36 }} />
+      )}
       <View style={{ flex: 1 }}>
         <Text
           style={[

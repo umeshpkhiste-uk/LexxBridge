@@ -116,8 +116,15 @@ export async function deleteMyAccount(): Promise<void> {
   await deleteMyStorageFiles();
   const { error } = await supabase.rpc("delete_my_account");
   if (error) throw new Error(error.message);
-  await disableBiometric();
-  await clearAppLock(me);
+
+  // The account — including its auth.users row — is already gone at this
+  // point, so every step below is local-only cleanup and must never surface
+  // as a "deletion failed" error. In particular, signOut() must use the
+  // "local" scope: its default ("global") calls GoTrue's logout endpoint,
+  // which looks the user up by the JWT's sub claim and fails with "User
+  // from sub claim in JWT does not exist" now that the row is gone.
+  await disableBiometric().catch(() => {});
+  await clearAppLock(me).catch(() => {});
   await clearDeviceNotifications().catch(() => {});
-  await supabase.auth.signOut();
+  await supabase.auth.signOut({ scope: "local" });
 }

@@ -1,7 +1,7 @@
 import { router } from "expo-router";
 import { useState } from "react";
 import { Text } from "react-native";
-import { countWords, FEEDBACK_MAX_WORDS, submitFeedback } from "@/features/feedback/api";
+import { countWords, FEEDBACK_MAX_CHARS, FEEDBACK_MAX_WORDS, submitFeedback } from "@/features/feedback/api";
 import { alertMessage, confirmAlert } from "@/shared/lib/alert";
 import { Button } from "@/shared/ui/Button";
 import { ScreenContainer } from "@/shared/ui/ScreenContainer";
@@ -14,7 +14,9 @@ export default function HelpSupportScreen() {
   const [isSending, setIsSending] = useState(false);
 
   const wordCount = countWords(comment);
-  const overLimit = wordCount > FEEDBACK_MAX_WORDS;
+  const overWordLimit = wordCount > FEEDBACK_MAX_WORDS;
+  const overCharLimit = comment.length > FEEDBACK_MAX_CHARS;
+  const overLimit = overWordLimit || overCharLimit;
 
   const handleSend = async () => {
     setIsSending(true);
@@ -47,8 +49,15 @@ export default function HelpSupportScreen() {
         placeholder="What's on your mind?"
         multiline
         numberOfLines={8}
+        maxLength={FEEDBACK_MAX_CHARS}
         style={{ minHeight: 160, textAlignVertical: "top" }}
-        error={overLimit ? `Please keep it under ${FEEDBACK_MAX_WORDS} words.` : undefined}
+        error={
+          overCharLimit
+            ? `Please keep it under ${FEEDBACK_MAX_CHARS} characters.`
+            : overWordLimit
+              ? `Please keep it under ${FEEDBACK_MAX_WORDS} words.`
+              : undefined
+        }
       />
 
       <Text
@@ -57,7 +66,7 @@ export default function HelpSupportScreen() {
           { color: overLimit ? colors.danger : colors.textSecondary, marginTop: -spacing.sm, marginBottom: spacing.lg, textAlign: "right" },
         ]}
       >
-        {wordCount} / {FEEDBACK_MAX_WORDS} words
+        {wordCount} / {FEEDBACK_MAX_WORDS} words · {comment.length} / {FEEDBACK_MAX_CHARS} characters
       </Text>
 
       <Button label="Send" onPress={handleSend} loading={isSending} disabled={!comment.trim() || overLimit} />

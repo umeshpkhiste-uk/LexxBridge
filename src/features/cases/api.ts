@@ -164,3 +164,26 @@ export async function setCaseArchived(id: string, isArchived: boolean): Promise<
   const { error } = await supabase.from("cases").update({ is_archived: isArchived }).eq("id", id);
   if (error) throw new Error(error.message);
 }
+
+/** Permanently deletes a case and everything attached to it: hearings,
+ * meetings, tasks, case participants and documents cascade in the
+ * database; transactions linked to this case cascade too (case_id's FK
+ * was changed to ON DELETE CASCADE for this). Storage files (case
+ * documents and any transaction receipts, both in the `documents` bucket)
+ * don't get cleaned up by a Postgres cascade, so they're removed
+ * explicitly first. Irreversible — callers must confirm with the user
+ * before calling this. */
+export async function deleteCase(id: string): Promise<void> {
+  const [{ data: docs }, { data: txReceipts }] = await Promise.all([
+    supabase.from("documents").select("storage_path").eq("case_id", id),
+    supabase.from("transactions").select("receipt_path").eq("case_id", id).not("receipt_path", "is", null),
+  ]);
+  const paths = [...(docs ?? []).map((d) => d.storage_path), ...(txReceipts ?? []).map((t) => t.receipt_path as string)];
+  if (paths.length) {
+    // Best-effort: a stray orphaned file is recoverable manually later;
+    // blocking the actual case deletion on a storage hiccup is worse.
+    await supabase.storage.from("documents").remove(paths).catch(() => {});
+  }
+  const { error } = await supabase.from("cases").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+}

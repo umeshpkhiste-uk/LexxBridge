@@ -1,7 +1,7 @@
 import { ActivityIndicator, Pressable, StyleSheet, Text } from "react-native";
 import { useTheme } from "./theme";
 
-type Variant = "primary" | "secondary" | "ghost";
+type Variant = "primary" | "secondary" | "ghost" | "danger";
 
 type Props = {
   label: string;
@@ -20,9 +20,15 @@ export function Button({ label, onPress, variant = "primary", loading, disabled,
   const isDisabled = disabled || loading;
 
   const backgroundColor =
-    variant === "primary" ? colors.brand : variant === "secondary" ? colors.surface : "transparent";
+    variant === "primary"
+      ? colors.brand
+      : variant === "danger"
+        ? colors.danger
+        : variant === "secondary"
+          ? colors.surface
+          : "transparent";
   const borderColor = variant === "secondary" ? colors.border : "transparent";
-  const textColor = variant === "primary" ? colors.textInverse : colors.textPrimary;
+  const textColor = variant === "primary" || variant === "danger" ? colors.textInverse : colors.textPrimary;
 
   return (
     <Pressable

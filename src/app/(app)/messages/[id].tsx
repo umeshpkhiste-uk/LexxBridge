@@ -401,14 +401,26 @@ export default function ChatScreen() {
             </Pressable>
           ) : null,
         headerRight: () => (
-          <Pressable
-            onPress={() => setChatMenuOpen(true)}
-            hitSlop={10}
-            accessibilityLabel="Chat options"
-            style={{ paddingRight: spacing.sm }}
-          >
-            <Ionicons name="ellipsis-vertical" size={20} color={colors.textPrimary} />
-          </Pressable>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+            {partner?.phone ? (
+              <Pressable
+                onPress={() => Linking.openURL(`tel:${partner.phone}`)}
+                hitSlop={10}
+                accessibilityLabel={`Call ${withAdvPrefix(partner.full_name)}`}
+                style={{ padding: 6 }}
+              >
+                <Ionicons name="call-outline" size={20} color={colors.textPrimary} />
+              </Pressable>
+            ) : null}
+            <Pressable
+              onPress={() => setChatMenuOpen(true)}
+              hitSlop={10}
+              accessibilityLabel="Chat options"
+              style={{ paddingRight: spacing.sm }}
+            >
+              <Ionicons name="ellipsis-vertical" size={20} color={colors.textPrimary} />
+            </Pressable>
+          </View>
         ),
       }}
     />

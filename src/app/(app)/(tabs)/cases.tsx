@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { router, useFocusEffect, useNavigation } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, Alert, FlatList, Pressable, Text, View } from "react-native";
+import { ActivityIndicator, Alert, FlatList, Linking, Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CaseSummary, listCases } from "@/features/cases/api";
 import { CaseBriefCard } from "@/features/cases/CaseBriefCard";
@@ -215,21 +215,40 @@ export default function CasesScreen() {
                     <Text style={[typography.caption, { color: colors.textSecondary }]}>No cases yet</Text>
                   )}
                 </View>
-                <Pressable
-                  onPress={() => router.push(`/(app)/clients/new?id=${item.id}`)}
-                  hitSlop={8}
-                  accessibilityLabel={`Edit ${item.full_name}`}
-                  style={({ pressed }) => ({
-                    width: 34,
-                    height: 34,
-                    borderRadius: 17,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    backgroundColor: pressed ? colors.border : colors.surfaceAlt,
-                  })}
-                >
-                  <Ionicons name="create-outline" size={18} color={colors.brand} />
-                </Pressable>
+                <View style={{ gap: spacing.xs }}>
+                  <Pressable
+                    onPress={() => router.push(`/(app)/clients/new?id=${item.id}`)}
+                    hitSlop={8}
+                    accessibilityLabel={`Edit ${item.full_name}`}
+                    style={({ pressed }) => ({
+                      width: 34,
+                      height: 34,
+                      borderRadius: 17,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      backgroundColor: pressed ? colors.border : colors.surfaceAlt,
+                    })}
+                  >
+                    <Ionicons name="create-outline" size={18} color={colors.brand} />
+                  </Pressable>
+                  {item.phone ? (
+                    <Pressable
+                      onPress={() => Linking.openURL(`tel:${item.phone}`)}
+                      hitSlop={8}
+                      accessibilityLabel={`Call ${item.full_name}`}
+                      style={({ pressed }) => ({
+                        width: 34,
+                        height: 34,
+                        borderRadius: 17,
+                        alignItems: "center",
+                        justifyContent: "center",
+                        backgroundColor: pressed ? colors.border : colors.surfaceAlt,
+                      })}
+                    >
+                      <Ionicons name="call-outline" size={18} color={colors.brand} />
+                    </Pressable>
+                  ) : null}
+                </View>
               </Pressable>
             );
           }}

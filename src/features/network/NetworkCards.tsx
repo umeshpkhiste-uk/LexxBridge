@@ -859,8 +859,8 @@ export function AdvocateIdentity({ profile, large = false }: { profile: PublicPr
       ) : null}
       {tags.length ? (
         <View style={[styles.tags, { marginTop: spacing.sm }]}>
-          {tags.map((t) => (
-            <View key={t} style={[styles.tag, { backgroundColor: colors.surfaceAlt, borderRadius: radius.sm }]}>
+          {tags.map((t, i) => (
+            <View key={`${t}-${i}`} style={[styles.tag, { backgroundColor: colors.surfaceAlt, borderRadius: radius.sm }]}>
               <Text style={[typography.label, { color: colors.brand }]} numberOfLines={1}>
                 {t}
               </Text>

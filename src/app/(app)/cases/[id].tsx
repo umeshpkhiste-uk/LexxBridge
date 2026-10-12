@@ -1,10 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Stack, useFocusEffect, useLocalSearchParams } from "expo-router";
+import { router, Stack, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useState } from "react";
-import { ActivityIndicator, Pressable, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Pressable, Text, View } from "react-native";
 import { CaseDetail, getCase } from "@/features/cases/api";
 import { CaseOverview } from "@/features/cases/CaseOverview";
 import { LedgerView } from "@/features/transactions/LedgerView";
+import { downloadCaseStatementPdf } from "@/features/transactions/shareStatement";
 import { useSwipeTabs } from "@/shared/hooks/useSwipeTabs";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { useTheme } from "@/shared/ui/theme";
@@ -24,6 +25,7 @@ export default function CaseDetailScreen() {
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<TabKey>("overview");
   const [isEditing, setIsEditing] = useState(edit === "1");
+  const [isDownloading, setIsDownloading] = useState(false);
   const swipeHandlers = useSwipeTabs(TAB_KEYS, tab, setTab);
 
   const load = useCallback(() => {
@@ -50,6 +52,18 @@ export default function CaseDetailScreen() {
     );
   }
 
+  const downloadStatement = async () => {
+    if (isDownloading) return;
+    setIsDownloading(true);
+    try {
+      await downloadCaseStatementPdf(caseDetail.id);
+    } catch (err) {
+      Alert.alert("Couldn't download statement", err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <Stack.Screen
@@ -58,18 +72,27 @@ export default function CaseDetailScreen() {
           headerRight: isEditing
             ? undefined
             : () => (
-                <Pressable
-                  onPress={() => {
-                    setTab("overview");
-                    setIsEditing(true);
-                  }}
-                  hitSlop={10}
-                  accessibilityLabel="Edit case"
-                  style={{ flexDirection: "row", alignItems: "center", gap: 4, paddingRight: spacing.sm }}
-                >
-                  <Ionicons name="create-outline" size={20} color={colors.brand} />
-                  <Text style={[typography.bodyStrong, { color: colors.brand }]}>Edit</Text>
-                </Pressable>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.md, paddingRight: spacing.sm }}>
+                  <Pressable onPress={downloadStatement} disabled={isDownloading} hitSlop={10} accessibilityLabel="Download statement">
+                    {isDownloading ? (
+                      <ActivityIndicator size="small" color={colors.brand} />
+                    ) : (
+                      <Ionicons name="download-outline" size={20} color={colors.brand} />
+                    )}
+                  </Pressable>
+                  <Pressable
+                    onPress={() => {
+                      setTab("overview");
+                      setIsEditing(true);
+                    }}
+                    hitSlop={10}
+                    accessibilityLabel="Edit case"
+                    style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
+                  >
+                    <Ionicons name="create-outline" size={20} color={colors.brand} />
+                    <Text style={[typography.bodyStrong, { color: colors.brand }]}>Edit</Text>
+                  </Pressable>
+                </View>
               ),
         }}
       />
@@ -86,7 +109,13 @@ export default function CaseDetailScreen() {
           to tapping the segmented control above. */}
       <View style={{ flex: 1 }} {...swipeHandlers}>
         {tab === "overview" ? (
-          <CaseOverview caseDetail={caseDetail} onUpdated={load} isEditing={isEditing} setIsEditing={setIsEditing} />
+          <CaseOverview
+            caseDetail={caseDetail}
+            onUpdated={load}
+            onDeleted={() => router.back()}
+            isEditing={isEditing}
+            setIsEditing={setIsEditing}
+          />
         ) : (
           <LedgerView clientId={caseDetail.client_id} caseId={caseDetail.id} variant="embedded" />
         )}

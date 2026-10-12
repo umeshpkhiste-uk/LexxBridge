@@ -4,10 +4,12 @@ import { ActivityIndicator, Text, View } from "react-native";
 import { getMyProfile } from "@/features/profile/api";
 import { getMyVerification, submitVerificationRequest, VerificationStatus } from "@/features/verification/api";
 import { alertMessage } from "@/shared/lib/alert";
+import { STATE_NAMES } from "@/shared/data/indiaLocations";
 import { Badge } from "@/shared/ui/Badge";
 import { Button } from "@/shared/ui/Button";
 import { PickedReceipt, ReceiptPicker } from "@/shared/ui/ReceiptPicker";
 import { ScreenContainer } from "@/shared/ui/ScreenContainer";
+import { SelectField } from "@/shared/ui/SelectField";
 import { TextField } from "@/shared/ui/TextField";
 import { useTheme } from "@/shared/ui/theme";
 
@@ -109,7 +111,14 @@ export default function VerificationScreen() {
           ) : null}
 
           <TextField label="Bar registration / enrollment number" value={barNumber} onChangeText={setBarNumber} placeholder="e.g. MAH/1234/2020" />
-          <TextField label="Bar Council state" value={barState} onChangeText={setBarState} placeholder="e.g. Maharashtra" />
+          <SelectField
+            label="Bar Council state"
+            placeholder="Select state / union territory"
+            value={barState || null}
+            options={STATE_NAMES.map((n) => ({ value: n, label: n }))}
+            onChange={setBarState}
+            searchable
+          />
           <ReceiptPicker value={document} onChange={setDocument} label="Bar Council ID / enrollment certificate photo" />
 
           <Button label="Submit for review" onPress={handleSubmit} loading={submitting} disabled={!canSubmit} />

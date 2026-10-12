@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Alert, Linking, Pressable, StyleSheet, Text, View } from "react-native";
 import { blockAdvocate, isBlocked, unblockAdvocate } from "@/features/blocking/api";
 import { getOrCreateConversation } from "@/features/messaging/api";
@@ -38,6 +38,12 @@ export default function PublicProfileScreen() {
   const [mutualCount, setMutualCount] = useState<number | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
   const [isActing, setIsActing] = useState(false);
+  // `isActing`-driven pointerEvents only takes effect after a re-render, so
+  // a fast double-tap can fire an onPress twice before that commits (seen
+  // in practice: two overlapping handleMessage() calls each navigating to
+  // the chat screen crashed Fabric with "addViewAt ... already has a
+  // parent"). This ref blocks the second call synchronously, same frame.
+  const isActingRef = useRef(false);
 
   // Your own name opens your own profile docket instead.
   useEffect(() => {
@@ -71,6 +77,8 @@ export default function PublicProfileScreen() {
   );
 
   const handleToggleFollow = async () => {
+    if (isActingRef.current) return;
+    isActingRef.current = true;
     setIsActing(true);
     try {
       if (following) await unfollowAdvocate(id);
@@ -78,43 +86,53 @@ export default function PublicProfileScreen() {
       setFollowing(!following);
       getNetworkStats(id).then(setStats).catch(() => {});
     } finally {
+      isActingRef.current = false;
       setIsActing(false);
     }
   };
 
   const handleConnect = async () => {
+    if (isActingRef.current) return;
+    isActingRef.current = true;
     setIsActing(true);
     try {
       await sendConnectionRequest(id);
       load();
     } finally {
+      isActingRef.current = false;
       setIsActing(false);
     }
   };
 
   const handleAccept = async () => {
-    if (connection.status !== "pending_received") return;
+    if (connection.status !== "pending_received" || isActingRef.current) return;
+    isActingRef.current = true;
     setIsActing(true);
     try {
       await respondToConnection(connection.connectionId, true);
       load();
     } finally {
+      isActingRef.current = false;
       setIsActing(false);
     }
   };
 
   const handleRemoveOrCancel = async () => {
-    if (connection.status === "none" || connection.status === "rejected") return;
+    if (connection.status === "none" || connection.status === "rejected" || isActingRef.current) return;
+    isActingRef.current = true;
     setIsActing(true);
     try {
       await removeConnection(connection.connectionId);
       load();
     } finally {
+      isActingRef.current = false;
       setIsActing(false);
     }
   };
 
   const handleMessage = async () => {
+    if (isActingRef.current) return;
+    isActingRef.current = true;
     setIsActing(true);
     try {
       const conversationId = await getOrCreateConversation(id);
@@ -122,6 +140,7 @@ export default function PublicProfileScreen() {
     } catch (err) {
       Alert.alert("Couldn't start conversation", err instanceof Error ? err.message : "Something went wrong");
     } finally {
+      isActingRef.current = false;
       setIsActing(false);
     }
   };
@@ -136,12 +155,15 @@ export default function PublicProfileScreen() {
           text: blocked ? "Unblock" : "Block",
           style: blocked ? "default" : "destructive",
           onPress: async () => {
+            if (isActingRef.current) return;
+            isActingRef.current = true;
             setIsActing(true);
             try {
               if (blocked) await unblockAdvocate(id);
               else await blockAdvocate(id);
               load();
             } finally {
+              isActingRef.current = false;
               setIsActing(false);
             }
           },
@@ -297,8 +319,8 @@ function Tags({ items }: { items: string[] }) {
   const { colors, radius, typography } = useTheme();
   return (
     <View style={styles.tags}>
-      {items.map((t) => (
-        <View key={t} style={[styles.tag, { backgroundColor: colors.surfaceAlt, borderRadius: radius.sm }]}>
+      {items.map((t, i) => (
+        <View key={`${t}-${i}`} style={[styles.tag, { backgroundColor: colors.surfaceAlt, borderRadius: radius.sm }]}>
           <Text style={[typography.label, { color: colors.brand }]}>{t}</Text>
         </View>
       ))}

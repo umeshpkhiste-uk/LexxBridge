@@ -13,7 +13,7 @@ import { SelectField } from "@/shared/ui/SelectField";
 import { DateField, fromDateOnly, toDateOnly } from "@/shared/ui/DateField";
 import { TextField } from "@/shared/ui/TextField";
 import { useTheme } from "@/shared/ui/theme";
-import { CaseDetail, CasePriority, updateCase } from "./api";
+import { CaseDetail, CasePriority, deleteCase, updateCase } from "./api";
 
 const PRIORITIES: CasePriority[] = ["low", "medium", "high"];
 const PRIORITY_ICONS: Record<CasePriority, "arrow-down-circle-outline" | "remove-circle-outline" | "arrow-up-circle-outline"> = {
@@ -46,11 +46,13 @@ function fileSize(bytes: number | null) {
 export function CaseOverview({
   caseDetail,
   onUpdated,
+  onDeleted,
   isEditing,
   setIsEditing,
 }: {
   caseDetail: CaseDetail;
   onUpdated: () => void;
+  onDeleted: () => void;
   isEditing: boolean;
   setIsEditing: (editing: boolean) => void;
 }) {
@@ -125,6 +127,7 @@ export function CaseOverview({
           setIsEditing(false);
           onUpdated();
         }}
+        onDeleted={onDeleted}
       />
     );
   }
@@ -250,8 +253,19 @@ export function CaseOverview({
   );
 }
 
-function CaseEditForm({ caseDetail, onCancel, onSaved }: { caseDetail: CaseDetail; onCancel: () => void; onSaved: () => void }) {
+function CaseEditForm({
+  caseDetail,
+  onCancel,
+  onSaved,
+  onDeleted,
+}: {
+  caseDetail: CaseDetail;
+  onCancel: () => void;
+  onSaved: () => void;
+  onDeleted: () => void;
+}) {
   const { colors, spacing, radius, typography } = useTheme();
+  const [isDeleting, setIsDeleting] = useState(false);
   const [title, setTitle] = useState(caseDetail.title);
   const [caseNumber, setCaseNumber] = useState(caseDetail.case_number ?? "");
   const [caseType, setCaseType] = useState(caseDetail.case_type ?? "");
@@ -408,6 +422,35 @@ function CaseEditForm({ caseDetail, onCancel, onSaved }: { caseDetail: CaseDetai
 
       {error ? <Text style={[typography.body, { color: colors.danger }]}>{error}</Text> : null}
       <Button label="Save changes" onPress={save} loading={isSaving} pill />
+      <Button
+        label="Delete case"
+        variant="danger"
+        loading={isDeleting}
+        pill
+        onPress={() =>
+          Alert.alert(
+            "Delete this case permanently?",
+            `This will permanently delete "${caseDetail.title}" and everything in it — hearings, documents, and all related transactions. This can't be undone.`,
+            [
+              { text: "Cancel", style: "cancel" },
+              {
+                text: "Delete",
+                style: "destructive",
+                onPress: async () => {
+                  setIsDeleting(true);
+                  try {
+                    await deleteCase(caseDetail.id);
+                    onDeleted();
+                  } catch (err) {
+                    setIsDeleting(false);
+                    Alert.alert("Couldn't delete case", err instanceof Error ? err.message : "Something went wrong");
+                  }
+                },
+              },
+            ],
+          )
+        }
+      />
       <Button label="Cancel" variant="ghost" onPress={onCancel} />
     </ScrollView>
   );

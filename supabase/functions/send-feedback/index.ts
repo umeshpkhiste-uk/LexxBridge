@@ -9,6 +9,21 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 const RESEND_API_URL = "https://api.resend.com/emails";
 const RECIPIENT = "deepomeshcreation@gmail.com";
 const MAX_WORDS = 500;
+// Authoritative character cap — the word-count check alone can be bypassed
+// by a single no-space "word" of arbitrary length. This is the one that
+// actually stops an oversized payload, since the client-side check is just
+// for UX.
+const MAX_CHARS = 4000;
+
+/** Strips null bytes and other non-printable control characters (keeping
+ * newlines/tabs). The sanitized text only ever becomes a plain-text email
+ * body via Resend's JSON API — never raw SQL, never an HTML email body —
+ * so this is payload hygiene, not an injection fix for a path that doesn't
+ * exist. If an HTML template is ever added here, both `sanitized` and
+ * `fullName` would need HTML-escaping first. */
+function sanitize(text: string): string {
+  return text.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "").trim();
+}
 
 // The only one of the 3 Edge Functions this app calls directly from the
 // client's browser/app, rather than a database trigger — so it's the only
@@ -37,7 +52,11 @@ Deno.serve(async (req) => {
   if (typeof comment !== "string" || !comment.trim()) {
     return new Response("Bad request", { status: 400, headers: corsHeaders });
   }
-  const trimmed = comment.trim();
+  const trimmed = sanitize(comment);
+  if (!trimmed) return new Response("Bad request", { status: 400, headers: corsHeaders });
+  if (trimmed.length > MAX_CHARS) {
+    return json({ error: `Comment exceeds ${MAX_CHARS} characters` }, 400);
+  }
   const wordCount = trimmed.split(/\s+/).filter(Boolean).length;
   if (wordCount > MAX_WORDS) {
     return json({ error: `Comment exceeds ${MAX_WORDS} words` }, 400);
@@ -70,7 +89,7 @@ Deno.serve(async (req) => {
     .select("full_name")
     .eq("id", userData.user.id)
     .single();
-  const fullName = profile?.full_name ?? "Advocate";
+  const fullName = (profile?.full_name ?? "Advocate").slice(0, 200);
 
   const resendKey = Deno.env.get("RESEND_API_KEY");
   if (!resendKey) return json({ error: "Email service not configured" }, 500);

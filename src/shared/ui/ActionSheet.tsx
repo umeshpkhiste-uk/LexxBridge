@@ -7,6 +7,9 @@ export type SheetAction = {
   label: string;
   icon: keyof typeof Ionicons.glyphMap;
   onPress: () => void;
+  /** Renders the icon and label in the danger color — for irreversible
+   * actions like "Delete". */
+  destructive?: boolean;
 };
 
 type Props = {
@@ -56,8 +59,15 @@ export function ActionSheet({ visible, title, actions, onClose }: Props) {
                 { paddingHorizontal: spacing.md, backgroundColor: pressed ? colors.surfaceAlt : "transparent" },
               ]}
             >
-              <Ionicons name={action.icon} size={22} color={colors.textSecondary} style={{ width: 36 }} />
-              <Text style={[typography.body, { color: colors.textPrimary, fontSize: 16 }]}>{action.label}</Text>
+              <Ionicons
+                name={action.icon}
+                size={22}
+                color={action.destructive ? colors.danger : colors.textSecondary}
+                style={{ width: 36 }}
+              />
+              <Text style={[typography.body, { color: action.destructive ? colors.danger : colors.textPrimary, fontSize: 16 }]}>
+                {action.label}
+              </Text>
             </Pressable>
           ))}
           <View style={{ height: spacing.xs }} />

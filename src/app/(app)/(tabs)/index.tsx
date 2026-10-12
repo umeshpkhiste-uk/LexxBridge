@@ -17,12 +17,14 @@ import { firstName, greetingFor } from "@/shared/lib/names";
 import { AgendaItem, listAgendaItems } from "@/features/calendar/api";
 import { DayAgenda } from "@/features/calendar/DayAgenda";
 import { MonthCalendar } from "@/features/calendar/MonthCalendar";
-import { CaseSummary, listCases } from "@/features/cases/api";
+import { CaseSummary, deleteCase, listCases } from "@/features/cases/api";
 import { listUpcomingHearings, UpcomingHearing } from "@/features/hearings/api";
 import { ConversationSummary, listConversations } from "@/features/messaging/api";
 import { OnlineDot } from "@/features/presence/OnlineDot";
 import { getMyProfile } from "@/features/profile/api";
 import { getPendingByCase } from "@/features/transactions/api";
+import { downloadCaseStatementPdf } from "@/features/transactions/shareStatement";
+import { alertMessage, confirmAlert } from "@/shared/lib/alert";
 import { formatHearingDate, formatINR, toDateParam } from "@/shared/lib/format";
 import { ActionSheet, SheetAction } from "@/shared/ui/ActionSheet";
 import { useAppWidth } from "@/shared/ui/appFrame";
@@ -149,6 +151,37 @@ export default function HomeScreen() {
   const openCalendar = (dateIso?: string) =>
     router.push(dateIso ? `/(app)/(tabs)/calendar?date=${toDateParam(dateIso)}` : "/(app)/(tabs)/calendar");
 
+  const downloadCaseStatement = async (c: CaseSummary) => {
+    try {
+      await downloadCaseStatementPdf(c.id);
+    } catch (err) {
+      alertMessage("Couldn't download statement", err instanceof Error ? err.message : "Something went wrong");
+    }
+  };
+
+  const confirmDeleteCase = (c: CaseSummary) => {
+    confirmAlert(
+      "Delete this case permanently?",
+      `This will permanently delete "${c.title}" and everything in it — hearings, documents, and all related transactions. This can't be undone.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deleteCase(c.id);
+              setCases((prev) => prev.filter((x) => x.id !== c.id));
+              alertMessage("Deleted", `"${c.title}" has been deleted.`);
+            } catch (err) {
+              alertMessage("Couldn't delete", err instanceof Error ? err.message : "Something went wrong");
+            }
+          },
+        },
+      ],
+    );
+  };
+
   const menuActions: SheetAction[] = menuCase
     ? [
         { label: "Open case", icon: "folder-open-outline", onPress: () => router.push(`/(app)/cases/${menuCase.id}`) },
@@ -167,9 +200,11 @@ export default function HomeScreen() {
           icon: "cash-outline",
           onPress: () => router.push(`/(app)/transactions/new?caseId=${menuCase.id}&clientId=${menuCase.client_id}`),
         },
+        { label: "Download statement", icon: "download-outline", onPress: () => downloadCaseStatement(menuCase) },
         ...(menuCase.next_hearing_at
           ? [{ label: "See hearing in calendar", icon: "today-outline" as const, onPress: () => openCalendar(menuCase.next_hearing_at!) }]
           : []),
+        { label: "Delete case", icon: "trash-outline", destructive: true, onPress: () => confirmDeleteCase(menuCase) },
       ]
     : [];
 

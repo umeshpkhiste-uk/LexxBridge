@@ -44,7 +44,7 @@ async function currentUserId(): Promise<string> {
 export type ConversationSummary = {
   id: string;
   last_message_at: string;
-  otherParty: { id: string; full_name: string; profile_photo_url: string | null };
+  otherParty: { id: string; full_name: string; profile_photo_url: string | null; phone: string | null };
   lastMessage: {
     content: string;
     is_undecryptable: boolean;
@@ -72,8 +72,9 @@ export async function listConversations(): Promise<ConversationSummary[]> {
   const otherIds = rows.map((r) => (r.participant_one_id === me ? r.participant_two_id : r.participant_one_id));
   const conversationIds = rows.map((r) => r.id);
 
-  const [profilesResult, lastMessagesResult, unreadResult] = await Promise.all([
+  const [profilesResult, phonesResult, lastMessagesResult, unreadResult] = await Promise.all([
     supabase.from("public_advocate_profiles").select("id, full_name, profile_photo_url, messaging_public_key").in("id", otherIds),
+    supabase.rpc("connection_phone_numbers", { p_ids: otherIds }),
     supabase
       .from("messages")
       .select("conversation_id, content, nonce, is_deleted, sender_id, read_at, created_at, attachment_kind")
@@ -87,8 +88,11 @@ export async function listConversations(): Promise<ConversationSummary[]> {
       .neq("sender_id", me),
   ]);
   if (profilesResult.error) throw new Error(profilesResult.error.message);
+  if (phonesResult.error) throw new Error(phonesResult.error.message);
   if (lastMessagesResult.error) throw new Error(lastMessagesResult.error.message);
   if (unreadResult.error) throw new Error(unreadResult.error.message);
+
+  const phoneById = new Map((phonesResult.data as { id: string; phone: string }[]).map((p) => [p.id, p.phone]));
 
   const profileById = new Map(profilesResult.data.map((p) => [p.id, p]));
   const lastMessageByConversation = new Map<string, (typeof lastMessagesResult.data)[number]>();
@@ -108,7 +112,8 @@ export async function listConversations(): Promise<ConversationSummary[]> {
       const otherId = r.participant_one_id === me ? r.participant_two_id : r.participant_one_id;
       const profile = profileById.get(otherId);
       if (!profile) return null;
-      const { messaging_public_key: _messagingPublicKey, ...otherParty } = profile;
+      const { messaging_public_key: _messagingPublicKey, ...otherPartyBase } = profile;
+      const otherParty = { ...otherPartyBase, phone: phoneById.get(otherId) ?? null };
       const lastMessage = lastMessageByConversation.get(r.id) ?? null;
       const decrypted = lastMessage
         ? await decryptText(lastMessage.content, lastMessage.nonce, publicKeyByOtherId.get(otherId) ?? null)
@@ -404,16 +409,18 @@ export async function deleteMessage(message: Pick<Message, "id" | "attachment_pa
   if (message.attachment_path) await supabase.storage.from(ATTACHMENT_BUCKET).remove([message.attachment_path]);
 }
 
-export type ChatPartner = { id: string; full_name: string; profile_photo_url: string | null };
+export type ChatPartner = { id: string; full_name: string; profile_photo_url: string | null; phone: string | null };
 
-/** The other participant's public name and photo, for the chat header. */
+/** The other participant's public name, photo and (if connected) phone, for the chat header. */
 export async function getChatPartner(conversationId: string): Promise<ChatPartner> {
   const otherId = await getConversationOtherParty(conversationId);
-  const { data, error } = await supabase
-    .from("public_advocate_profiles")
-    .select("id, full_name, profile_photo_url")
-    .eq("id", otherId)
-    .maybeSingle();
-  if (error) throw new Error(error.message);
-  return (data as ChatPartner | null) ?? { id: otherId, full_name: "Advocate", profile_photo_url: null };
+  const [profileResult, phonesResult] = await Promise.all([
+    supabase.from("public_advocate_profiles").select("id, full_name, profile_photo_url").eq("id", otherId).maybeSingle(),
+    supabase.rpc("connection_phone_numbers", { p_ids: [otherId] }),
+  ]);
+  if (profileResult.error) throw new Error(profileResult.error.message);
+  if (phonesResult.error) throw new Error(phonesResult.error.message);
+  const phone = (phonesResult.data as { id: string; phone: string }[] | null)?.[0]?.phone ?? null;
+  const base = profileResult.data ?? { id: otherId, full_name: "Advocate", profile_photo_url: null };
+  return { ...base, phone };
 }

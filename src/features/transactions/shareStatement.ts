@@ -1,9 +1,13 @@
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 import { Linking, Platform, Share } from "react-native";
+import { getCase } from "@/features/cases/api";
+import { getClient } from "@/features/clients/api";
+import { getMyProfile } from "@/features/profile/api";
 import { alertMessage } from "@/shared/lib/alert";
 import { formatINR } from "@/shared/lib/format";
-import type { Transaction } from "./api";
+import { listTransactionsForCase, type Transaction } from "./api";
+import { computeFeeTotals } from "./feeTotals";
 
 export type StatementRange = { from: string; to: string };
 
@@ -510,6 +514,44 @@ export async function downloadStatementPdf(input: StatementInput, title: string)
   } catch (err) {
     alertMessage("Couldn't create PDF", err instanceof Error ? err.message : "Something went wrong");
   }
+}
+
+/** One-tap "Download statement" for a single case — fetches everything
+ * `downloadStatementPdf` needs (case, client, transactions, advocate
+ * profile) itself, so every entry point (Home quick menu, case header, …)
+ * can call this directly instead of duplicating that fetch. Covers the
+ * complete transaction history for the case, same as "Complete transaction
+ * history" in the existing share sheet. */
+export async function downloadCaseStatementPdf(caseId: string): Promise<void> {
+  const [caseDetail, transactions, profile] = await Promise.all([
+    getCase(caseId),
+    listTransactionsForCase(caseId),
+    getMyProfile().catch(() => null),
+  ]);
+  const client = await getClient(caseDetail.client_id);
+  const totals = computeFeeTotals([{ id: caseDetail.id, agreed_fee: caseDetail.agreed_fee }], transactions);
+  await downloadStatementPdf(
+    {
+      clientName: client.full_name,
+      clientPhone: client.phone,
+      clientEmail: client.email,
+      clientAddress: client.address,
+      caseTitle: caseDetail.title,
+      caseNumber: caseDetail.case_number,
+      caseType: caseDetail.case_type,
+      court: caseDetail.court,
+      oppositeParty: caseDetail.opposite_party,
+      filingDate: caseDetail.filing_date,
+      agreedFee: caseDetail.agreed_fee,
+      advocateName: profile?.full_name ?? null,
+      advocatePhone: profile?.phone ?? null,
+      advocateAddress: profile?.chamber_address ?? profile?.address_line ?? null,
+      transactions,
+      totals,
+      periodLabel: "Complete transaction history",
+    },
+    `Payment statement — ${caseDetail.title}`,
+  );
 }
 
 /** Indian mobile numbers are stored however the advocate typed them;

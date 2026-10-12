@@ -60,11 +60,21 @@ describe("normalizeEnrolment", () => {
 describe("normalizeCaseNumber", () => {
   const now = new Date(2026, 8, 26);
 
-  it("tidies valid Indian court case numbers", () => {
+  it("tidies valid traditional citations (NUMBER/YEAR, with an optional case type)", () => {
     expect(normalizeCaseNumber("482/2024", now)).toBe("482/2024");
-    expect(normalizeCaseNumber("CC/123/2024", now)).toBe("CC/123/2024");
-    expect(normalizeCaseNumber("cc123 / 2024", now)).toBe("CC/123/2024");
+    expect(normalizeCaseNumber("CC/123/2024", now)).toBe("CC 123/2024");
+    expect(normalizeCaseNumber("cc123 / 2024", now)).toBe("CC 123/2024");
     expect(normalizeCaseNumber(" 45 / 2023 ", now)).toBe("45/2023");
+    expect(normalizeCaseNumber("W.P.(C) 1234/2025", now)).toBe("W.P.(C) 1234/2025");
+    expect(normalizeCaseNumber("slp (crl) 56/2024", now)).toBe("SLP (CRL) 56/2024");
+    expect(normalizeCaseNumber("Crl. A 45/2023", now)).toBe("CRL. A 45/2023");
+  });
+
+  it("tidies valid 16-character CNR codes", () => {
+    expect(normalizeCaseNumber("DLST010012342024", now)).toBe("DLST010012342024");
+    expect(normalizeCaseNumber("dlst01 0012 342024", now)).toBe("DLST010012342024");
+    expect(normalizeCaseNumber("DLST01-001234-2024", now)).toBe("DLST010012342024");
+    expect(normalizeCaseNumber("DLST010012341900", now)).toBeNull();
   });
 
   it("rejects random alphanumeric strings, bare numbers and impossible years", () => {

@@ -290,7 +290,8 @@ function CaseEditForm({
   const save = async () => {
     setTouched({ title: true, caseNumber: true, agreedFee: true });
     if (!title.trim()) return setError("Case title is required");
-    if (caseNumberError(caseNumber)) return setError("Case number: use the format NUMBER/YEAR, e.g. 482/2024");
+    const caseNumberSubmitErr = caseNumberError(caseNumber);
+    if (caseNumberSubmitErr) return setError(`Case number: ${caseNumberSubmitErr}`);
     const fee = agreedFee.trim() ? Number(agreedFee) : null;
     if (fee !== null && (Number.isNaN(fee) || fee < 0)) return setError("Total fees agreed: enter a valid amount");
     if (filingDate && registrationDate && registrationDate < filingDate) {

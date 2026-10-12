@@ -67,8 +67,9 @@ export default function NewCaseScreen() {
       setError("Case title is required");
       return;
     }
-    if (caseNumberError(caseNumber)) {
-      setError("Case number: use the format NUMBER/YEAR, e.g. 482/2024");
+    const caseNumberSubmitErr = caseNumberError(caseNumber);
+    if (caseNumberSubmitErr) {
+      setError(`Case number: ${caseNumberSubmitErr}`);
       return;
     }
     const fee = agreedFee.trim() ? Number(agreedFee) : null;

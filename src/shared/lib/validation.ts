@@ -42,23 +42,42 @@ export function enrolmentError(input: string, now: Date = new Date()): string | 
 }
 
 /**
- * Indian court filings are numbered NUMBER/YEAR (e.g. 482/2024, CC/123/2024
- * with an optional short case-type prefix) — never a free-form string of
- * digits and letters. Returns the tidied form (upper-case, "/" separators)
- * or null if it doesn't fit.
+ * Indian court case numbers follow one of two formats:
+ *  - CNR (Case Number Record): a permanent, system-assigned 16-character
+ *    code under the eCourts system — 2-letter state code, 2-letter
+ *    district/court-complex code, 2-digit establishment code, 6-digit
+ *    sequence number and 4-digit year, e.g. DLST010012342024.
+ *  - Traditional citation: [Case Type] SERIAL/YEAR, e.g. W.P.(C) 1234/2025,
+ *    SLP (Crl) 56/2024, CC 123/2024, or bare 482/2024. The case type is
+ *    optional and may contain letters, digits, dots, spaces and
+ *    parentheses.
+ * Returns the tidied form, or null if it fits neither.
  */
 export function normalizeCaseNumber(input: string, now: Date = new Date()): string | null {
-  const cleaned = input.trim().toUpperCase().replace(/\s*[/\-\\ ]\s*/g, "/");
-  const match = /^(?:([A-Z]{1,6})\/?)?(\d{1,6})\/((?:19|20)\d{2})$/.exec(cleaned);
+  const trimmed = input.trim();
+  if (!trimmed) return null;
+
+  const compact = trimmed.toUpperCase().replace(/[\s-]+/g, "");
+  const cnrMatch = /^[A-Z]{4}\d{12}$/.exec(compact);
+  if (cnrMatch) {
+    const year = Number(compact.slice(-4));
+    if (year >= 1950 && year <= now.getFullYear() + 1) return compact;
+  }
+
+  const cleaned = trimmed.toUpperCase();
+  const match = /^(.*?)[\s/]*(\d{1,6})\s*\/\s*((?:19|20)\d{2})$/.exec(cleaned);
   if (!match) return null;
   const year = Number(match[3]);
   if (year < 1950 || year > now.getFullYear() + 1) return null;
-  return [match[1], match[2], match[3]].filter(Boolean).join("/");
+  const caseType = match[1].trim().replace(/\s+/g, " ");
+  return [caseType, `${match[2]}/${match[3]}`].filter(Boolean).join(" ");
 }
 
 export function caseNumberError(input: string, now: Date = new Date()): string | null {
   if (!input.trim()) return null;
-  return normalizeCaseNumber(input, now) ? null : "Use the format NUMBER/YEAR, e.g. 482/2024";
+  return normalizeCaseNumber(input, now)
+    ? null
+    : "Use a CNR (16-character code) or NUMBER/YEAR, e.g. W.P.(C) 1234/2025 or DLST010012342024";
 }
 
 /**

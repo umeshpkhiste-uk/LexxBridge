@@ -32,13 +32,7 @@ export function CaseBriefCard({ caseItem, onPress, onEdit, onHearingChanged }: P
           { backgroundColor: colors.brand, borderRadius: radius.lg, padding: spacing.md, opacity: pressed ? 0.95 : 1 },
         ]}
       >
-        <View style={styles.rowBetween}>
-          <View style={[styles.pill, pillBg]}>
-            <Ionicons name="person-outline" size={12} color="#FFDEA5" />
-            <Text style={[styles.pillText, { color: "#FFFFFF" }]} numberOfLines={1}>
-              {(caseItem.clients?.full_name ?? "No client").toUpperCase()}
-            </Text>
-          </View>
+        <View style={[styles.rowBetween, { justifyContent: "flex-end" }]}>
           <Pressable onPress={onEdit} hitSlop={10} style={styles.inlineRow} accessibilityLabel={`Edit ${caseItem.title}`}>
             <Ionicons name="create-outline" size={18} color="#FFFFFF" />
             <Text style={[typography.label, { color: "#FFFFFF" }]}>Edit</Text>

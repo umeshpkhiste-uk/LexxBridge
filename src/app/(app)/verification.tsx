@@ -119,7 +119,12 @@ export default function VerificationScreen() {
             onChange={setBarState}
             searchable
           />
-          <ReceiptPicker value={document} onChange={setDocument} label="Bar Council ID / enrollment certificate photo" />
+          <ReceiptPicker
+            value={document}
+            onChange={setDocument}
+            label="Bar Council ID / enrollment certificate photo"
+            allowedMimeTypes={["image/png", "image/jpeg"]}
+          />
 
           <Button label="Submit for review" onPress={handleSubmit} loading={submitting} disabled={!canSubmit} />
         </>

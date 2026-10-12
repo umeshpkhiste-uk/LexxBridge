@@ -14,6 +14,10 @@ export type VerificationRequest = {
 };
 
 const BUCKET = "verification-documents";
+/** Mirrors the "verification-documents" bucket's own allowed_mime_types
+ * (migration 0064) — checked again here so a request built by hand (or a
+ * tampered client) can't skip the picker's own format check. */
+const ALLOWED_MIME_TYPES = ["image/png", "image/jpeg"];
 
 export type MyVerification = {
   status: VerificationStatus;
@@ -50,16 +54,21 @@ export async function submitVerificationRequest(input: {
   barNumber: string;
   barState: string;
 }): Promise<void> {
+  const mimeType = input.mimeType === "image/jpg" ? "image/jpeg" : input.mimeType;
+  if (!ALLOWED_MIME_TYPES.includes(mimeType)) {
+    throw new Error("Unsupported file format. Please upload a PNG or JPEG/JPG image, or take a new photo.");
+  }
+
   const { data: userData, error: userError } = await supabase.auth.getUser();
   if (userError || !userData.user) throw new Error(userError?.message ?? "Not signed in");
 
   // First path segment must be the advocate's own auth.uid() — that's what
   // the storage.objects RLS policies (migration 0062) check.
-  const extension = input.mimeType === "application/pdf" ? "pdf" : "jpg";
+  const extension = mimeType === "image/png" ? "png" : "jpg";
   const storagePath = `${userData.user.id}/${Date.now()}.${extension}`;
 
   const base64 = await fileUriToBase64(input.fileUri);
-  const { error: uploadError } = await supabase.storage.from(BUCKET).upload(storagePath, decode(base64), { contentType: input.mimeType });
+  const { error: uploadError } = await supabase.storage.from(BUCKET).upload(storagePath, decode(base64), { contentType: mimeType });
   if (uploadError) throw new Error(uploadError.message);
 
   const { error } = await supabase.rpc("submit_verification_request", {

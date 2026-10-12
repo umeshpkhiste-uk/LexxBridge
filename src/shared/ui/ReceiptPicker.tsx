@@ -6,16 +6,38 @@ import { useTheme } from "@/shared/ui/theme";
 
 export type PickedReceipt = { uri: string; mimeType: string };
 
+/** Normalizes the non-standard "image/jpg" some pickers/browsers report
+ * into the real "image/jpeg", so mime-type allowlists don't need to list
+ * both. Everything else passes through unchanged. */
+function normalizeMimeType(mimeType: string): string {
+  return mimeType === "image/jpg" ? "image/jpeg" : mimeType;
+}
+
+/** Best-effort mime type from the file extension, for the rare case a
+ * picker returns no mimeType at all (seen on some older Android devices). */
+function mimeFromUri(uri: string): string | null {
+  const ext = uri.split(".").pop()?.toLowerCase().split("?")[0];
+  if (ext === "png") return "image/png";
+  if (ext === "jpg" || ext === "jpeg") return "image/jpeg";
+  return null;
+}
+
 /** "Take photo / Upload image" for a photo attachment (payment receipt,
  * identity document, etc.), then a preview with Retake / Replace / Remove. */
 export function ReceiptPicker({
   value,
   onChange,
   label = "Receipt / payment screenshot (optional)",
+  allowedMimeTypes,
 }: {
   value: PickedReceipt | null;
   onChange: (value: PickedReceipt | null) => void;
   label?: string;
+  /** Restricts which image formats are accepted (e.g. `["image/png",
+   * "image/jpeg"]`) — anything else (HEIC, WEBP, GIF, …) is rejected with
+   * an alert and never reaches `onChange`. Omit to accept whatever the
+   * picker returns, as before. */
+  allowedMimeTypes?: string[];
 }) {
   const { colors, spacing, radius, typography } = useTheme();
 
@@ -29,7 +51,14 @@ export function ReceiptPicker({
     const options: ImagePicker.ImagePickerOptions = { mediaTypes: ["images"], quality: 0.7 };
     const result = source === "camera" ? await ImagePicker.launchCameraAsync(options) : await ImagePicker.launchImageLibraryAsync(options);
     const asset = result.canceled ? null : result.assets[0];
-    if (asset) onChange({ uri: asset.uri, mimeType: asset.mimeType ?? "image/jpeg" });
+    if (!asset) return;
+
+    const mimeType = normalizeMimeType(asset.mimeType ?? mimeFromUri(asset.uri) ?? "image/jpeg");
+    if (allowedMimeTypes && !allowedMimeTypes.includes(mimeType)) {
+      Alert.alert("Unsupported format", "Please upload a PNG or JPEG/JPG image, or take a new photo.");
+      return;
+    }
+    onChange({ uri: asset.uri, mimeType });
   };
 
   return (

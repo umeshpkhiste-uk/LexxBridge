@@ -44,9 +44,9 @@ export default function SignUpScreen() {
     // docs/AUTH.md) — the confirmation link itself still opens
     // (auth)/verify-email, which exchanges it for a session automatically.
     // This screen is only the very next step right after submitting the
-    // form, so it lands on sign-in with a reminder, rather than a separate
-    // "check your email" screen.
-    router.replace({ pathname: "/(auth)/sign-in", params: { justSignedUp: "1" } });
+    // form, so it lands back on the welcome screen with a reminder, rather
+    // than a separate "check your email" screen.
+    router.replace({ pathname: "/(auth)", params: { justSignedUp: "1" } });
   };
 
   return (
@@ -142,7 +142,7 @@ export default function SignUpScreen() {
       <Button label="Sign Up" onPress={handleSubmit(onSubmit)} loading={isSubmitting} disabled={!agreedToTerms} pill />
 
       <View style={{ height: spacing.lg }} />
-      <Link href="/(auth)/sign-in">
+      <Link href="/(auth)">
         <Text style={[typography.caption, { color: colors.textSecondary, textAlign: "center" }]}>
           Already have an account? <Text style={{ color: colors.brand, fontWeight: "600" }}>Sign In</Text>
         </Text>

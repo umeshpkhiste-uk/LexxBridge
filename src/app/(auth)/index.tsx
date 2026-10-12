@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Link } from "expo-router";
+import { Link, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -37,6 +37,7 @@ const SOCIAL: { provider: SocialProvider; icon: keyof typeof Ionicons.glyphMap; 
 
 export default function WelcomeScreen() {
   const { colors, spacing, radius, typography } = useTheme();
+  const { justSignedUp } = useLocalSearchParams<{ justSignedUp?: string }>();
   // Phone width, or the app's centred column on the web.
   const width = useAppWidth();
   const [page, setPage] = useState(0);
@@ -140,6 +141,23 @@ export default function WelcomeScreen() {
             <Text style={[typography.caption, { color: colors.textSecondary, flex: 1 }]}>
               Your {lockHint === "pin" ? "PIN" : "pattern"} is set on this phone. Log in once with your password and LexxBridge will ask for
               your {lockHint === "pin" ? "PIN" : "pattern"} from then on.
+            </Text>
+          </View>
+        ) : null}
+        {justSignedUp ? (
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "flex-start",
+              gap: spacing.sm,
+              backgroundColor: colors.surfaceAlt,
+              borderRadius: radius.lg,
+              padding: spacing.md,
+            }}
+          >
+            <Ionicons name="mail-outline" size={20} color={colors.brand} />
+            <Text style={[typography.caption, { color: colors.textPrimary, flex: 1 }]}>
+              Account created. We sent a confirmation link to your email — verify it, then sign in below.
             </Text>
           </View>
         ) : null}

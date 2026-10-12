@@ -23,7 +23,7 @@ export default function VerifyEmailScreen() {
         We sent a confirmation link to your email address. Verify it, then sign in to continue.
       </Text>
       <View style={{ alignSelf: "stretch" }}>
-        <Button label="Go to sign in" onPress={() => router.replace("/(auth)/sign-in")} />
+        <Button label="Go to sign in" onPress={() => router.replace("/(auth)")} />
       </View>
     </ScreenContainer>
   );

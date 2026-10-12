@@ -58,7 +58,7 @@ export default function ResetPasswordScreen() {
     // their new password rather than silently keeping them logged in.
     await supabase.auth.signOut();
     clearPasswordRecovery();
-    router.replace("/(auth)/sign-in");
+    router.replace("/(auth)");
   };
 
   return (

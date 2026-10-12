@@ -8,7 +8,6 @@ export type CaseSummary = {
   case_number: string | null;
   case_type: string | null;
   court: string | null;
-  opposite_party: string | null;
   /** Total fees agreed with the client for this case (₹), if set. */
   agreed_fee: number | null;
   priority: CasePriority;
@@ -29,11 +28,11 @@ export type CaseDetail = CaseSummary & {
 };
 
 const CASE_SUMMARY_COLUMNS =
-  "id, title, case_number, case_type, court, opposite_party, agreed_fee, priority, next_hearing_at, client_id, created_at, clients(full_name)";
+  "id, title, case_number, case_type, court, agreed_fee, priority, next_hearing_at, client_id, created_at, clients(full_name)";
 
 const CASE_DETAIL_COLUMNS = `
   id, title, case_number, case_type, court, bench, filing_date, registration_date,
-  priority, opposite_party, agreed_fee, description, internal_notes, tags,
+  priority, agreed_fee, description, internal_notes, tags,
   next_hearing_at, is_archived, client_id, created_at, clients(full_name)
 `;
 
@@ -78,7 +77,6 @@ export async function createCase(input: {
   court?: string;
   bench?: string;
   priority?: CasePriority;
-  oppositeParty?: string;
   /** Date-only, YYYY-MM-DD. */
   filingDate?: string | null;
   registrationDate?: string | null;
@@ -100,7 +98,6 @@ export async function createCase(input: {
       court: input.court?.trim() || null,
       bench: input.bench?.trim() || null,
       priority: input.priority ?? "medium",
-      opposite_party: input.oppositeParty?.trim() || null,
       filing_date: input.filingDate ?? null,
       registration_date: input.registrationDate ?? null,
       description: input.description?.trim() || null,
@@ -129,7 +126,6 @@ export async function updateCase(
     caseType: string | null;
     court: string | null;
     bench: string | null;
-    oppositeParty: string | null;
     description: string | null;
     internalNotes: string | null;
     priority: CasePriority;
@@ -147,7 +143,6 @@ export async function updateCase(
       ...(patch.caseType !== undefined ? { case_type: patch.caseType } : {}),
       ...(patch.court !== undefined ? { court: patch.court } : {}),
       ...(patch.bench !== undefined ? { bench: patch.bench } : {}),
-      ...(patch.oppositeParty !== undefined ? { opposite_party: patch.oppositeParty } : {}),
       ...(patch.description !== undefined ? { description: patch.description } : {}),
       ...(patch.internalNotes !== undefined ? { internal_notes: patch.internalNotes } : {}),
       ...(patch.priority !== undefined ? { priority: patch.priority } : {}),

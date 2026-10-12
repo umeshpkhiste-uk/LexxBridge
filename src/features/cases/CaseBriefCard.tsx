@@ -48,11 +48,6 @@ export function CaseBriefCard({ caseItem, onPress, onEdit, onHearingChanged }: P
         <Text style={[typography.title, { color: "#FFFFFF", marginTop: spacing.sm }]} numberOfLines={2}>
           {caseItem.title}
         </Text>
-        {caseItem.opposite_party ? (
-          <Text style={[typography.body, { color: "rgba(255,255,255,0.8)", marginTop: 2 }]} numberOfLines={1}>
-            vs. {caseItem.opposite_party}
-          </Text>
-        ) : null}
 
         <View style={[styles.rowWrap, { marginTop: spacing.md }]}>
           {caseItem.court ? (

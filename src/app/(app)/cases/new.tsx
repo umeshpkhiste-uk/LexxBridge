@@ -32,7 +32,6 @@ export default function NewCaseScreen() {
   const [caseType, setCaseType] = useState("");
   const [court, setCourt] = useState("");
   const [bench, setBench] = useState("");
-  const [oppositeParty, setOppositeParty] = useState("");
   const [priority, setPriority] = useState<CasePriority>("medium");
   const [filingDate, setFilingDate] = useState<Date | null>(null);
   const [registrationDate, setRegistrationDate] = useState<Date | null>(null);
@@ -93,7 +92,6 @@ export default function NewCaseScreen() {
         court,
         bench,
         priority,
-        oppositeParty,
         filingDate: toDateOnly(filingDate),
         registrationDate: toDateOnly(registrationDate),
         description,
@@ -209,7 +207,6 @@ export default function NewCaseScreen() {
         searchable
         placeholder="Select case type"
       />
-      <TextField label="Opposite party" placeholder="e.g. Suresh Traders" value={oppositeParty} onChangeText={setOppositeParty} />
       <TextField
         label="Total fees agreed (₹)"
         placeholder="e.g. 25000"

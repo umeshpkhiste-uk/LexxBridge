@@ -176,7 +176,6 @@ export function CaseOverview({
         <DetailRow label="Court" value={caseDetail.court} />
         <DetailRow label="Bench" value={caseDetail.bench} />
         <DetailRow label="Case type" value={caseDetail.case_type} />
-        <DetailRow label="Opposite party" value={caseDetail.opposite_party} />
         <DetailRow label="Total fees agreed" value={caseDetail.agreed_fee !== null ? formatINR(Number(caseDetail.agreed_fee)) : null} last />
       </View>
 
@@ -271,7 +270,6 @@ function CaseEditForm({
   const [caseType, setCaseType] = useState(caseDetail.case_type ?? "");
   const [court, setCourt] = useState(caseDetail.court ?? "");
   const [bench, setBench] = useState(caseDetail.bench ?? "");
-  const [oppositeParty, setOppositeParty] = useState(caseDetail.opposite_party ?? "");
   const [priority, setPriority] = useState<CasePriority>(caseDetail.priority);
   const [filingDate, setFilingDate] = useState(fromDateOnly(caseDetail.filing_date));
   const [registrationDate, setRegistrationDate] = useState(fromDateOnly(caseDetail.registration_date));
@@ -308,7 +306,6 @@ function CaseEditForm({
         caseType: caseType.trim() || null,
         court: court.trim() || null,
         bench: bench.trim() || null,
-        oppositeParty: oppositeParty.trim() || null,
         agreedFee: fee,
         priority,
         filingDate: toDateOnly(filingDate),
@@ -365,7 +362,6 @@ function CaseEditForm({
           searchable
           placeholder="Select case type"
         />
-        <TextField label="Opposite party" placeholder="e.g. Suresh Traders" value={oppositeParty} onChangeText={setOppositeParty} />
         <TextField
           label="Total fees agreed (₹)"
           placeholder="e.g. 25000"

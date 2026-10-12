@@ -20,7 +20,6 @@ type StatementInput = {
   caseNumber?: string | null;
   caseType?: string | null;
   court?: string | null;
-  oppositeParty?: string | null;
   filingDate?: string | null;
   /** The agreed fee for this specific case, when scoped to one. */
   agreedFee?: number | null;
@@ -116,7 +115,6 @@ export function buildStatement({
   caseNumber,
   caseType,
   court,
-  oppositeParty,
   filingDate,
   agreedFee,
   cases,
@@ -149,7 +147,6 @@ export function buildStatement({
     caseTitle ? `Case: ${caseTitle}${caseNumber ? ` (${caseNumber})` : ""}` : null,
     caseTitle && caseType ? `Type: ${caseType}` : null,
     caseTitle && court ? `Court: ${court}` : null,
-    caseTitle && oppositeParty ? `Opposite party: ${oppositeParty}` : null,
     caseTitle && filingDate ? `Filed: ${formatDay(filingDate)}` : null,
     caseTitle && agreedFee != null ? `Agreed fee: ${formatINR(agreedFee)}` : null,
     caseTitle && agreedFee != null && overallExpenses > 0 ? `Total (agreed fee + expenses): ${formatINR(agreedFee + overallExpenses)}` : null,
@@ -209,7 +206,6 @@ export function buildStatementHtml({
   caseNumber,
   caseType,
   court,
-  oppositeParty,
   filingDate,
   agreedFee,
   cases,
@@ -308,7 +304,6 @@ export function buildStatementHtml({
         caseNumber ? ["Case number", caseNumber] : null,
         caseType ? ["Type", caseType] : null,
         court ? ["Court", court] : null,
-        oppositeParty ? ["Opposite party", oppositeParty] : null,
         filingDate ? ["Filed", formatDay(filingDate)] : null,
         agreedFee != null ? ["Agreed fee", formatINR(agreedFee)] : null,
         agreedFee != null && overallExpenses > 0 ? ["Total (agreed fee + expenses)", formatINR(agreedFee + overallExpenses)] : null,
@@ -540,7 +535,6 @@ export async function downloadCaseStatementPdf(caseId: string): Promise<void> {
       caseNumber: caseDetail.case_number,
       caseType: caseDetail.case_type,
       court: caseDetail.court,
-      oppositeParty: caseDetail.opposite_party,
       filingDate: caseDetail.filing_date,
       agreedFee: caseDetail.agreed_fee,
       advocateName: profile?.full_name ?? null,

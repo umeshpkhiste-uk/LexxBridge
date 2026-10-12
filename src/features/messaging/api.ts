@@ -1,5 +1,5 @@
 import { decode } from "base64-arraybuffer";
-import * as FileSystem from "expo-file-system/legacy";
+import { fileUriToBase64 } from "@/shared/lib/fileBase64";
 import { supabase } from "@/shared/lib/supabase";
 import { decryptFromParty, encryptForRecipient, getPublicKey } from "./encryption";
 
@@ -226,7 +226,7 @@ async function uploadAttachment(conversationId: string, file: Attachment): Promi
   const safeName = file.name.replace(/[^\w.\-]+/g, "_").slice(-80) || "file";
   // First folder = conversation id: that's what the storage policies check.
   const path = `${conversationId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${safeName}`;
-  const base64 = await FileSystem.readAsStringAsync(file.uri, { encoding: "base64" });
+  const base64 = await fileUriToBase64(file.uri);
   const { error } = await supabase.storage.from(ATTACHMENT_BUCKET).upload(path, decode(base64), { contentType: file.mimeType });
   if (error) throw new Error(error.message);
   return path;

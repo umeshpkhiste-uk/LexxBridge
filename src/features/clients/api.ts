@@ -1,5 +1,5 @@
 import { decode } from "base64-arraybuffer";
-import * as FileSystem from "expo-file-system/legacy";
+import { fileUriToBase64 } from "@/shared/lib/fileBase64";
 import { supabase } from "@/shared/lib/supabase";
 
 const PHOTO_BUCKET = "documents";
@@ -169,7 +169,7 @@ export async function uploadClientPhoto(client: Pick<Client, "id" | "photo_path"
   if (userError || !userData.user) throw new Error(userError?.message ?? "Not signed in");
 
   const path = `${userData.user.id}/client-photos/${client.id}-${Date.now()}.jpg`;
-  const base64 = await FileSystem.readAsStringAsync(fileUri, { encoding: "base64" });
+  const base64 = await fileUriToBase64(fileUri);
   const { error: uploadError } = await supabase.storage.from(PHOTO_BUCKET).upload(path, decode(base64), { contentType: mimeType });
   if (uploadError) throw new Error(uploadError.message);
 

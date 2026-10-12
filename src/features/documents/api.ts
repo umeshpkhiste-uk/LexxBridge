@@ -1,5 +1,5 @@
-import * as FileSystem from "expo-file-system/legacy";
 import { decode } from "base64-arraybuffer";
+import { fileUriToBase64 } from "@/shared/lib/fileBase64";
 import { supabase } from "@/shared/lib/supabase";
 
 export type DocumentCategory =
@@ -49,7 +49,7 @@ export async function uploadDocument(input: {
   // just app-level filtering.
   const storagePath = `${userData.user.id}/${Date.now()}-${input.fileName}`;
 
-  const base64 = await FileSystem.readAsStringAsync(input.fileUri, { encoding: "base64" });
+  const base64 = await fileUriToBase64(input.fileUri);
   const { error: uploadError } = await supabase.storage
     .from(BUCKET)
     .upload(storagePath, decode(base64), { contentType: input.mimeType });

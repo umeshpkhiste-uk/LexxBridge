@@ -1,6 +1,6 @@
 import { decode } from "base64-arraybuffer";
 import * as Crypto from "expo-crypto";
-import * as FileSystem from "expo-file-system/legacy";
+import { fileUriToBase64 } from "@/shared/lib/fileBase64";
 import { supabase } from "@/shared/lib/supabase";
 
 const RECEIPT_BUCKET = "documents";
@@ -103,7 +103,7 @@ export async function createTransaction(input: {
  * folder = their id, which the documents bucket policies check). */
 async function uploadReceipt(userId: string, receipt: { uri: string; mimeType: string }): Promise<string> {
   const path = `${userId}/receipts/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
-  const base64 = await FileSystem.readAsStringAsync(receipt.uri, { encoding: "base64" });
+  const base64 = await fileUriToBase64(receipt.uri);
   const { error } = await supabase.storage.from(RECEIPT_BUCKET).upload(path, decode(base64), { contentType: receipt.mimeType });
   if (error) throw new Error(error.message);
   return path;

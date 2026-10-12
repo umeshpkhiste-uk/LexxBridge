@@ -1,5 +1,5 @@
 import { decode } from "base64-arraybuffer";
-import * as FileSystem from "expo-file-system/legacy";
+import { fileUriToBase64 } from "@/shared/lib/fileBase64";
 import { supabase } from "@/shared/lib/supabase";
 
 const PHOTO_BUCKET = "profile-photos";
@@ -106,7 +106,7 @@ export async function uploadProfilePhoto(uri: string, mimeType?: string | null):
   const ext = contentType.split("/")[1] ?? "jpg";
   // A fresh file name per upload so cached copies of the old photo never linger.
   const path = `${me}/${Date.now()}.${ext}`;
-  const base64 = await FileSystem.readAsStringAsync(uri, { encoding: "base64" });
+  const base64 = await fileUriToBase64(uri);
   const { error: uploadError } = await supabase.storage.from(PHOTO_BUCKET).upload(path, decode(base64), { contentType });
   if (uploadError) throw new Error(uploadError.message);
 

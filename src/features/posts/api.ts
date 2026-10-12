@@ -1,5 +1,6 @@
 import { decode } from "base64-arraybuffer";
 import * as FileSystem from "expo-file-system/legacy";
+import { fileUriToBase64 } from "@/shared/lib/fileBase64";
 import { supabase } from "@/shared/lib/supabase";
 
 const BUCKET = "post-images";
@@ -212,7 +213,7 @@ export async function createPost(input: {
   if (input.imageUri) {
     const ext = input.imageMimeType?.split("/")[1] ?? "jpg";
     imagePath = `${me}/${Date.now()}.${ext}`;
-    const base64 = await FileSystem.readAsStringAsync(input.imageUri, { encoding: "base64" });
+    const base64 = await fileUriToBase64(input.imageUri);
     const { error: uploadError } = await supabase.storage
       .from(BUCKET)
       .upload(imagePath, decode(base64), { contentType: input.imageMimeType ?? "image/jpeg" });
@@ -259,7 +260,7 @@ async function addPostAttachment(postId: string, authorId: string, file: PickedF
   if (file.size && file.size > MAX_ATTACHMENT_BYTES) throw new Error(`${file.name} is larger than the 20 MB attachment limit.`);
   const safeName = file.name.replace(/[^\w.\-]+/g, "_").slice(-80) || "file";
   const path = `${authorId}/${postId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${safeName}`;
-  const base64 = await FileSystem.readAsStringAsync(file.uri, { encoding: "base64" });
+  const base64 = await fileUriToBase64(file.uri);
   const { error: uploadError } = await supabase.storage
     .from(ATTACHMENT_BUCKET)
     .upload(path, decode(base64), { contentType: file.mimeType ?? "application/octet-stream" });

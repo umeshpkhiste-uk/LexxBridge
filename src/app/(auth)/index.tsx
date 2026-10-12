@@ -201,7 +201,7 @@ export default function WelcomeScreen() {
             ))}
           </View>
 
-          <Link href="/(auth)/sign-up" style={{ marginTop: spacing.md }}>
+          <Link href="/(auth)/sign-up" style={{ marginTop: spacing.md, alignSelf: "center" }}>
             <Text style={[typography.caption, { color: colors.textSecondary, textAlign: "center" }]}>
               Don&apos;t have an account? <Text style={{ color: colors.accent, fontWeight: "600" }}>Sign Up</Text>
             </Text>

@@ -23,14 +23,10 @@ export type Client = {
   contact_person_designation: string | null;
   gstin: string | null;
   registration_number: string | null;
-  /** Individual clients only. */
-  occupation: string | null;
-  pan_number: string | null;
-  date_of_birth: string | null;
 };
 
 const CLIENT_COLUMNS =
-  "id, full_name, client_type, phone, email, address, notes, is_archived, created_at, photo_path, contact_person_name, contact_person_designation, gstin, registration_number, occupation, pan_number, date_of_birth";
+  "id, full_name, client_type, phone, email, address, notes, is_archived, created_at, photo_path, contact_person_name, contact_person_designation, gstin, registration_number";
 
 export type ClientCaseBrief = { id: string; title: string; court: string | null; created_at: string; is_archived: boolean };
 export type ClientListItem = Client & { cases: ClientCaseBrief[] };
@@ -69,10 +65,6 @@ export async function createClientRecord(input: {
   contactPersonDesignation?: string;
   gstin?: string;
   registrationNumber?: string;
-  occupation?: string;
-  panNumber?: string;
-  /** Date-only, YYYY-MM-DD. */
-  dateOfBirth?: string | null;
 }): Promise<Client> {
   const { data: userData, error: userError } = await supabase.auth.getUser();
   if (userError || !userData.user) throw new Error(userError?.message ?? "Not signed in");
@@ -92,9 +84,6 @@ export async function createClientRecord(input: {
       contact_person_designation: isOrg ? input.contactPersonDesignation?.trim() || null : null,
       gstin: isOrg ? input.gstin?.trim() || null : null,
       registration_number: isOrg ? input.registrationNumber?.trim() || null : null,
-      occupation: !isOrg ? input.occupation?.trim() || null : null,
-      pan_number: !isOrg ? input.panNumber?.trim() || null : null,
-      date_of_birth: !isOrg ? input.dateOfBirth ?? null : null,
     })
     .select(CLIENT_COLUMNS)
     .single();
@@ -123,10 +112,6 @@ export async function updateClient(
     contactPersonDesignation: string | null;
     gstin: string | null;
     registrationNumber: string | null;
-    occupation: string | null;
-    panNumber: string | null;
-    /** Date-only, YYYY-MM-DD. */
-    dateOfBirth: string | null;
   }>
 ): Promise<void> {
   const { error } = await supabase
@@ -142,9 +127,6 @@ export async function updateClient(
       ...(patch.contactPersonDesignation !== undefined ? { contact_person_designation: patch.contactPersonDesignation } : {}),
       ...(patch.gstin !== undefined ? { gstin: patch.gstin } : {}),
       ...(patch.registrationNumber !== undefined ? { registration_number: patch.registrationNumber } : {}),
-      ...(patch.occupation !== undefined ? { occupation: patch.occupation } : {}),
-      ...(patch.panNumber !== undefined ? { pan_number: patch.panNumber } : {}),
-      ...(patch.dateOfBirth !== undefined ? { date_of_birth: patch.dateOfBirth } : {}),
     })
     .eq("id", id);
 

@@ -5,9 +5,8 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, Alert, Pressable, Text, View } from "react-native";
 import { Client, ClientType, createClientRecord, getClient, updateClient, uploadClientPhoto } from "@/features/clients/api";
 import { ClientAvatar } from "@/features/clients/ClientAvatar";
-import { gstinError, mobileError, normalizeGstin, normalizeIndianMobile, normalizePan, panError } from "@/shared/lib/validation";
+import { gstinError, mobileError, normalizeGstin, normalizeIndianMobile } from "@/shared/lib/validation";
 import { Button } from "@/shared/ui/Button";
-import { DateField, fromDateOnly, toDateOnly } from "@/shared/ui/DateField";
 import { ScreenContainer } from "@/shared/ui/ScreenContainer";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { TextField } from "@/shared/ui/TextField";
@@ -31,18 +30,14 @@ export default function NewClientScreen() {
   const [contactPersonDesignation, setContactPersonDesignation] = useState("");
   const [gstin, setGstin] = useState("");
   const [registrationNumber, setRegistrationNumber] = useState("");
-  const [occupation, setOccupation] = useState("");
-  const [panNumber, setPanNumber] = useState("");
-  const [dateOfBirth, setDateOfBirth] = useState<Date | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [touched, setTouched] = useState<{ fullName?: boolean; phone?: boolean; gstin?: boolean; pan?: boolean }>({});
+  const [touched, setTouched] = useState<{ fullName?: boolean; phone?: boolean; gstin?: boolean }>({});
 
   const isOrganization = clientType === "organization";
   const fullNameError = touched.fullName && !fullName.trim() ? "Client name is required" : null;
   const phoneErr = touched.phone ? mobileError(phone) : null;
   const gstinErr = touched.gstin ? gstinError(gstin) : null;
-  const panErr = touched.pan ? panError(panNumber) : null;
 
   useEffect(() => {
     if (!id) return;
@@ -59,15 +54,12 @@ export default function NewClientScreen() {
         setContactPersonDesignation(c.contact_person_designation ?? "");
         setGstin(c.gstin ?? "");
         setRegistrationNumber(c.registration_number ?? "");
-        setOccupation(c.occupation ?? "");
-        setPanNumber(c.pan_number ?? "");
-        setDateOfBirth(fromDateOnly(c.date_of_birth));
       })
       .catch((err) => setLoadError(err instanceof Error ? err.message : "Couldn't load this client"));
   }, [id]);
 
   const handleSave = async () => {
-    setTouched({ fullName: true, phone: true, gstin: true, pan: true });
+    setTouched({ fullName: true, phone: true, gstin: true });
     if (!fullName.trim()) {
       setError("Client name is required");
       return;
@@ -80,15 +72,10 @@ export default function NewClientScreen() {
       setError(`GSTIN: ${gstinError(gstin)}`);
       return;
     }
-    if (!isOrganization && panError(panNumber)) {
-      setError(`PAN: ${panError(panNumber)}`);
-      return;
-    }
     setError(null);
     setIsSubmitting(true);
     const phoneValue = phone.trim() ? normalizeIndianMobile(phone) : null;
     const gstinValue = isOrganization && gstin.trim() ? normalizeGstin(gstin) : null;
-    const panValue = !isOrganization && panNumber.trim() ? normalizePan(panNumber) : null;
     try {
       if (existing) {
         await updateClient(existing.id, {
@@ -102,9 +89,6 @@ export default function NewClientScreen() {
           contactPersonDesignation: isOrganization ? contactPersonDesignation.trim() || null : null,
           gstin: gstinValue,
           registrationNumber: isOrganization ? registrationNumber.trim() || null : null,
-          occupation: !isOrganization ? occupation.trim() || null : null,
-          panNumber: panValue,
-          dateOfBirth: !isOrganization ? toDateOnly(dateOfBirth) : null,
         });
         if (photo) {
           await uploadClientPhoto(existing, photo.uri, photo.mimeType).catch(() =>
@@ -125,9 +109,6 @@ export default function NewClientScreen() {
         contactPersonDesignation,
         gstin: gstinValue ?? "",
         registrationNumber,
-        occupation,
-        panNumber: panValue ?? "",
-        dateOfBirth: toDateOnly(dateOfBirth),
       });
       if (photo) {
         // The client is saved either way; a failed photo can be added later.
@@ -248,35 +229,6 @@ export default function NewClientScreen() {
         multiline
         numberOfLines={2}
       />
-      {!isOrganization ? (
-        <>
-          <Text style={[typography.subtitle, { color: colors.brand, marginTop: spacing.sm, marginBottom: spacing.sm }]}>
-            Individual details
-          </Text>
-          <TextField
-            label="Occupation"
-            placeholder="e.g. Business owner"
-            value={occupation}
-            onChangeText={setOccupation}
-          />
-          <TextField
-            label="PAN number"
-            placeholder="e.g. ABCDE1234F"
-            value={panNumber}
-            onChangeText={setPanNumber}
-            onBlur={() => {
-              setTouched((t) => ({ ...t, pan: true }));
-              const tidy = normalizePan(panNumber);
-              if (tidy) setPanNumber(tidy);
-            }}
-            autoCapitalize="characters"
-            autoCorrect={false}
-            maxLength={10}
-            error={panErr ?? undefined}
-          />
-          <DateField label="Date of birth" value={dateOfBirth} onChange={setDateOfBirth} maximumDate={new Date()} placeholder="Not set" optional />
-        </>
-      ) : null}
       {isOrganization ? (
         <>
           <Text style={[typography.subtitle, { color: colors.brand, marginTop: spacing.sm, marginBottom: spacing.sm }]}>

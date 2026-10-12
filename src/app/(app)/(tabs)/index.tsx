@@ -636,7 +636,11 @@ function CaseCard({
   const { colors, spacing, radius, typography } = useTheme();
   const fg = highlighted ? "#FFFFFF" : colors.textPrimary;
   const muted = highlighted ? "rgba(255,255,255,0.75)" : colors.textSecondary;
+  const faint = highlighted ? "rgba(255,255,255,0.55)" : colors.textSecondary;
+  const dividerColor = highlighted ? "rgba(255,255,255,0.14)" : colors.border;
+  const rowIconBg = highlighted ? "rgba(255,255,255,0.1)" : colors.surfaceAlt;
   const hasUpcoming = !!item.next_hearing_at && new Date(item.next_hearing_at) >= startOfDay(new Date());
+  const pendingColor = pending > 0 ? (highlighted ? "#FFD28A" : colors.warning) : muted;
 
   return (
     <Pressable
@@ -652,50 +656,71 @@ function CaseCard({
         },
       ]}
     >
-      {/* Next hearing → calendar on that day (or schedule one) */}
       <View style={styles.cardTop}>
-        <Pressable
-          onPress={() =>
-            hasUpcoming ? onOpenCalendar(item.next_hearing_at!) : router.push(`/(app)/hearings/new?caseId=${item.id}`)
-          }
-          hitSlop={6}
-          style={styles.dateChip}
-          accessibilityLabel={hasUpcoming ? "Open next hearing in calendar" : "Schedule a hearing"}
-        >
-          <Ionicons name={hasUpcoming ? "calendar-outline" : "add-circle-outline"} size={14} color={muted} />
-          <Text style={[typography.caption, { color: muted, flexShrink: 1 }]} numberOfLines={1}>
-            {hasUpcoming ? formatHearingDate(item.next_hearing_at!) : "Set hearing"}
+        {item.case_type ? (
+          <Text style={[typography.label, styles.overline, { color: colors.accent, flex: 1 }]} numberOfLines={1}>
+            {item.case_type.toUpperCase()}
           </Text>
-        </Pressable>
+        ) : (
+          <View style={{ flex: 1 }} />
+        )}
         <Pressable onPress={onMenu} hitSlop={10} accessibilityLabel="Case options">
-          <Ionicons name="ellipsis-vertical" size={18} color={muted} />
+          <Ionicons name="ellipsis-vertical" size={16} color={faint} />
         </Pressable>
       </View>
 
-      <View style={{ flexDirection: "row", alignItems: "flex-start", marginTop: spacing.md }}>
-        <Ionicons name="briefcase-outline" size={30} color={fg} />
-        <View style={{ flex: 1, marginLeft: spacing.sm }}>
-          <Text style={[typography.bodyStrong, { color: fg, fontSize: 16 }]} numberOfLines={2}>
-            {item.title}
-          </Text>
+      <Text style={[typography.bodyStrong, { color: fg, fontSize: 16, marginTop: spacing.xs }]} numberOfLines={2}>
+        {item.title}
+      </Text>
+
+      <View style={[styles.rowDivider, { marginTop: spacing.sm, borderTopColor: dividerColor }]} />
+
+      <Pressable
+        onPress={() =>
+          hasUpcoming ? onOpenCalendar(item.next_hearing_at!) : router.push(`/(app)/hearings/new?caseId=${item.id}`)
+        }
+        hitSlop={4}
+        style={styles.statRow}
+        accessibilityLabel={hasUpcoming ? "Open next hearing in calendar" : "Schedule a hearing"}
+      >
+        <View
+          style={[
+            styles.statIcon,
+            { borderRadius: radius.sm },
+            hasUpcoming ? { backgroundColor: rowIconBg } : [styles.statIconOutline, { borderColor: highlighted ? "rgba(255,255,255,0.35)" : colors.border }],
+          ]}
+        >
+          <Ionicons name={hasUpcoming ? "calendar-outline" : "add"} size={13} color={hasUpcoming ? fg : faint} />
         </View>
-      </View>
+        {hasUpcoming ? (
+          <View style={{ flex: 1 }}>
+            <Text style={[typography.caption, { color: faint, fontSize: 10 }]}>Next hearing</Text>
+            <Text style={[typography.bodyStrong, { color: fg, fontSize: 13 }]} numberOfLines={1}>
+              {formatHearingDate(item.next_hearing_at!)}
+            </Text>
+          </View>
+        ) : (
+          <Text style={[typography.bodyStrong, { color: muted, fontSize: 13, flex: 1 }]}>Schedule hearing</Text>
+        )}
+      </Pressable>
+
+      <View style={[styles.rowDivider, { borderTopColor: dividerColor }]} />
 
       <Pressable
         onPress={() => router.push(`/(app)/ledger?clientId=${item.client_id}&caseId=${item.id}`)}
-        hitSlop={6}
-        style={{ marginTop: spacing.md }}
+        hitSlop={4}
+        style={[styles.statRow, { paddingBottom: 2 }]}
         accessibilityLabel="Open case transactions"
       >
-        <Text style={[typography.caption, { color: muted }]}>Pending amount ›</Text>
-        <Text
-          style={[
-            typography.subtitle,
-            { color: pending > 0 ? (highlighted ? "#FFD28A" : colors.warning) : muted, marginTop: 2 },
-          ]}
-        >
-          {pending > 0 ? formatINR(pending) : "No dues"}
-        </Text>
+        <View style={[styles.statIcon, { borderRadius: radius.sm, backgroundColor: rowIconBg }]}>
+          <Ionicons name="wallet-outline" size={13} color={pendingColor} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={[typography.caption, { color: faint, fontSize: 10 }]}>Pending</Text>
+          <Text style={[typography.bodyStrong, { color: pendingColor, fontSize: 13 }]} numberOfLines={1}>
+            {pending > 0 ? formatINR(pending) : "No dues"}
+          </Text>
+        </View>
       </Pressable>
     </Pressable>
   );
@@ -715,7 +740,11 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   cardTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 6 },
-  dateChip: { flexDirection: "row", alignItems: "center", gap: 4, flexShrink: 1 },
+  overline: { letterSpacing: 0.3 },
+  rowDivider: { borderTopWidth: StyleSheet.hairlineWidth },
+  statRow: { flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 8 },
+  statIcon: { width: 24, height: 24, alignItems: "center", justifyContent: "center" },
+  statIconOutline: { borderWidth: 1, borderStyle: "dashed" },
   countPill: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999 },
   openCalendar: { flexDirection: "row", alignItems: "center", gap: 6 },
   calendarCard: {

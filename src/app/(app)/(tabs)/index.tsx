@@ -678,9 +678,6 @@ function CaseCard({
           <Text style={[typography.bodyStrong, { color: fg, fontSize: 16 }]} numberOfLines={2}>
             {item.title}
           </Text>
-          <Text style={[typography.caption, { color: muted }]} numberOfLines={1}>
-            {item.clients?.full_name ?? "No client"}
-          </Text>
         </View>
       </View>
 

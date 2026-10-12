@@ -30,9 +30,8 @@ const SLIDES = [
 ];
 
 const SOCIAL: { provider: SocialProvider; icon: keyof typeof Ionicons.glyphMap; color?: string }[] = [
-  { provider: "google", icon: "logo-google", color: "#EA4335" },
-  { provider: "facebook", icon: "logo-facebook", color: "#1877F2" },
   { provider: "apple", icon: "logo-apple" },
+  { provider: "google", icon: "logo-google", color: "#EA4335" },
 ];
 
 export default function WelcomeScreen() {
@@ -163,12 +162,6 @@ export default function WelcomeScreen() {
         ) : null}
         <SignInForm />
 
-        <Link href="/(auth)/sign-up">
-          <Text style={[typography.caption, { color: colors.textSecondary, textAlign: "center" }]}>
-            Don&apos;t have an account? <Text style={{ color: colors.accent, fontWeight: "600" }}>Sign Up</Text>
-          </Text>
-        </Link>
-
         <View
           style={[
             styles.connectCard,
@@ -180,7 +173,13 @@ export default function WelcomeScreen() {
             },
           ]}
         >
-          <Text style={[typography.body, { color: colors.textPrimary }]}>Connect with</Text>
+          <View style={styles.dividerRow}>
+            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+            <Text style={[typography.caption, { color: colors.textSecondary, marginHorizontal: spacing.sm }]}>
+              Or sign in with
+            </Text>
+            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+          </View>
           <View style={[styles.socialRow, { gap: spacing.md, marginTop: spacing.md }]}>
             {SOCIAL.map(({ provider, icon, color }) => (
               <Pressable
@@ -190,7 +189,7 @@ export default function WelcomeScreen() {
                 onPress={() => onSocial(provider)}
                 style={({ pressed }) => [
                   styles.socialButton,
-                  { backgroundColor: colors.surface, borderRadius: radius.pill, opacity: pressed ? 0.85 : 1 },
+                  { backgroundColor: colors.surfaceAlt, borderRadius: radius.pill, opacity: pressed ? 0.85 : 1 },
                 ]}
               >
                 {busy === provider ? (
@@ -201,6 +200,12 @@ export default function WelcomeScreen() {
               </Pressable>
             ))}
           </View>
+
+          <Link href="/(auth)/sign-up" style={{ marginTop: spacing.md }}>
+            <Text style={[typography.caption, { color: colors.textSecondary, textAlign: "center" }]}>
+              Don&apos;t have an account? <Text style={{ color: colors.accent, fontWeight: "600" }}>Sign Up</Text>
+            </Text>
+          </Link>
         </View>
       </View>
     </ScreenContainer>
@@ -214,7 +219,9 @@ const styles = StyleSheet.create({
   swipeHint: { flexDirection: "row", alignItems: "center", gap: 4 },
   dots: { flexDirection: "row", alignItems: "center", gap: 6 },
   dot: { height: 7 },
-  connectCard: { alignItems: "center", borderWidth: StyleSheet.hairlineWidth * 2 },
+  connectCard: { alignItems: "stretch", borderWidth: StyleSheet.hairlineWidth * 2 },
+  dividerRow: { flexDirection: "row", alignItems: "center" },
+  dividerLine: { flex: 1, height: StyleSheet.hairlineWidth },
   lockHint: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 12 },
   socialRow: { flexDirection: "row", justifyContent: "center" },
   socialButton: { width: 52, height: 52, alignItems: "center", justifyContent: "center" },

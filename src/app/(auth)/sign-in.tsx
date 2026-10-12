@@ -101,9 +101,9 @@ export default function SignInScreen() {
         )}
       />
 
-      <Link href="/(auth)/forgot-password" style={{ marginBottom: spacing.lg }}>
-        <Text style={[typography.caption, { color: colors.brand, fontWeight: "600" }]}>
-          Forgot password?
+      <Link href="/(auth)/forgot-password" style={{ alignSelf: "flex-end", marginBottom: spacing.lg }}>
+        <Text style={[typography.caption, { color: colors.accent, fontWeight: "600" }]}>
+          Forgot Password?
         </Text>
       </Link>
 
@@ -113,14 +113,14 @@ export default function SignInScreen() {
         </Text>
       ) : null}
 
-      <Button label="Log in" onPress={handleSubmit(onSubmit)} loading={isSubmitting} pill />
+      <Button label="Sign In" onPress={handleSubmit(onSubmit)} loading={isSubmitting} pill />
       <View style={{ height: spacing.md }} />
       <BiometricLoginButton />
 
       <View style={{ height: spacing.lg }} />
       <Link href="/(auth)/sign-up">
         <Text style={[typography.caption, { color: colors.textSecondary, textAlign: "center" }]}>
-          New to LexxBridge? <Text style={{ color: colors.brand, fontWeight: "600" }}>Create an account</Text>
+          Don&apos;t have an account? <Text style={{ color: colors.accent, fontWeight: "600" }}>Sign Up</Text>
         </Text>
       </Link>
     </ScreenContainer>

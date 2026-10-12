@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { Link } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -13,6 +13,7 @@ import {
   View,
 } from "react-native";
 import { getEnabledProviders, signInWithProvider, SOCIAL_LABEL, SocialProvider } from "@/features/auth/socialLogin";
+import { SignInForm } from "@/features/auth/SignInForm";
 import { getLastLockedAccountMethod } from "@/features/applock/appLock";
 import { getSavedLoginUser } from "@/features/biometric/biometric";
 import { BiometricLoginButton } from "@/features/biometric/BiometricLoginButton";
@@ -82,7 +83,7 @@ export default function WelcomeScreen() {
   };
 
   return (
-    <ScreenContainer style={styles.container}>
+    <ScreenContainer scroll style={styles.container}>
       <View style={styles.hero}>
         <View style={{ marginBottom: spacing.lg }}>
           <AppLogo size={112} />
@@ -142,27 +143,13 @@ export default function WelcomeScreen() {
             </Text>
           </View>
         ) : null}
-        <Pressable
-          onPress={() => router.push("/(auth)/sign-in")}
-          style={({ pressed }) => [
-            styles.pillButton,
-            { backgroundColor: colors.surface, borderRadius: radius.pill, opacity: pressed ? 0.85 : 1 },
-          ]}
-        >
-          <Ionicons name="log-in-outline" size={20} color={colors.textPrimary} />
-          <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Log in</Text>
-        </Pressable>
+        <SignInForm />
 
-        <Pressable
-          onPress={() => router.push("/(auth)/sign-up")}
-          style={({ pressed }) => [
-            styles.pillButton,
-            { backgroundColor: `${colors.brand}1F`, borderRadius: radius.pill, opacity: pressed ? 0.85 : 1 },
-          ]}
-        >
-          <Ionicons name="mail-outline" size={20} color={colors.brand} />
-          <Text style={[typography.bodyStrong, { color: colors.brand }]}>Continue with your email</Text>
-        </Pressable>
+        <Link href="/(auth)/sign-up">
+          <Text style={[typography.caption, { color: colors.textSecondary, textAlign: "center" }]}>
+            Don&apos;t have an account? <Text style={{ color: colors.accent, fontWeight: "600" }}>Sign Up</Text>
+          </Text>
+        </Link>
 
         <View
           style={[
@@ -209,13 +196,6 @@ const styles = StyleSheet.create({
   swipeHint: { flexDirection: "row", alignItems: "center", gap: 4 },
   dots: { flexDirection: "row", alignItems: "center", gap: 6 },
   dot: { height: 7 },
-  pillButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
-    paddingVertical: 16,
-  },
   connectCard: { alignItems: "center", borderWidth: StyleSheet.hairlineWidth * 2 },
   lockHint: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 12 },
   socialRow: { flexDirection: "row", justifyContent: "center" },

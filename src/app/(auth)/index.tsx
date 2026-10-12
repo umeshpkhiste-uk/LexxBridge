@@ -84,8 +84,8 @@ export default function WelcomeScreen() {
 
   return (
     <ScreenContainer scroll style={styles.container}>
-      <View style={styles.hero}>
-        <View style={{ marginBottom: spacing.lg }}>
+      <View style={[styles.hero, { marginTop: spacing.lg }]}>
+        <View style={{ marginBottom: spacing.md }}>
           <AppLogo size={112} />
         </View>
         {/* Exactly one slide wide: inside the centred column a horizontal
@@ -101,8 +101,8 @@ export default function WelcomeScreen() {
         >
           {SLIDES.map((slide) => (
             <View key={slide.title} style={[styles.slide, { width: slideWidth }]}>
-              <Text style={[typography.display, { color: colors.textPrimary, textAlign: "center" }]}>{slide.title}</Text>
-              <Text style={[typography.body, { color: colors.textSecondary, textAlign: "center", marginTop: spacing.sm, maxWidth: 240 }]}>
+              <Text style={[typography.title, { color: colors.textPrimary, textAlign: "center" }]}>{slide.title}</Text>
+              <Text style={[typography.body, { color: colors.textSecondary, textAlign: "center", marginTop: spacing.xs, maxWidth: 240 }]}>
                 {slide.body}
               </Text>
             </View>
@@ -213,8 +213,13 @@ export default function WelcomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { justifyContent: "space-between" },
-  hero: { alignItems: "center", flexGrow: 1, justifyContent: "center" },
+  container: {},
+  // Pinned at a fixed offset from the top (via marginTop where used) rather
+  // than flex-centered, so this block sits at the same height as the
+  // matching hero on the sign-up screen — centering it here would shift it
+  // up/down depending on how much content is below (lock hint, banner,
+  // etc.), which is what caused the "jump" between the two screens.
+  hero: { alignItems: "center" },
   slide: { alignItems: "center", justifyContent: "center" },
   swipeHint: { flexDirection: "row", alignItems: "center", gap: 4 },
   dots: { flexDirection: "row", alignItems: "center", gap: 6 },

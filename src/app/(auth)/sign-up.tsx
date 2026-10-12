@@ -54,7 +54,7 @@ export default function SignUpScreen() {
       {/* Hero: logo, app name, and what it offers — same treatment as the
           onboarding intro, shown once above the form. */}
       <View style={{ alignItems: "center", marginTop: spacing.lg, marginBottom: spacing.xl }}>
-        <AppLogo size={96} />
+        <AppLogo size={112} />
         <Text style={[typography.title, { color: colors.textPrimary, marginTop: spacing.md }]}>LexxBridge</Text>
         <Text
           style={[

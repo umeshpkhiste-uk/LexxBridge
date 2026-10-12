@@ -1,4 +1,4 @@
-import { disableBiometric } from "@/features/biometric/biometric";
+import { disableBiometric, forgetSavedLogin } from "@/features/biometric/biometric";
 import { clearAppLock } from "@/features/applock/appLock";
 import { clearDeviceNotifications } from "@/features/notifications/device";
 import { supabase } from "@/shared/lib/supabase";
@@ -124,6 +124,7 @@ export async function deleteMyAccount(): Promise<void> {
   // which looks the user up by the JWT's sub claim and fails with "User
   // from sub claim in JWT does not exist" now that the row is gone.
   await disableBiometric().catch(() => {});
+  await forgetSavedLogin().catch(() => {});
   await clearAppLock(me).catch(() => {});
   await clearDeviceNotifications().catch(() => {});
   await supabase.auth.signOut({ scope: "local" });

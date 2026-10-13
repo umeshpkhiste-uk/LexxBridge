@@ -21,7 +21,7 @@ function buildReminderMessage(opts: {
     `Hi ${opts.clientName},`,
     "",
     `This is a reminder regarding ${opts.caseTitle}${opts.caseNumber ? ` (${opts.caseNumber})` : ""}.${hearingLine}`,
-    `Pending fee: ${formatINR(opts.pending)}.`,
+    `Please pay your pending fees: ${formatINR(opts.pending)}.`,
   ];
   if (opts.advocateName) lines.push("", "Regards,", opts.advocateName);
   return lines.join("\n");

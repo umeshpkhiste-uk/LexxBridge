@@ -8,6 +8,7 @@ import { CaseSummary, listCases } from "@/features/cases/api";
 import { CaseBriefCard } from "@/features/cases/CaseBriefCard";
 import { ClientListItem, listClients, uploadClientPhoto } from "@/features/clients/api";
 import { clientCaseTargets } from "@/features/clients/clientCases";
+import { checkHearingDayReminders } from "@/features/hearings/paymentReminder";
 import { useSwipeTabs } from "@/shared/hooks/useSwipeTabs";
 import { ActionSheet, SheetAction } from "@/shared/ui/ActionSheet";
 import { ClientAvatar } from "@/features/clients/ClientAvatar";
@@ -58,6 +59,14 @@ export default function CasesScreen() {
     useCallback(() => {
       load();
     }, [load]),
+  );
+
+  // Re-offers the payment reminder for any case with a hearing today —
+  // independent of `load`, so a slow/failed check never delays the list.
+  useFocusEffect(
+    useCallback(() => {
+      checkHearingDayReminders().catch(() => {});
+    }, []),
   );
 
   // A client opens straight onto their case; with several open cases, pick one.

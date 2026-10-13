@@ -187,7 +187,7 @@ export default function NewCaseScreen() {
       />
       <TextField
         label="Case number"
-        placeholder="e.g. 482/2024"
+        placeholder="e.g. CS/123/2024 or CNR"
         value={caseNumber}
         onChangeText={setCaseNumber}
         onBlur={() => {

@@ -77,6 +77,13 @@ describe("normalizeCaseNumber", () => {
     expect(normalizeCaseNumber("DLST010012341900", now)).toBeNull();
   });
 
+  it("accepts every citation shape from the app's case-number reference table", () => {
+    expect(normalizeCaseNumber("CS/123/2024", now)).toBe("CS 123/2024");
+    expect(normalizeCaseNumber("CRL.A. 456/2023", now)).toBe("CRL.A. 456/2023");
+    expect(normalizeCaseNumber("123/1998", now)).toBe("123/1998");
+    expect(normalizeCaseNumber("MHXX000012342024", now)).toBe("MHXX000012342024");
+  });
+
   it("rejects random alphanumeric strings, bare numbers and impossible years", () => {
     expect(normalizeCaseNumber("ABCD1234", now)).toBeNull();
     expect(normalizeCaseNumber("123456", now)).toBeNull();

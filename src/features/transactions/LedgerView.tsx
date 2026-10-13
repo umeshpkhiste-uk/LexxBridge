@@ -160,7 +160,6 @@ export function LedgerView({ clientId, caseId, variant = "screen" }: Props) {
     caseNumber: caseDetail?.case_number,
     caseType: caseDetail?.case_type,
     court: caseDetail?.court,
-    filingDate: caseDetail?.filing_date,
     agreedFee: caseDetail?.agreed_fee,
     cases: caseDetail ? undefined : scopeCases.map((c) => ({ title: c.title, caseNumber: c.case_number, agreedFee: c.agreed_fee })),
     advocateName: advocate.name,

@@ -20,7 +20,6 @@ type StatementInput = {
   caseNumber?: string | null;
   caseType?: string | null;
   court?: string | null;
-  filingDate?: string | null;
   /** The agreed fee for this specific case, when scoped to one. */
   agreedFee?: number | null;
   /** When not scoped to one case, every case this client has with its own
@@ -115,7 +114,6 @@ export function buildStatement({
   caseNumber,
   caseType,
   court,
-  filingDate,
   agreedFee,
   cases,
   advocateName,
@@ -147,7 +145,6 @@ export function buildStatement({
     caseTitle ? `Case: ${caseTitle}${caseNumber ? ` (${caseNumber})` : ""}` : null,
     caseTitle && caseType ? `Type: ${caseType}` : null,
     caseTitle && court ? `Court: ${court}` : null,
-    caseTitle && filingDate ? `Filed: ${formatDay(filingDate)}` : null,
     caseTitle && agreedFee != null ? `Agreed fee: ${formatINR(agreedFee)}` : null,
     caseTitle && agreedFee != null && overallExpenses > 0 ? `Total (agreed fee + expenses): ${formatINR(agreedFee + overallExpenses)}` : null,
     !caseTitle && cases?.length ? "Cases:" : null,
@@ -206,7 +203,6 @@ export function buildStatementHtml({
   caseNumber,
   caseType,
   court,
-  filingDate,
   agreedFee,
   cases,
   advocateName,
@@ -304,7 +300,6 @@ export function buildStatementHtml({
         caseNumber ? ["Case number", caseNumber] : null,
         caseType ? ["Type", caseType] : null,
         court ? ["Court", court] : null,
-        filingDate ? ["Filed", formatDay(filingDate)] : null,
         agreedFee != null ? ["Agreed fee", formatINR(agreedFee)] : null,
         agreedFee != null && overallExpenses > 0 ? ["Total (agreed fee + expenses)", formatINR(agreedFee + overallExpenses)] : null,
       ].filter((r): r is [string, string] => r !== null)
@@ -535,7 +530,6 @@ export async function downloadCaseStatementPdf(caseId: string): Promise<void> {
       caseNumber: caseDetail.case_number,
       caseType: caseDetail.case_type,
       court: caseDetail.court,
-      filingDate: caseDetail.filing_date,
       agreedFee: caseDetail.agreed_fee,
       advocateName: profile?.full_name ?? null,
       advocatePhone: profile?.phone ?? null,

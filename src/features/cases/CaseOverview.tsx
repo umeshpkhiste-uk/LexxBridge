@@ -10,7 +10,6 @@ import { formatHearingDate, formatINR } from "@/shared/lib/format";
 import { caseNumberError, normalizeCaseNumber } from "@/shared/lib/validation";
 import { Button } from "@/shared/ui/Button";
 import { SelectField } from "@/shared/ui/SelectField";
-import { DateField, fromDateOnly, toDateOnly } from "@/shared/ui/DateField";
 import { TextField } from "@/shared/ui/TextField";
 import { useTheme } from "@/shared/ui/theme";
 import { CaseDetail, CasePriority, deleteCase, updateCase } from "./api";
@@ -21,11 +20,6 @@ const PRIORITY_ICONS: Record<CasePriority, "arrow-down-circle-outline" | "remove
   medium: "remove-circle-outline",
   high: "arrow-up-circle-outline",
 };
-
-function formatDay(value: string | null) {
-  const date = fromDateOnly(value);
-  return date ? date.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : null;
-}
 
 function fileIcon(doc: CaseDocument): keyof typeof Ionicons.glyphMap {
   const type = doc.mime_type ?? "";
@@ -164,10 +158,6 @@ export function CaseOverview({
             onSaved={onUpdated}
           />
         ) : null}
-        <View style={[styles.dateGrid, { marginTop: spacing.sm, gap: spacing.sm }]}>
-          <DateTile label="Filed on" value={formatDay(caseDetail.filing_date)} />
-          <DateTile label="Registered on" value={formatDay(caseDetail.registration_date)} />
-        </View>
       </View>
 
       {/* Details */}
@@ -271,8 +261,6 @@ function CaseEditForm({
   const [court, setCourt] = useState(caseDetail.court ?? "");
   const [bench, setBench] = useState(caseDetail.bench ?? "");
   const [priority, setPriority] = useState<CasePriority>(caseDetail.priority);
-  const [filingDate, setFilingDate] = useState(fromDateOnly(caseDetail.filing_date));
-  const [registrationDate, setRegistrationDate] = useState(fromDateOnly(caseDetail.registration_date));
   const [description, setDescription] = useState(caseDetail.description ?? "");
   const [notes, setNotes] = useState(caseDetail.internal_notes ?? "");
   const [agreedFee, setAgreedFee] = useState(caseDetail.agreed_fee !== null ? String(Number(caseDetail.agreed_fee)) : "");
@@ -294,9 +282,6 @@ function CaseEditForm({
     if (caseNumberSubmitErr) return setError(`Case number: ${caseNumberSubmitErr}`);
     const fee = agreedFee.trim() ? Number(agreedFee) : null;
     if (fee !== null && (Number.isNaN(fee) || fee < 0)) return setError("Total fees agreed: enter a valid amount");
-    if (filingDate && registrationDate && registrationDate < filingDate) {
-      return setError("Registration date can't be before the filing date");
-    }
     setError(null);
     setIsSaving(true);
     const caseNumberValue = caseNumber.trim() ? normalizeCaseNumber(caseNumber) ?? caseNumber.trim() : "";
@@ -309,8 +294,6 @@ function CaseEditForm({
         bench: bench.trim() || null,
         agreedFee: fee,
         priority,
-        filingDate: toDateOnly(filingDate),
-        registrationDate: toDateOnly(registrationDate),
         description: description.trim() || null,
         internalNotes: notes.trim() || null,
       });
@@ -382,7 +365,7 @@ function CaseEditForm({
       </View>
 
       <View style={card}>
-        <SectionTitle icon="business-outline" title="Court & Dates" />
+        <SectionTitle icon="business-outline" title="Court" />
         <SelectField
           label="Court"
           icon="business-outline"
@@ -393,16 +376,6 @@ function CaseEditForm({
           placeholder="Select court"
         />
         <TextField label="Bench" placeholder="e.g. Division Bench II" value={bench} onChangeText={setBench} />
-        <DateField label="Filing date" value={filingDate} onChange={setFilingDate} maximumDate={new Date()} placeholder="Not set" optional />
-        <DateField
-          label="Registration date"
-          value={registrationDate}
-          onChange={setRegistrationDate}
-          minimumDate={filingDate ?? undefined}
-          maximumDate={new Date()}
-          placeholder="Not set"
-          optional
-        />
       </View>
 
       <View style={card}>
@@ -475,16 +448,6 @@ function DetailRow({ label, value, last }: { label: string; value: string | null
   );
 }
 
-function DateTile({ label, value }: { label: string; value: string | null }) {
-  const { colors, radius, typography } = useTheme();
-  return (
-    <View style={[styles.dateTile, { backgroundColor: colors.background, borderRadius: radius.md }]}>
-      <Text style={[styles.pillText, { color: colors.textSecondary }]}>{label.toUpperCase()}</Text>
-      <Text style={[typography.bodyStrong, { color: value ? colors.textPrimary : colors.textSecondary }]}>{value ?? "—"}</Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   card: {
     shadowColor: "#0F172A",
@@ -498,8 +461,6 @@ const styles = StyleSheet.create({
   sectionTitle: { flexDirection: "row", alignItems: "center", gap: 8 },
   nextHearing: { flexDirection: "row", alignItems: "center", gap: 10 },
   iconBox: { width: 36, height: 36, borderRadius: 10, alignItems: "center", justifyContent: "center" },
-  dateGrid: { flexDirection: "row" },
-  dateTile: { flex: 1, padding: 10, gap: 2 },
   detailRow: { flexDirection: "row", alignItems: "center", paddingVertical: 10, gap: 8 },
   uploadButton: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 12, paddingVertical: 7 },
   docRow: { flexDirection: "row", alignItems: "center", gap: 10 },

@@ -19,8 +19,6 @@ export type CaseSummary = {
 
 export type CaseDetail = CaseSummary & {
   bench: string | null;
-  filing_date: string | null;
-  registration_date: string | null;
   description: string | null;
   internal_notes: string | null;
   tags: string[];
@@ -31,7 +29,7 @@ const CASE_SUMMARY_COLUMNS =
   "id, title, case_number, case_type, court, agreed_fee, priority, next_hearing_at, client_id, created_at, clients(full_name)";
 
 const CASE_DETAIL_COLUMNS = `
-  id, title, case_number, case_type, court, bench, filing_date, registration_date,
+  id, title, case_number, case_type, court, bench,
   priority, agreed_fee, description, internal_notes, tags,
   next_hearing_at, is_archived, client_id, created_at, clients(full_name)
 `;
@@ -77,9 +75,6 @@ export async function createCase(input: {
   court?: string;
   bench?: string;
   priority?: CasePriority;
-  /** Date-only, YYYY-MM-DD. */
-  filingDate?: string | null;
-  registrationDate?: string | null;
   description?: string;
   internalNotes?: string;
   agreedFee?: number | null;
@@ -98,8 +93,6 @@ export async function createCase(input: {
       court: input.court?.trim() || null,
       bench: input.bench?.trim() || null,
       priority: input.priority ?? "medium",
-      filing_date: input.filingDate ?? null,
-      registration_date: input.registrationDate ?? null,
       description: input.description?.trim() || null,
       internal_notes: input.internalNotes?.trim() || null,
       agreed_fee: input.agreedFee ?? null,
@@ -129,9 +122,6 @@ export async function updateCase(
     description: string | null;
     internalNotes: string | null;
     priority: CasePriority;
-    /** Date-only, YYYY-MM-DD. */
-    filingDate: string | null;
-    registrationDate: string | null;
     agreedFee: number | null;
   }>
 ): Promise<void> {
@@ -146,8 +136,6 @@ export async function updateCase(
       ...(patch.description !== undefined ? { description: patch.description } : {}),
       ...(patch.internalNotes !== undefined ? { internal_notes: patch.internalNotes } : {}),
       ...(patch.priority !== undefined ? { priority: patch.priority } : {}),
-      ...(patch.filingDate !== undefined ? { filing_date: patch.filingDate } : {}),
-      ...(patch.registrationDate !== undefined ? { registration_date: patch.registrationDate } : {}),
       ...(patch.agreedFee !== undefined ? { agreed_fee: patch.agreedFee } : {}),
     })
     .eq("id", id);

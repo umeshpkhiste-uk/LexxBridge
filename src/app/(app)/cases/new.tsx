@@ -7,7 +7,6 @@ import { CASE_TYPE_OPTIONS } from "@/shared/data/caseTypes";
 import { COURT_OPTIONS } from "@/shared/data/courts";
 import { caseNumberError, normalizeCaseNumber } from "@/shared/lib/validation";
 import { Button } from "@/shared/ui/Button";
-import { DateField, toDateOnly } from "@/shared/ui/DateField";
 import { ScreenContainer } from "@/shared/ui/ScreenContainer";
 import { SelectField } from "@/shared/ui/SelectField";
 import { TextField } from "@/shared/ui/TextField";
@@ -33,8 +32,6 @@ export default function NewCaseScreen() {
   const [court, setCourt] = useState("");
   const [bench, setBench] = useState("");
   const [priority, setPriority] = useState<CasePriority>("medium");
-  const [filingDate, setFilingDate] = useState<Date | null>(null);
-  const [registrationDate, setRegistrationDate] = useState<Date | null>(null);
   const [description, setDescription] = useState("");
   const [notes, setNotes] = useState("");
   const [agreedFee, setAgreedFee] = useState("");
@@ -77,10 +74,6 @@ export default function NewCaseScreen() {
       setError("Total fees agreed: enter a valid amount");
       return;
     }
-    if (filingDate && registrationDate && registrationDate < filingDate) {
-      setError("Registration date can't be before the filing date");
-      return;
-    }
     setError(null);
     setIsSubmitting(true);
     const caseNumberValue = caseNumber.trim() ? normalizeCaseNumber(caseNumber) ?? caseNumber.trim() : "";
@@ -93,8 +86,6 @@ export default function NewCaseScreen() {
         court,
         bench,
         priority,
-        filingDate: toDateOnly(filingDate),
-        registrationDate: toDateOnly(registrationDate),
         description,
         internalNotes: notes,
         agreedFee: fee,
@@ -225,7 +216,7 @@ export default function NewCaseScreen() {
         onChange={setPriority}
       />
 
-      <Text style={[typography.subtitle, { color: colors.brand, marginTop: spacing.md, marginBottom: spacing.sm }]}>Court & Dates</Text>
+      <Text style={[typography.subtitle, { color: colors.brand, marginTop: spacing.md, marginBottom: spacing.sm }]}>Court</Text>
       <SelectField
         label="Court"
         icon="business-outline"
@@ -236,16 +227,6 @@ export default function NewCaseScreen() {
         placeholder="Select court"
       />
       <TextField label="Bench" placeholder="e.g. Division Bench II" value={bench} onChangeText={setBench} />
-      <DateField label="Filing date" value={filingDate} onChange={setFilingDate} maximumDate={new Date()} placeholder="Not set" optional />
-      <DateField
-        label="Registration date"
-        value={registrationDate}
-        onChange={setRegistrationDate}
-        minimumDate={filingDate ?? undefined}
-        maximumDate={new Date()}
-        placeholder="Not set"
-        optional
-      />
 
       <Text style={[typography.subtitle, { color: colors.brand, marginTop: spacing.md, marginBottom: spacing.sm }]}>Summary & Notes</Text>
       <TextField

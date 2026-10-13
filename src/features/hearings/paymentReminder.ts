@@ -1,11 +1,12 @@
 import { getCase } from "@/features/cases/api";
 import { getClient } from "@/features/clients/api";
+import { Notifications } from "@/features/notifications/notificationsModule";
 import { getMyProfile } from "@/features/profile/api";
 import { getPendingByCase } from "@/features/transactions/api";
 import { shareViaWhatsApp } from "@/features/transactions/shareStatement";
 import { confirmAlert } from "@/shared/lib/alert";
 import { formatINR } from "@/shared/lib/format";
-import { listUpcomingHearings, markPaymentReminderSent, UpcomingHearing } from "./api";
+import { listUpcomingHearings } from "./api";
 
 function buildReminderMessage(opts: {
   clientName: string;
@@ -84,100 +85,126 @@ function buildHearingDayMessage(opts: {
   return lines.join("\n");
 }
 
-function startOfDay(d: Date) {
-  const x = new Date(d);
-  x.setHours(0, 0, 0, 0);
-  return x;
-}
-function endOfDay(d: Date) {
-  const x = new Date(d);
-  x.setHours(23, 59, 59, 999);
-  return x;
-}
+const PAYMENT_PREFIX = "payment:";
 
-/** One case's hearing-day prompt, resolved once the advocate has answered
- * (or it was skipped) — used to run several, one at a time, instead of
- * stacking confirm dialogs on top of each other. */
-function promptForHearing(hearing: UpcomingHearing, pending: number, advocateName: string | null): Promise<void> {
-  return new Promise((resolve) => {
-    if (!hearing.cases) return resolve();
-    const caseInfo = hearing.cases;
-    getClient(caseInfo.client_id)
-      .then((client) => {
-        if (!client.phone) return resolve();
-        const alreadySent = !!hearing.payment_reminder_sent_at;
-
-        if (!alreadySent) {
-          if (pending <= 0) return resolve();
-          const message = buildReminderMessage({
-            clientName: client.full_name,
-            caseTitle: caseInfo.title,
-            caseNumber: caseInfo.case_number,
-            pending,
-            hearingAt: new Date(hearing.hearing_at),
-            advocateName,
-          });
-          confirmAlert(
-            "Send payment reminder?",
-            `${client.full_name} has ${formatINR(pending)} pending for ${caseInfo.title}. Today is the hearing day — send a WhatsApp reminder now?`,
-            [
-              { text: "Not now", style: "cancel", onPress: resolve },
-              {
-                text: "Send",
-                onPress: () => {
-                  shareViaWhatsApp(message, client.phone);
-                  markPaymentReminderSent(hearing.id).catch(() => {});
-                  resolve();
-                },
-              },
-            ],
-          );
-        } else {
-          const court = hearing.court ?? caseInfo.court ?? null;
-          const message = buildHearingDayMessage({
-            clientName: client.full_name,
-            caseTitle: caseInfo.title,
-            caseNumber: caseInfo.case_number,
-            court,
-            pending,
-            advocateName,
-          });
-          confirmAlert(
-            "Payment reminder already sent",
-            `A payment reminder was already sent to ${client.full_name} for this hearing. Send it again?`,
-            [
-              { text: "Not now", style: "cancel", onPress: resolve },
-              {
-                text: "Send again",
-                onPress: () => {
-                  shareViaWhatsApp(message, client.phone);
-                  markPaymentReminderSent(hearing.id).catch(() => {});
-                  resolve();
-                },
-              },
-            ],
-          );
-        }
-      })
-      .catch(() => resolve());
-  });
+function eveningBeforeTrigger(hearingAt: Date): Date {
+  const d = new Date(hearingAt);
+  d.setDate(d.getDate() - 1);
+  d.setHours(18, 0, 0, 0);
+  return d;
+}
+function dayOfTrigger(hearingAt: Date): Date {
+  const d = new Date(hearingAt);
+  d.setHours(9, 0, 0, 0);
+  return d;
 }
 
-/** Called when the Cases tab gains focus: re-offers the payment reminder for
- * every case with a hearing today. Runs one confirm dialog at a time (not
- * all at once) so multiple same-day hearings don't stack prompts. */
-export async function checkHearingDayReminders(): Promise<void> {
+/** Recomputes the two fixed payment-reminder notifications (evening
+ * before, morning of) for every upcoming hearing in the next 2 days, based
+ * on a live pending-fee check. Idempotent — safe to call on every
+ * foreground, same cadence as syncCalendarReminders. Schedules what's
+ * missing and still owed, cancels what's no longer owed, leaves alone
+ * anything whose window already passed (no retroactive catch-up). */
+export async function syncPaymentReminders(enabled: boolean): Promise<void> {
+  if (!Notifications) return;
   try {
-    const today = new Date();
-    const [todaysHearings, pendingByCase, profile] = await Promise.all([
-      listUpcomingHearings({ from: startOfDay(today), to: endOfDay(today) }),
+    if (!enabled) {
+      const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+      await Promise.all(
+        scheduled
+          .filter((n) => n.identifier.startsWith(PAYMENT_PREFIX))
+          .map((n) => Notifications!.cancelScheduledNotificationAsync(n.identifier)),
+      );
+      return;
+    }
+
+    const now = new Date();
+    const [hearings, pendingByCase, scheduled] = await Promise.all([
+      listUpcomingHearings({ from: now, to: new Date(now.getTime() + 2 * 86_400_000) }),
       getPendingByCase(),
-      getMyProfile().catch(() => null),
+      Notifications.getAllScheduledNotificationsAsync(),
     ]);
-    for (const hearing of todaysHearings) {
-      await promptForHearing(hearing, pendingByCase[hearing.case_id] ?? 0, profile?.full_name ?? null);
+    const scheduledIds = new Set(scheduled.map((n) => n.identifier));
+
+    for (const hearing of hearings) {
+      if (!hearing.cases) continue;
+      const pending = pendingByCase[hearing.case_id] ?? 0;
+      const hearingAt = new Date(hearing.hearing_at);
+      const occurrences = [
+        { suffix: "evening" as const, at: eveningBeforeTrigger(hearingAt), title: "Payment reminder — hearing tomorrow" },
+        { suffix: "day" as const, at: dayOfTrigger(hearingAt), title: "Payment reminder — hearing today" },
+      ];
+
+      for (const occ of occurrences) {
+        if (occ.at.getTime() <= now.getTime()) continue; // window already passed
+        const identifier = `${PAYMENT_PREFIX}${hearing.id}:${occ.suffix}`;
+        const isScheduled = scheduledIds.has(identifier);
+
+        if (pending <= 0) {
+          if (isScheduled) await Notifications.cancelScheduledNotificationAsync(identifier);
+          continue;
+        }
+        if (isScheduled) continue;
+        await Notifications.scheduleNotificationAsync({
+          identifier,
+          content: {
+            title: occ.title,
+            body: `${hearing.cases.title}: ${formatINR(pending)} pending.`,
+            data: { kind: "payment", caseId: hearing.case_id, occurrence: occ.suffix },
+            sound: "default",
+          },
+          trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: occ.at, channelId: "default" },
+        });
+      }
     }
   } catch {
-    // Best-effort — never surface an error for a background nudge.
+    // Best-effort — never blocks the rest of the notification refresh pass.
+  }
+}
+
+/** Foreground delivery for a payment-reminder notification: instead of
+ * the OS banner (suppressed for these, see device.ts), show the same
+ * send-reminder confirm used elsewhere, with a LIVE pending check — so a
+ * fee paid since the notification was scheduled correctly skips it. */
+export async function handlePaymentReminderReceived(data: Record<string, unknown>): Promise<void> {
+  if (typeof data.caseId !== "string") return;
+  try {
+    const [caseDetail, pendingByCase] = await Promise.all([getCase(data.caseId), getPendingByCase()]);
+    const pending = pendingByCase[data.caseId] ?? 0;
+    if (pending <= 0) return;
+
+    const client = await getClient(caseDetail.client_id);
+    if (!client.phone) return;
+    const profile = await getMyProfile().catch(() => null);
+
+    const isDayOf = data.occurrence === "day";
+    const message = isDayOf
+      ? buildHearingDayMessage({
+          clientName: client.full_name,
+          caseTitle: caseDetail.title,
+          caseNumber: caseDetail.case_number,
+          court: caseDetail.court,
+          pending,
+          advocateName: profile?.full_name ?? null,
+        })
+      : buildReminderMessage({
+          clientName: client.full_name,
+          caseTitle: caseDetail.title,
+          caseNumber: caseDetail.case_number,
+          pending,
+          hearingAt: caseDetail.next_hearing_at ? new Date(caseDetail.next_hearing_at) : null,
+          advocateName: profile?.full_name ?? null,
+        });
+
+    confirmAlert(
+      isDayOf ? "Today is the hearing day" : "Hearing tomorrow",
+      `${client.full_name} has ${formatINR(pending)} pending for ${caseDetail.title}. Send a WhatsApp reminder now?`,
+      [
+        { text: "Not now", style: "cancel" },
+        { text: "Send", onPress: () => shareViaWhatsApp(message, client.phone) },
+      ],
+    );
+  } catch {
+    // Best-effort.
   }
 }

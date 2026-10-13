@@ -21,17 +21,23 @@ const REMINDER_PREFIX = "agenda:";
 
 let configured = false;
 
-/** Show banners even while the app is in the foreground. */
+/** Show banners even while the app is in the foreground — except payment
+ * reminders, which show a richer in-app confirm popup instead (see
+ * NotificationsProvider's addNotificationReceivedListener), so the plain
+ * banner would just be a redundant duplicate. */
 export function configureNotifications() {
   if (configured || !Notifications) return;
   configured = true;
   Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldShowBanner: true,
-      shouldShowList: true,
-      shouldPlaySound: true,
-      shouldSetBadge: false,
-    }),
+    handleNotification: async (notification) => {
+      const isPayment = notification.request.content.data?.kind === "payment";
+      return {
+        shouldShowBanner: !isPayment,
+        shouldShowList: !isPayment,
+        shouldPlaySound: true,
+        shouldSetBadge: false,
+      };
+    },
   });
   if (Platform.OS === "android") {
     Notifications.setNotificationChannelAsync("messages", {

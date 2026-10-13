@@ -2,6 +2,7 @@ import { router } from "expo-router";
 import { PropsWithChildren, useEffect } from "react";
 import { AppState } from "react-native";
 import { useAuth } from "@/features/auth/AuthProvider";
+import { handlePaymentReminderReceived, syncPaymentReminders } from "@/features/hearings/paymentReminder";
 import { toDateParam } from "@/shared/lib/format";
 import { supabase } from "@/shared/lib/supabase";
 import { getMyProfile } from "@/features/profile/api";
@@ -17,6 +18,7 @@ function openFromNotification(data: Record<string, unknown> | undefined) {
     if (typeof data.caseId === "string") return router.push(`/(app)/cases/${data.caseId}`);
     if (typeof data.at === "string") return router.push(`/(app)/(tabs)/calendar?date=${toDateParam(data.at)}`);
   }
+  if (data.kind === "payment" && typeof data.caseId === "string") return router.push(`/(app)/cases/${data.caseId}`);
   if (typeof data.conversation_id === "string") return router.push(`/(app)/messages/${data.conversation_id}`);
   if (typeof data.post_id === "string") return router.push(`/(app)/posts/${data.post_id}`);
   if (typeof data.actor_id === "string") return router.push(`/(app)/network/${data.actor_id}`);
@@ -44,6 +46,7 @@ export function NotificationsProvider({ children }: PropsWithChildren) {
         .catch(() => true);
       if (!(await ensurePermission())) return;
       await syncCalendarReminders(enabled).catch((err) => console.warn("Reminder sync failed", err));
+      await syncPaymentReminders(enabled).catch((err) => console.warn("Payment reminder sync failed", err));
     };
 
     refresh().then(() => registerPushToken(userId));
@@ -74,9 +77,17 @@ export function NotificationsProvider({ children }: PropsWithChildren) {
     const last = N.getLastNotificationResponse();
     if (last) openFromNotification(last.notification.request.content.data as Record<string, unknown>);
 
+    // Payment reminders show a richer in-app confirm instead of their OS
+    // banner (suppressed in device.ts) while the app is foregrounded.
+    const received = N.addNotificationReceivedListener((notification) => {
+      const data = notification.request.content.data as Record<string, unknown> | undefined;
+      if (data?.kind === "payment") handlePaymentReminderReceived(data);
+    });
+
     return () => {
       appState.remove();
       tapped.remove();
+      received.remove();
       supabase.removeChannel(channel);
     };
   }, [userId]);

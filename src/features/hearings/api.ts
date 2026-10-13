@@ -17,11 +17,10 @@ export type Hearing = {
   orders: string | null;
   next_action: string | null;
   next_hearing_at: string | null;
-  payment_reminder_sent_at: string | null;
 };
 
 const COLUMNS =
-  "id, case_id, court, courtroom, hearing_at, hearing_type, purpose, status, notes, outcome, arguments, orders, next_action, next_hearing_at, payment_reminder_sent_at";
+  "id, case_id, court, courtroom, hearing_at, hearing_type, purpose, status, notes, outcome, arguments, orders, next_action, next_hearing_at";
 
 export async function getHearing(id: string): Promise<Hearing> {
   const { data, error } = await supabase.from("hearings").select(COLUMNS).eq("id", id).single();
@@ -137,7 +136,7 @@ export async function setNextHearing(caseId: string, hearingAt: Date): Promise<v
   if (upcoming?.[0]) {
     const { error } = await supabase
       .from("hearings")
-      .update({ hearing_at: hearingAt.toISOString(), status: "scheduled", payment_reminder_sent_at: null })
+      .update({ hearing_at: hearingAt.toISOString(), status: "scheduled" })
       .eq("id", upcoming[0].id);
     if (error) throw new Error(error.message);
     return;
@@ -159,19 +158,7 @@ export async function updateHearing(
       courtroom: input.courtroom?.trim() || null,
       hearing_type: input.hearingType?.trim() || null,
       purpose: input.purpose?.trim() || null,
-      payment_reminder_sent_at: null,
     })
     .eq("id", id);
-  if (error) throw new Error(error.message);
-}
-
-/** Marks that a payment reminder has been sent for this hearing, so the
- * hearing-day re-prompt (see paymentReminder.ts) switches from "send a
- * reminder?" to "already sent — send again?" on future visits. */
-export async function markPaymentReminderSent(hearingId: string): Promise<void> {
-  const { error } = await supabase
-    .from("hearings")
-    .update({ payment_reminder_sent_at: new Date().toISOString() })
-    .eq("id", hearingId);
   if (error) throw new Error(error.message);
 }

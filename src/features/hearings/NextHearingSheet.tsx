@@ -17,6 +17,10 @@ type Props = {
   onSaved: () => void;
 };
 
+const pad = (n: number) => String(n).padStart(2, "0");
+const toDateInputValue = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const toTimeInputValue = (d: Date) => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+
 /** Default for a new hearing: tomorrow at 10:30, when courts usually sit. */
 function defaultDate(current: string | null) {
   if (current && new Date(current) >= new Date()) return new Date(current);
@@ -95,7 +99,68 @@ export function NextHearingSheet({ caseId, caseTitle, current, onClose, onSaved 
             </Pressable>
           </View>
 
-          {Platform.OS === "ios" ? (
+          {Platform.OS === "web" ? (
+            // @react-native-community/datetimepicker has no web
+            // implementation — DateTimePickerAndroid.open() is a silent
+            // no-op there, which is why the Android-style rows below did
+            // nothing when tapped on web. Use the browser's own native
+            // date/time inputs instead, same fix as DateField.web.tsx.
+            <View style={{ gap: spacing.sm, marginVertical: spacing.md }}>
+              <View style={[styles.androidRow, { borderColor: colors.border, borderRadius: radius.md, paddingHorizontal: spacing.md }]}>
+                <Ionicons name="calendar-outline" size={20} color={colors.brand} />
+                <input
+                  type="date"
+                  value={toDateInputValue(draft)}
+                  min={toDateInputValue(today)}
+                  aria-label="Hearing date"
+                  onChange={(e: { target: { value: string } }) => {
+                    if (!e.target.value) return;
+                    const [y, m, d] = e.target.value.split("-").map(Number);
+                    const next = new Date(draft);
+                    next.setFullYear(y, m - 1, d);
+                    setDraft(next);
+                  }}
+                  style={{
+                    flex: 1,
+                    minWidth: 0,
+                    height: 46,
+                    border: "none",
+                    outline: "none",
+                    background: "transparent",
+                    fontFamily: "-apple-system, Helvetica, Arial, sans-serif",
+                    fontSize: 16,
+                    color: colors.textPrimary,
+                  }}
+                />
+              </View>
+              <View style={[styles.androidRow, { borderColor: colors.border, borderRadius: radius.md, paddingHorizontal: spacing.md }]}>
+                <Ionicons name="time-outline" size={20} color={colors.brand} />
+                <input
+                  type="time"
+                  value={toTimeInputValue(draft)}
+                  aria-label="Hearing time"
+                  onChange={(e: { target: { value: string } }) => {
+                    if (!e.target.value) return;
+                    const [h, m] = e.target.value.split(":").map(Number);
+                    const next = new Date(draft);
+                    next.setHours(h, m, 0, 0);
+                    setDraft(next);
+                  }}
+                  style={{
+                    flex: 1,
+                    minWidth: 0,
+                    height: 46,
+                    border: "none",
+                    outline: "none",
+                    background: "transparent",
+                    fontFamily: "-apple-system, Helvetica, Arial, sans-serif",
+                    fontSize: 16,
+                    color: colors.textPrimary,
+                  }}
+                />
+              </View>
+            </View>
+          ) : Platform.OS === "ios" ? (
             <>
               <DateTimePicker
                 value={draft}

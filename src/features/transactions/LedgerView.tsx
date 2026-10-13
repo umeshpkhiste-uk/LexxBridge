@@ -592,10 +592,8 @@ function Legend({ color, label, value, note }: { color: string; label: string; v
     <View style={styles.legend}>
       <View style={[styles.legendDot, { backgroundColor: color }]} />
       <View style={{ flex: 1 }}>
-        <Text style={[typography.caption, { color: colors.textSecondary }]}>
-          {label}
-          {note ? ` ${note}` : ""}
-        </Text>
+        <Text style={[typography.caption, { color: colors.textSecondary }]}>{label}</Text>
+        {note ? <Text style={[typography.caption, { color: colors.textSecondary }]}>{note}</Text> : null}
         <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>{formatINR(value)}</Text>
       </View>
     </View>

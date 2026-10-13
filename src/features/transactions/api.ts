@@ -214,15 +214,21 @@ export async function getClientFinancialSummary(clientId: string): Promise<Clien
 }
 
 /** Pending (unpaid) income per case, keyed by case id — for showing dues on
- * case cards without opening each case. */
+ * case cards without opening each case. `case_financial_summary.total_pending`
+ * folds in expenses, but the card (and the Ledger tab's "Pending" figure)
+ * shows agreed fees still owed only, with expenses broken out separately —
+ * so expenses are subtracted back out here to keep the two in sync. */
 export async function getPendingByCase(): Promise<Record<string, number>> {
   const { data, error } = await supabase
     .from("case_financial_summary")
-    .select("case_id, total_pending")
+    .select("case_id, total_pending, total_expenses")
     .gt("total_pending", 0);
   if (error) throw new Error(error.message);
   return Object.fromEntries(
-    (data as { case_id: string; total_pending: number }[]).map((r) => [r.case_id, Number(r.total_pending)])
+    (data as { case_id: string; total_pending: number; total_expenses: number }[]).map((r) => [
+      r.case_id,
+      Number(r.total_pending) - Number(r.total_expenses),
+    ])
   );
 }
 

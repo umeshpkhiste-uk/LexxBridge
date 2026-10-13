@@ -16,13 +16,13 @@ function buildReminderMessage(opts: {
   advocateName: string | null;
 }): string {
   const hearingLine = opts.hearingAt
-    ? ` The next hearing is on ${opts.hearingAt.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}.`
+    ? ` The next date of your mentioned case appears on ${opts.hearingAt.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}.`
     : "";
   const lines = [
     `Hi ${opts.clientName},`,
     "",
-    `This is a reminder regarding ${opts.caseTitle}${opts.caseNumber ? ` (${opts.caseNumber})` : ""}.${hearingLine}`,
-    `Please pay your pending fees: ${formatINR(opts.pending)}.`,
+    `This is a reminder regarding your case ${opts.caseTitle}${opts.caseNumber ? ` (${opts.caseNumber})` : ""}.${hearingLine}`,
+    `Please pay your pending fees: ${formatINR(opts.pending)} on or before the mentioned date.`,
   ];
   if (opts.advocateName) lines.push("", "Regards,", opts.advocateName);
   return lines.join("\n");

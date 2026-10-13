@@ -89,7 +89,11 @@ export function DateField({ label, value, onChange, mode = "date", minimumDate, 
             border: "none",
             outline: "none",
             background: "transparent",
-            fontFamily: "inherit",
+            // react-native-web applies its default Text font only via a CSS
+            // class on its own components, not globally — this raw <input>
+            // inherits nothing, so without this it falls back to the
+            // browser's serif default instead of matching the rest of the app.
+            fontFamily: "-apple-system, Helvetica, Arial, sans-serif",
             fontSize: 16,
             color: value ? colors.textPrimary : colors.textSecondary,
           }}

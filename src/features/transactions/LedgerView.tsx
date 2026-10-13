@@ -222,6 +222,10 @@ export function LedgerView({ clientId, caseId, variant = "screen" }: Props) {
   // pure agreed fee (matching the case Overview tab exactly), not the
   // combined fees+expenses figure the card below shows.
   const agreedFeeOnly = billed - totals.expenses;
+  // totals.pending folds in expenses (see feeTotals.ts) — split it back
+  // apart here so "Pending" reads as agreed fees still owed, not that plus
+  // reimbursable expenses, which is now shown as its own figure instead.
+  const pendingDue = totals.pending - totals.expenses;
   const hasAgreedFee = scopeCases.some((c) => c.agreed_fee !== null);
   const isScreen = variant === "screen";
   const onHero = "#FFFFFF";
@@ -230,7 +234,6 @@ export function LedgerView({ clientId, caseId, variant = "screen" }: Props) {
   const FILTERS: { key: Filter; label: string; color: string }[] = [
     { key: "all", label: "All", color: colors.textPrimary },
     { key: "received", label: "Received", color: colors.success },
-    { key: "pending", label: "Pending", color: colors.warning },
     { key: "expenses", label: "Expenses", color: colors.danger },
   ];
 
@@ -333,41 +336,49 @@ export function LedgerView({ clientId, caseId, variant = "screen" }: Props) {
               trackColor={colors.surfaceAlt}
               segments={[
                 { value: totals.received, color: colors.success },
-                // totals.pending already folds in expenses (see
-                // feeTotals.ts) — split it back apart here so the two
-                // slices don't double-count the same rupees.
-                { value: totals.pending - totals.expenses, color: colors.warning },
+                { value: pendingDue, color: colors.warning },
                 { value: totals.expenses, color: colors.danger },
               ]}
             >
               <Text style={[typography.caption, { color: colors.textSecondary }]}>Yet to receive</Text>
-              <Text style={[typography.title, { color: totals.pending > 0 ? colors.warning : colors.success, fontSize: 20 }]}>
-                {formatINR(totals.pending)}
+              <Text style={[typography.title, { color: pendingDue > 0 ? colors.warning : colors.success, fontSize: 20 }]}>
+                {formatINR(pendingDue)}
               </Text>
               <Text style={[typography.caption, { color: colors.textSecondary }]}>
                 {billed > 0 ? `${Math.round((totals.received / billed) * 100)}% paid` : "No fees yet"}
               </Text>
+              {totals.expenses > 0 ? (
+                <Text style={[typography.caption, { color: colors.danger, marginTop: 2 }]}>
+                  Expenses {formatINR(totals.expenses)}
+                </Text>
+              ) : null}
             </DonutChart>
             <View style={{ flex: 1, marginLeft: spacing.lg, gap: spacing.md }}>
               <Legend color={colors.brand} label="Total agreed" value={agreedFeeOnly} />
               <Legend color={colors.success} label="Received" value={totals.received} />
               {totals.expenses > 0 ? <Legend color={colors.danger} label="Expenses" value={totals.expenses} /> : null}
-              <Legend color={colors.warning} label="Pending" value={totals.pending} note="(Agreed fees + expenses − Received)" />
+              <Legend color={colors.warning} label="Pending" value={pendingDue} note="(Agreed fees − Received)" />
             </View>
           </View>
           <View style={[styles.cardFooter, { marginTop: spacing.md, paddingTop: spacing.md, borderTopColor: colors.border }]}>
             <View style={{ flex: 1 }}>
-              <Text style={[typography.caption, { color: colors.textSecondary }]}>
-                Total{hasAgreedFee ? " (agreed fees" : " (fees"}
-                {totals.expenses > 0 ? " + expenses)" : ")"}
-              </Text>
-              <Text style={[typography.title, { color: colors.brand, fontSize: 22 }]}>{formatINR(billed)}</Text>
+              <Text style={[typography.caption, { color: colors.textSecondary }]}>Total{hasAgreedFee ? " (agreed fees)" : " (fees)"}</Text>
+              <Text style={[typography.title, { color: colors.brand, fontSize: 22 }]}>{formatINR(agreedFeeOnly)}</Text>
               {!hasAgreedFee ? (
                 <Text style={[typography.caption, { color: colors.textSecondary, fontSize: 11 }]}>
                   Set the agreed fee when adding a transaction
                 </Text>
               ) : null}
             </View>
+            {totals.expenses > 0 ? (
+              <>
+                <View style={{ width: StyleSheet.hairlineWidth, alignSelf: "stretch", backgroundColor: colors.border, marginHorizontal: spacing.md }} />
+                <View style={{ flex: 1 }}>
+                  <Text style={[typography.caption, { color: colors.textSecondary }]}>Expenses</Text>
+                  <Text style={[typography.title, { color: colors.danger, fontSize: 22 }]}>{formatINR(totals.expenses)}</Text>
+                </View>
+              </>
+            ) : null}
             {!isScreen ? (
               <View style={[styles.cardActions, { gap: spacing.sm }]}>
                 <Pressable

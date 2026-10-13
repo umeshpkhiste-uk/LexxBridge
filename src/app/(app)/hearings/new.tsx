@@ -2,6 +2,7 @@ import { router, Stack, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Text } from "react-native";
 import { createHearing, getHearing, updateHearing } from "@/features/hearings/api";
+import { offerPaymentReminder } from "@/features/hearings/paymentReminder";
 import { Button } from "@/shared/ui/Button";
 import { DateField } from "@/shared/ui/DateField";
 import { ScreenContainer } from "@/shared/ui/ScreenContainer";
@@ -16,6 +17,7 @@ export default function NewHearingScreen() {
   const { colors, spacing } = useTheme();
   const now = new Date();
 
+  const [resolvedCaseId, setResolvedCaseId] = useState(caseId);
   const [hearingAt, setHearingAt] = useState<Date | null>(now);
   const [court, setCourt] = useState("");
   const [courtroom, setCourtroom] = useState("");
@@ -31,6 +33,7 @@ export default function NewHearingScreen() {
     if (!id) return;
     getHearing(id)
       .then((h) => {
+        setResolvedCaseId(h.case_id);
         setHearingAt(new Date(h.hearing_at));
         setCourt(h.court ?? "");
         setCourtroom(h.courtroom ?? "");
@@ -56,6 +59,7 @@ export default function NewHearingScreen() {
     try {
       if (id) await updateHearing(id, { hearingAt, court, courtroom, hearingType, purpose });
       else await createHearing({ caseId: caseId!, hearingAt, court, courtroom, hearingType, purpose });
+      offerPaymentReminder({ caseId: resolvedCaseId!, hearingAt }).catch(() => {});
       router.back();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");

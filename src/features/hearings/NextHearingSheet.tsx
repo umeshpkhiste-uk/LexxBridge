@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button } from "@/shared/ui/Button";
 import { useTheme } from "@/shared/ui/theme";
 import { setNextHearing } from "./api";
+import { offerPaymentReminder } from "./paymentReminder";
 
 type Props = {
   caseId: string;
@@ -43,6 +44,7 @@ export function NextHearingSheet({ caseId, caseTitle, current, onClose, onSaved 
       await setNextHearing(caseId, draft);
       onSaved();
       onClose();
+      offerPaymentReminder({ caseId, hearingAt: draft }).catch(() => {});
     } catch (err) {
       Alert.alert("Couldn't save hearing date", err instanceof Error ? err.message : "Something went wrong");
     } finally {

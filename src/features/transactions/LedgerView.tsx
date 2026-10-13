@@ -356,7 +356,6 @@ export function LedgerView({ clientId, caseId, variant = "screen" }: Props) {
             <View style={{ flex: 1, marginLeft: spacing.lg, gap: spacing.md }}>
               <Legend color={colors.brand} label="Total agreed" value={agreedFeeOnly} />
               <Legend color={colors.success} label="Received" value={totals.received} />
-              {totals.expenses > 0 ? <Legend color={colors.danger} label="Expenses" value={totals.expenses} /> : null}
               <Legend color={colors.warning} label="Pending" value={pendingDue} note="(Agreed fees − Received)" />
             </View>
           </View>

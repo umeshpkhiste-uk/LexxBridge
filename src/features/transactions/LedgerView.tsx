@@ -354,14 +354,14 @@ export function LedgerView({ clientId, caseId, variant = "screen" }: Props) {
               ) : null}
             </DonutChart>
             <View style={{ flex: 1, marginLeft: spacing.lg, gap: spacing.md }}>
-              <Legend color={colors.brand} label="Total agreed" value={agreedFeeOnly} />
+              <Legend color={colors.brand} label="Agreed Fees" value={agreedFeeOnly} />
               <Legend color={colors.success} label="Received" value={totals.received} />
-              <Legend color={colors.warning} label="Pending" value={pendingDue} note="(Agreed fees − Received)" />
+              <Legend color={colors.warning} label="Pending" value={pendingDue} note="(Agreed Fees − Received)" />
             </View>
           </View>
           <View style={[styles.cardFooter, { marginTop: spacing.md, paddingTop: spacing.md, borderTopColor: colors.border }]}>
             <View style={{ flex: 1 }}>
-              <Text style={[typography.caption, { color: colors.textSecondary }]}>Total{hasAgreedFee ? " (agreed fees)" : " (fees)"}</Text>
+              <Text style={[typography.caption, { color: colors.textSecondary }]}>{hasAgreedFee ? "Agreed Fees" : "Fees"}</Text>
               <Text style={[typography.title, { color: colors.brand, fontSize: 22 }]}>{formatINR(agreedFeeOnly)}</Text>
               {!hasAgreedFee ? (
                 <Text style={[typography.caption, { color: colors.textSecondary, fontSize: 11 }]}>

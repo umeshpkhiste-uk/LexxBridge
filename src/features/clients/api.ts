@@ -14,6 +14,11 @@ export type Client = {
   email: string | null;
   address: string | null;
   notes: string | null;
+  /** The advocate's own private assessment notes (e.g. reliability
+   * concerns) — never shown to the client, never shared with any other
+   * advocate. Kept separate from `notes` (general client info/preferences)
+   * on purpose, same split as cases.description vs cases.internal_notes. */
+  private_notes: string | null;
   is_archived: boolean;
   created_at: string;
   /** Private storage path of the client's photo, if one was added. */
@@ -23,7 +28,7 @@ export type Client = {
 };
 
 const CLIENT_COLUMNS =
-  "id, full_name, client_type, phone, email, address, notes, is_archived, created_at, photo_path, contact_person_name";
+  "id, full_name, client_type, phone, email, address, notes, private_notes, is_archived, created_at, photo_path, contact_person_name";
 
 export type ClientCaseBrief = { id: string; title: string; court: string | null; created_at: string; is_archived: boolean };
 export type ClientListItem = Client & { cases: ClientCaseBrief[] };
@@ -58,6 +63,7 @@ export async function createClientRecord(input: {
   email?: string;
   address?: string;
   notes?: string;
+  privateNotes?: string;
   contactPersonName?: string;
 }): Promise<Client> {
   const { data: userData, error: userError } = await supabase.auth.getUser();
@@ -74,6 +80,7 @@ export async function createClientRecord(input: {
       email: input.email?.trim() || null,
       address: input.address?.trim() || null,
       notes: input.notes?.trim() || null,
+      private_notes: input.privateNotes?.trim() || null,
       contact_person_name: isOrg ? input.contactPersonName?.trim() || null : null,
     })
     .select(CLIENT_COLUMNS)
@@ -99,6 +106,7 @@ export async function updateClient(
     email: string | null;
     address: string | null;
     notes: string | null;
+    privateNotes: string | null;
     contactPersonName: string | null;
   }>
 ): Promise<void> {
@@ -111,6 +119,7 @@ export async function updateClient(
       ...(patch.email !== undefined ? { email: patch.email } : {}),
       ...(patch.address !== undefined ? { address: patch.address } : {}),
       ...(patch.notes !== undefined ? { notes: patch.notes } : {}),
+      ...(patch.privateNotes !== undefined ? { private_notes: patch.privateNotes } : {}),
       ...(patch.contactPersonName !== undefined ? { contact_person_name: patch.contactPersonName } : {}),
     })
     .eq("id", id);

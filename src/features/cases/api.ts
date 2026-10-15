@@ -23,6 +23,11 @@ export type CaseDetail = CaseSummary & {
   internal_notes: string | null;
   tags: string[];
   is_archived: boolean;
+  /** Set when the client has ended the engagement / moved to another
+   * advocate — distinct from winning/losing the case. Marking this also
+   * archives the case (see markCaseDiscontinued). */
+  discontinued_at: string | null;
+  discontinuation_reason: string | null;
 };
 
 const CASE_SUMMARY_COLUMNS =
@@ -31,7 +36,8 @@ const CASE_SUMMARY_COLUMNS =
 const CASE_DETAIL_COLUMNS = `
   id, title, case_number, case_type, court, bench,
   priority, agreed_fee, description, internal_notes, tags,
-  next_hearing_at, is_archived, client_id, created_at, clients(full_name)
+  next_hearing_at, is_archived, client_id, created_at, clients(full_name),
+  discontinued_at, discontinuation_reason
 `;
 
 export async function listCases(
@@ -145,6 +151,27 @@ export async function updateCase(
 
 export async function setCaseArchived(id: string, isArchived: boolean): Promise<void> {
   const { error } = await supabase.from("cases").update({ is_archived: isArchived }).eq("id", id);
+  if (error) throw new Error(error.message);
+}
+
+/** Marks a case as discontinued — the client has ended the engagement or
+ * moved to another advocate, not a win/loss outcome. Also archives the case:
+ * there's nothing more to do on it, same meaning is_archived already
+ * carries elsewhere. */
+export async function markCaseDiscontinued(id: string, reason?: string): Promise<void> {
+  const { error } = await supabase
+    .from("cases")
+    .update({ discontinued_at: new Date().toISOString(), discontinuation_reason: reason?.trim() || null, is_archived: true })
+    .eq("id", id);
+  if (error) throw new Error(error.message);
+}
+
+/** Undoes markCaseDiscontinued — restores the case to active. */
+export async function clearCaseDiscontinued(id: string): Promise<void> {
+  const { error } = await supabase
+    .from("cases")
+    .update({ discontinued_at: null, discontinuation_reason: null, is_archived: false })
+    .eq("id", id);
   if (error) throw new Error(error.message);
 }
 

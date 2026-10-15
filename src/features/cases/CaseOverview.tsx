@@ -1,18 +1,20 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
+import { router } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { NextHearingSheet } from "@/features/hearings/NextHearingSheet";
 import { CaseDocument, deleteDocument, getDocumentSignedUrl, listDocumentsForCase, uploadDocument } from "@/features/documents/api";
 import { CASE_TYPE_OPTIONS } from "@/shared/data/caseTypes";
 import { COURT_OPTIONS } from "@/shared/data/courts";
+import { confirmAlert } from "@/shared/lib/alert";
 import { formatHearingDate, formatINR } from "@/shared/lib/format";
 import { caseNumberError, normalizeCaseNumber } from "@/shared/lib/validation";
 import { Button } from "@/shared/ui/Button";
 import { SelectField } from "@/shared/ui/SelectField";
 import { TextField } from "@/shared/ui/TextField";
 import { useTheme } from "@/shared/ui/theme";
-import { CaseDetail, CasePriority, deleteCase, updateCase } from "./api";
+import { CaseDetail, CasePriority, clearCaseDiscontinued, deleteCase, updateCase } from "./api";
 
 const PRIORITIES: CasePriority[] = ["low", "medium", "high"];
 const PRIORITY_ICONS: Record<CasePriority, "arrow-down-circle-outline" | "remove-circle-outline" | "arrow-up-circle-outline"> = {
@@ -183,6 +185,18 @@ export function CaseOverview({
         </View>
       ) : null}
 
+      {caseDetail.discontinued_at ? (
+        <View style={[card, { borderColor: colors.danger, borderWidth: 1 }]}>
+          <SectionTitle icon="exit-outline" title="Client Discontinued" />
+          <Text style={[typography.body, { color: colors.textPrimary }]}>
+            {new Date(caseDetail.discontinued_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+          </Text>
+          {caseDetail.discontinuation_reason ? (
+            <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 4 }]}>{caseDetail.discontinuation_reason}</Text>
+          ) : null}
+        </View>
+      ) : null}
+
       {/* Documents */}
       <View style={card}>
         <View style={styles.rowBetween}>
@@ -255,6 +269,7 @@ function CaseEditForm({
 }) {
   const { colors, spacing, radius, typography } = useTheme();
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isResuming, setIsResuming] = useState(false);
   const [title, setTitle] = useState(caseDetail.title);
   const [caseNumber, setCaseNumber] = useState(caseDetail.case_number ?? "");
   const [caseType, setCaseType] = useState(caseDetail.case_type ?? "");
@@ -392,6 +407,43 @@ function CaseEditForm({
 
       {error ? <Text style={[typography.body, { color: colors.danger }]}>{error}</Text> : null}
       <Button label="Save changes" onPress={save} loading={isSaving} pill />
+      {caseDetail.discontinued_at ? (
+        <Button
+          label="Resume case"
+          variant="secondary"
+          loading={isResuming}
+          pill
+          onPress={() =>
+            confirmAlert(
+              "Resume this case?",
+              "This un-marks the case as discontinued and un-archives it, so it shows up in your active cases again.",
+              [
+                { text: "Cancel", style: "cancel" },
+                {
+                  text: "Resume",
+                  onPress: async () => {
+                    setIsResuming(true);
+                    try {
+                      await clearCaseDiscontinued(caseDetail.id);
+                      onSaved();
+                    } catch (err) {
+                      setIsResuming(false);
+                      Alert.alert("Couldn't resume case", err instanceof Error ? err.message : "Something went wrong");
+                    }
+                  },
+                },
+              ],
+            )
+          }
+        />
+      ) : (
+        <Button
+          label="Client discontinued / changed advocate"
+          variant="secondary"
+          pill
+          onPress={() => router.push(`/(app)/cases/discontinue?caseId=${caseDetail.id}`)}
+        />
+      )}
       <Button
         label="Delete case"
         variant="danger"

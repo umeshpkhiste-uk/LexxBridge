@@ -26,6 +26,7 @@ export default function NewClientScreen() {
   const [email, setEmail] = useState("");
   const [address, setAddress] = useState("");
   const [notes, setNotes] = useState("");
+  const [privateNotes, setPrivateNotes] = useState("");
   const [contactPersonName, setContactPersonName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -46,6 +47,7 @@ export default function NewClientScreen() {
         setEmail(c.email ?? "");
         setAddress(c.address ?? "");
         setNotes(c.notes ?? "");
+        setPrivateNotes(c.private_notes ?? "");
         setContactPersonName(c.contact_person_name ?? "");
       })
       .catch((err) => setLoadError(err instanceof Error ? err.message : "Couldn't load this client"));
@@ -73,6 +75,7 @@ export default function NewClientScreen() {
           email: email.trim() || null,
           address: address.trim() || null,
           notes: notes.trim() || null,
+          privateNotes: privateNotes.trim() || null,
           contactPersonName: isOrganization ? contactPersonName.trim() || null : null,
         });
         if (photo) {
@@ -90,6 +93,7 @@ export default function NewClientScreen() {
         email,
         address,
         notes,
+        privateNotes,
         contactPersonName,
       });
       if (photo) {
@@ -225,6 +229,14 @@ export default function NewClientScreen() {
         placeholder="e.g. Prefers WhatsApp updates after 6 PM"
         value={notes}
         onChangeText={setNotes}
+        multiline
+        numberOfLines={3}
+      />
+      <TextField
+        label="Private notes (only visible to you)"
+        placeholder="e.g. Changed advocates before, payment disputes"
+        value={privateNotes}
+        onChangeText={setPrivateNotes}
         multiline
         numberOfLines={3}
       />

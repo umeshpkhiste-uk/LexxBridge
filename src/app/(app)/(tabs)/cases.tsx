@@ -2,12 +2,13 @@ import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { router, useFocusEffect, useNavigation } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, Alert, FlatList, Linking, Pressable, Text, View } from "react-native";
+import { ActivityIndicator, Alert, FlatList, Linking, Pressable, SectionList, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CaseSummary, listCases } from "@/features/cases/api";
 import { CaseBriefCard } from "@/features/cases/CaseBriefCard";
 import { ClientListItem, listClients, uploadClientPhoto } from "@/features/clients/api";
-import { clientCaseTargets } from "@/features/clients/clientCases";
+import { clientCaseTargets, isOldClient } from "@/features/clients/clientCases";
+import { OldClientDetailSheet } from "@/features/clients/OldClientDetailSheet";
 import { useSwipeTabs } from "@/shared/hooks/useSwipeTabs";
 import { ActionSheet, SheetAction } from "@/shared/ui/ActionSheet";
 import { ClientAvatar } from "@/features/clients/ClientAvatar";
@@ -16,6 +17,8 @@ import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { TextField } from "@/shared/ui/TextField";
 import { HomeButton } from "@/shared/ui/HomeButton";
 import { useTheme } from "@/shared/ui/theme";
+
+type ClientSection = { title: string; kind: "present" | "old"; data: ClientListItem[] };
 
 const CASES_SEGMENTS = ["cases", "clients"] as const;
 
@@ -28,6 +31,7 @@ export default function CasesScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [clientMenu, setClientMenu] = useState<{ title: string; actions: SheetAction[] } | null>(null);
+  const [oldClientDetail, setOldClientDetail] = useState<ClientListItem | null>(null);
   const swipeHandlers = useSwipeTabs(CASES_SEGMENTS, segment, setSegment);
   const navigation = useNavigation();
 
@@ -151,22 +155,40 @@ export default function CasesScreen() {
           )}
         />
       ) : (
-        <FlatList
-          data={clients ?? []}
+        <SectionList<ClientListItem, ClientSection>
+          sections={(() => {
+            const present = (clients ?? []).filter((c) => !isOldClient(c.cases));
+            const old = (clients ?? []).filter((c) => isOldClient(c.cases));
+            return [
+              ...(present.length ? [{ title: "Present Clients", kind: "present" as const, data: present }] : []),
+              ...(old.length ? [{ title: "Old Clients", kind: "old" as const, data: old }] : []),
+            ];
+          })()}
           keyExtractor={(item) => item.id}
           contentContainerStyle={{ padding: spacing.lg, paddingBottom: 96 }}
+          stickySectionHeadersEnabled={false}
           ListEmptyComponent={
             <Text style={[typography.body, { color: colors.textSecondary, textAlign: "center", marginTop: spacing.xl }]}>
               No clients yet. Tap + above to add one.
             </Text>
           }
-          renderItem={({ item }) => {
+          renderSectionHeader={({ section }) => (
+            <Text
+              style={[
+                typography.subtitle,
+                { color: colors.textSecondary, marginTop: section.kind === "old" ? spacing.lg : 0, marginBottom: spacing.sm },
+              ]}
+            >
+              {section.title}
+            </Text>
+          )}
+          renderItem={({ item, section }) => {
             const targets = clientCaseTargets(item.cases);
             const shown = targets[0];
             const more = targets.length - 1;
             return (
               <Pressable
-                onPress={() => openClient(item)}
+                onPress={() => (section.kind === "old" ? setOldClientDetail(item) : openClient(item))}
                 onLongPress={() =>
                   setClientMenu({
                     title: item.full_name,
@@ -262,6 +284,7 @@ export default function CasesScreen() {
         actions={clientMenu?.actions ?? []}
         onClose={() => setClientMenu(null)}
       />
+      {oldClientDetail ? <OldClientDetailSheet client={oldClientDetail} onClose={() => setOldClientDetail(null)} /> : null}
     </SafeAreaView>
   );
 }

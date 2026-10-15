@@ -7,3 +7,14 @@ export function clientCaseTargets(cases: ClientCaseBrief[]): ClientCaseBrief[] {
   const open = sorted.filter((c) => !c.is_archived);
   return open.length ? open : sorted;
 }
+
+/** A client only counts as "old" once a discontinue action has actually
+ * happened for them — not just for having no cases yet (a brand-new client
+ * stays "present"). Derived from the cases already on hand, so a client who
+ * later gets a new active case automatically moves back to "present" with
+ * no extra bookkeeping. */
+export function isOldClient(cases: ClientCaseBrief[]): boolean {
+  const hasActive = cases.some((c) => !c.is_archived);
+  const hasDiscontinued = cases.some((c) => c.discontinued_at);
+  return !hasActive && hasDiscontinued;
+}

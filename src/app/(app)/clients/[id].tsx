@@ -19,7 +19,7 @@ export default function ClientRedirectScreen() {
     // listCases skips archived cases, matching the Clients tab.
     listCases({ clientId: id })
       .then((cases) => {
-        const [target] = clientCaseTargets(cases.map((c) => ({ ...c, is_archived: false })));
+        const [target] = clientCaseTargets(cases.map((c) => ({ ...c, is_archived: false, discontinued_at: null, discontinuation_reason: null })));
         router.replace(target ? `/(app)/cases/${target.id}` : `/(app)/cases/new?clientId=${id}`);
       })
       .catch((err) => setError(err instanceof Error ? err.message : "Something went wrong"));

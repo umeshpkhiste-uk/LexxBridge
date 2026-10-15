@@ -30,7 +30,15 @@ export type Client = {
 const CLIENT_COLUMNS =
   "id, full_name, client_type, phone, email, address, notes, private_notes, is_archived, created_at, photo_path, contact_person_name";
 
-export type ClientCaseBrief = { id: string; title: string; court: string | null; created_at: string; is_archived: boolean };
+export type ClientCaseBrief = {
+  id: string;
+  title: string;
+  court: string | null;
+  created_at: string;
+  is_archived: boolean;
+  discontinued_at: string | null;
+  discontinuation_reason: string | null;
+};
 export type ClientListItem = Client & { cases: ClientCaseBrief[] };
 
 export async function listClients(
@@ -38,7 +46,7 @@ export async function listClients(
 ): Promise<ClientListItem[]> {
   let query = supabase
     .from("clients")
-    .select(`${CLIENT_COLUMNS}, cases(id, title, court, created_at, is_archived)`)
+    .select(`${CLIENT_COLUMNS}, cases(id, title, court, created_at, is_archived, discontinued_at, discontinuation_reason)`)
     .order("full_name", { ascending: true })
     .limit(params.limit ?? 200);
 

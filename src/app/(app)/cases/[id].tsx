@@ -3,6 +3,7 @@ import { router, Stack, useFocusEffect, useLocalSearchParams } from "expo-router
 import { useCallback, useState } from "react";
 import { ActivityIndicator, Alert, Pressable, Text, View } from "react-native";
 import { CaseDetail, getCase } from "@/features/cases/api";
+import { downloadCaseHandoverPdf } from "@/features/cases/caseHandover";
 import { CaseOverview } from "@/features/cases/CaseOverview";
 import { LedgerView } from "@/features/transactions/LedgerView";
 import { downloadCaseStatementPdf } from "@/features/transactions/shareStatement";
@@ -26,6 +27,7 @@ export default function CaseDetailScreen() {
   const [tab, setTab] = useState<TabKey>("overview");
   const [isEditing, setIsEditing] = useState(edit === "1");
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isDownloadingSummary, setIsDownloadingSummary] = useState(false);
   const swipeHandlers = useSwipeTabs(TAB_KEYS, tab, setTab);
 
   const load = useCallback(() => {
@@ -64,6 +66,16 @@ export default function CaseDetailScreen() {
     }
   };
 
+  const downloadSummary = async () => {
+    if (isDownloadingSummary) return;
+    setIsDownloadingSummary(true);
+    try {
+      await downloadCaseHandoverPdf(caseDetail.id);
+    } finally {
+      setIsDownloadingSummary(false);
+    }
+  };
+
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <Stack.Screen
@@ -78,6 +90,13 @@ export default function CaseDetailScreen() {
                       <ActivityIndicator size="small" color={colors.brand} />
                     ) : (
                       <Ionicons name="download-outline" size={20} color={colors.brand} />
+                    )}
+                  </Pressable>
+                  <Pressable onPress={downloadSummary} disabled={isDownloadingSummary} hitSlop={10} accessibilityLabel="Download case summary">
+                    {isDownloadingSummary ? (
+                      <ActivityIndicator size="small" color={colors.brand} />
+                    ) : (
+                      <Ionicons name="document-outline" size={20} color={colors.brand} />
                     )}
                   </Pressable>
                   <Pressable

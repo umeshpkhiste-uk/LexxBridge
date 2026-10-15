@@ -18,6 +18,7 @@ import { AgendaItem, listAgendaItems } from "@/features/calendar/api";
 import { DayAgenda } from "@/features/calendar/DayAgenda";
 import { MonthCalendar } from "@/features/calendar/MonthCalendar";
 import { CaseSummary, deleteCase, listCases } from "@/features/cases/api";
+import { downloadCaseHandoverPdf } from "@/features/cases/caseHandover";
 import { listUpcomingHearings, UpcomingHearing } from "@/features/hearings/api";
 import { ConversationSummary, listConversations } from "@/features/messaging/api";
 import { OnlineDot } from "@/features/presence/OnlineDot";
@@ -201,6 +202,7 @@ export default function HomeScreen() {
           onPress: () => router.push(`/(app)/transactions/new?caseId=${menuCase.id}&clientId=${menuCase.client_id}`),
         },
         { label: "Download statement", icon: "download-outline", onPress: () => downloadCaseStatement(menuCase) },
+        { label: "Download case summary", icon: "document-outline", onPress: () => downloadCaseHandoverPdf(menuCase.id) },
         ...(menuCase.next_hearing_at
           ? [{ label: "See hearing in calendar", icon: "today-outline" as const, onPress: () => openCalendar(menuCase.next_hearing_at!) }]
           : []),

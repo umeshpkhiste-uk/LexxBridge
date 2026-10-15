@@ -38,6 +38,7 @@ export default function AppLayout() {
         <Stack.Screen name="clients/[id]" options={{ headerShown: true, title: "" }} />
         <Stack.Screen name="cases/new" options={{ presentation: "modal", headerShown: true, title: "New case" }} />
         <Stack.Screen name="cases/[id]" options={{ headerShown: true, title: "" }} />
+        <Stack.Screen name="cases/discontinue" options={{ presentation: "modal", headerShown: true, title: "Client discontinued" }} />
         <Stack.Screen name="hearings/new" options={{ presentation: "modal", headerShown: true, title: "Schedule hearing" }} />
         <Stack.Screen name="hearings/[id]" options={{ headerShown: true, title: "" }} />
         <Stack.Screen name="meetings/new" options={{ presentation: "modal", headerShown: true, title: "New meeting" }} />

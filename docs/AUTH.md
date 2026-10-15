@@ -117,6 +117,14 @@ re-authenticate against the server on its own.** Two different things share the 
    session — no password re-entry. Disabling biometrics, a password sign-in, or deleting the
    account all clear the stored token.
 
+   This deliberately skips server-side revocation on sign-out (a normal `signOut()` — even with
+   `scope: "local"` — invalidates the refresh token, which would make this feature impossible), so
+   the stored token stays valid on Supabase's side after "logging out." To bound that exposure, the
+   token also carries a local expiry (`QUICK_LOGIN_TTL_MS`, currently 7 days): past that window,
+   quick login silently falls back to requiring the password again, even with the correct
+   biometric/PIN, same as if the account had never stored one. See `SECURITY_CHECKLIST.md`
+   (Authentication & sessions) for the full tradeoff.
+
 Everything here is device-local (`expo-secure-store`); nothing biometric-related is ever sent to
 Supabase or stored server-side.
 

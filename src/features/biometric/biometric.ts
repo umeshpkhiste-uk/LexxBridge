@@ -16,7 +16,11 @@ import { supabase } from "@/shared/lib/supabase";
  * exchanges that token for a fresh session — no password needed.
  *
  * Disabling biometrics, a password sign-in, or deleting the account clears
- * the stored token.
+ * the stored token. It also expires on its own after QUICK_LOGIN_TTL_MS: a
+ * stolen/lost device can only skip the password this way for a limited
+ * window after the last log-out, not indefinitely (the server-side refresh
+ * token isn't revoked on log-out by design — see signOutKeepingBiometric —
+ * so this local expiry is what actually bounds the exposure).
  */
 
 const ENABLED_USER_KEY = "biometric.userId";
@@ -24,6 +28,17 @@ const REFRESH_TOKEN_KEY = "biometric.refreshToken";
 const EMAIL_KEY = "biometric.email";
 /** Whose stored refresh token it is (for PIN / pattern login after log out). */
 const SAVED_USER_KEY = "quicklogin.userId";
+/** When the current stored refresh token was saved (epoch ms, as a string). */
+const SAVED_AT_KEY = "quicklogin.savedAt";
+const QUICK_LOGIN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+/** True once the stored refresh token is past its local expiry window, or if
+ * there's no timestamp to check (defensive default: treat as expired). */
+async function isQuickLoginExpired(): Promise<boolean> {
+  const savedAt = await SecureStore.getItemAsync(SAVED_AT_KEY);
+  if (!savedAt) return true;
+  return Date.now() - Number(savedAt) > QUICK_LOGIN_TTL_MS;
+}
 
 export async function getBiometricSupport(): Promise<{ available: boolean; label: string }> {
   if (Platform.OS === "web") return { available: false, label: "Biometrics" };
@@ -68,10 +83,12 @@ export async function disableBiometric(): Promise<void> {
     SecureStore.deleteItemAsync(ENABLED_USER_KEY),
     SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY),
     SecureStore.deleteItemAsync(EMAIL_KEY),
+    SecureStore.deleteItemAsync(SAVED_AT_KEY),
   ]);
 }
 
-/** Email of the account a biometric login would restore, if one is available. */
+/** Email of the account a biometric login would restore, if one is available
+ * and its local expiry window hasn't passed. */
 export async function getBiometricLoginEmail(): Promise<string | null> {
   if (Platform.OS === "web") return null;
   const [userId, token, email] = await Promise.all([
@@ -79,7 +96,12 @@ export async function getBiometricLoginEmail(): Promise<string | null> {
     SecureStore.getItemAsync(REFRESH_TOKEN_KEY),
     SecureStore.getItemAsync(EMAIL_KEY),
   ]);
-  return userId && token ? (email ?? "your account") : null;
+  if (!userId || !token) return null;
+  if (await isQuickLoginExpired()) {
+    await forgetSavedLogin();
+    return null;
+  }
+  return email ?? "your account";
 }
 
 /**
@@ -99,6 +121,7 @@ export async function signOutKeepingBiometric(): Promise<{ error: string | null 
   if (session && keepForQuickLogin) {
     await SecureStore.setItemAsync(REFRESH_TOKEN_KEY, session.refresh_token);
     await SecureStore.setItemAsync(SAVED_USER_KEY, session.user.id);
+    await SecureStore.setItemAsync(SAVED_AT_KEY, Date.now().toString());
     await clearSessionOnDeviceOnly();
     return { error: null };
   }
@@ -109,6 +132,10 @@ export async function signOutKeepingBiometric(): Promise<{ error: string | null 
 export async function loginWithBiometric(label: string): Promise<{ error: string | null }> {
   const token = await SecureStore.getItemAsync(REFRESH_TOKEN_KEY);
   if (!token) return { error: "Log in with your password first." };
+  if (await isQuickLoginExpired()) {
+    await forgetSavedLogin();
+    return { error: "Your saved login has expired. Please log in with your password." };
+  }
 
   const ok = await authenticateBiometric(`Log in to LexxBridge with ${label}`);
   if (!ok) return { error: null };
@@ -136,17 +163,27 @@ async function clearSessionOnDeviceOnly() {
   else await supabase.auth.signOut({ scope: "local" });
 }
 
-/** The account a PIN / pattern / Face ID login would restore after log out. */
+/** The account a PIN / pattern / Face ID login would restore after log out,
+ * if its local expiry window hasn't passed. */
 export async function getSavedLoginUser(): Promise<string | null> {
   if (Platform.OS === "web") return null;
   const [userId, token] = await Promise.all([SecureStore.getItemAsync(SAVED_USER_KEY), SecureStore.getItemAsync(REFRESH_TOKEN_KEY)]);
-  return userId && token ? userId : null;
+  if (!userId || !token) return null;
+  if (await isQuickLoginExpired()) {
+    await forgetSavedLogin();
+    return null;
+  }
+  return userId;
 }
 
 /** Signs back in with the stored token (after the PIN / Face ID check). */
 export async function loginWithSavedSession(): Promise<{ error: string | null }> {
   const token = await SecureStore.getItemAsync(REFRESH_TOKEN_KEY);
   if (!token) return { error: "Please log in with your password." };
+  if (await isQuickLoginExpired()) {
+    await forgetSavedLogin();
+    return { error: "Your saved login has expired. Please log in with your password." };
+  }
   const { error } = await supabase.auth.refreshSession({ refresh_token: token });
   // Single-use: the new session carries its own refresh token.
   await forgetSavedLogin();
@@ -155,7 +192,11 @@ export async function loginWithSavedSession(): Promise<{ error: string | null }>
 
 export async function forgetSavedLogin(): Promise<void> {
   if (Platform.OS === "web") return;
-  await Promise.all([SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY), SecureStore.deleteItemAsync(SAVED_USER_KEY)]);
+  await Promise.all([
+    SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY),
+    SecureStore.deleteItemAsync(SAVED_USER_KEY),
+    SecureStore.deleteItemAsync(SAVED_AT_KEY),
+  ]);
 }
 
 /** Called after a password sign-in: drop any stale stored token, and turn

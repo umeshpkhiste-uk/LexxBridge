@@ -6,7 +6,7 @@ A single checkable list pulling together what's actually been verified (or is st
 confirmed, live state — checked via the Supabase advisor, direct SQL verification, or an actual
 test call — not an assumption. Re-run this before any production release.
 
-**Open items right now:** 2 — see below, each with an owner-actionable next step.
+**Open items right now:** 3 — see below, each with an owner-actionable next step.
 
 ## Authentication & sessions
 
@@ -21,6 +21,17 @@ test call — not an assumption. Re-run this before any production release.
       test call — see `THREAT_MODEL.md` R3 history)
 - [ ] **No MFA** on any account, including admin. *Next step: revisit once needed; no current
       Supabase plan blocker for TOTP specifically, just not built.*
+- [x] **Log-out token exposure is bounded, by design, not closed.** A normal sign-out (no
+      biometrics/PIN set) revokes the refresh token server-side (Supabase's default
+      `scope: "global"`) — but like any stateless-JWT system, an already-issued access token can't
+      be revoked early; it stays usable until it naturally expires (Supabase dashboard's "JWT
+      expiry limit" — **confirm/lower this in the dashboard; not configurable from this repo**,
+      default 3600s). With biometrics/PIN enabled, sign-out deliberately keeps the refresh token
+      alive server-side too (so Face ID/PIN can restore the session without the password) — bounded
+      by a local-only 7-day expiry (`QUICK_LOGIN_TTL_MS` in `src/features/biometric/biometric.ts`),
+      past which quick login falls back to requiring the password again. *Next step: periodically
+      confirm the dashboard JWT expiry is still short (≤1hr); the 7-day quick-login window is a
+      product tradeoff, not a bug — revisit the TTL value if device-theft risk changes.*
 
 ## Database & Row Level Security
 

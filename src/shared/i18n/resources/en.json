@@ -2,6 +2,7 @@
   "tabs": {
     "home": "Home",
     "cases": "Cases",
+    "newClient": "New Client",
     "calendar": "Calendar",
     "network": "Network",
     "profile": "Profile"

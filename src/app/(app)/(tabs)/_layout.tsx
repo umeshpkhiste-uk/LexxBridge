@@ -5,8 +5,7 @@ import { CenterFabTabBar } from "@/shared/ui/CenterFabTabBar";
 import { useTheme } from "@/shared/ui/theme";
 
 // Calendar stays a tab route (so /calendar?date=… links and the Home screen's
-// calendar shortcuts keep working) but isn't shown in the bar, leaving two
-// tabs either side of the centre "+" button.
+// calendar shortcuts keep working) but isn't shown in the bar.
 const HIDDEN_TABS = ["calendar"];
 
 export default function TabsLayout() {
@@ -22,8 +21,15 @@ export default function TabsLayout() {
         <CenterFabTabBar
           {...props}
           hiddenRoutes={HIDDEN_TABS}
-          centerLabel="Add new client"
-          onCenterPress={() => router.push("/(app)/clients/new")}
+          actionItem={{
+            afterRoute: "cases",
+            icon: "person-add-outline",
+            label: t("tabs.newClient"),
+            onPress: () => router.push("/(app)/clients/new"),
+          }}
+          fabLabel="Quick actions"
+          // Functionality TBD.
+          onFabPress={() => {}}
         />
       )}
     >

@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Appearance } from "react-native";
+import { Appearance, Platform } from "react-native";
 
 export type ThemePreference = "system" | "light" | "dark";
 
@@ -14,6 +14,9 @@ export const themePreferenceLabel: Record<ThemePreference, string> = {
 /** Overrides the OS colour scheme app-wide, so every `useColorScheme()`
  * (and therefore `useTheme()`) follows the advocate's choice. */
 function apply(preference: ThemePreference) {
+  // Not available on web; manual light/dark override has no effect there,
+  // useTheme() just follows the browser's prefers-color-scheme.
+  if (Platform.OS === "web") return;
   Appearance.setColorScheme(preference === "system" ? "unspecified" : preference);
 }
 

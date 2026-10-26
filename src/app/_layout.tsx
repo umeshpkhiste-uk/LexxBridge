@@ -1,5 +1,5 @@
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from "expo-router";
-import { enableAppSwitcherProtectionAsync, usePreventScreenCapture } from "expo-screen-capture";
+import { allowScreenCaptureAsync, enableAppSwitcherProtectionAsync, preventScreenCaptureAsync } from "expo-screen-capture";
 import { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Alert, Platform, View } from "react-native";
 import { AuthProvider, useAuth } from "@/features/auth/AuthProvider";
@@ -164,18 +164,27 @@ function NavigationTheme({ children }: { children: React.ReactNode }) {
 }
 
 export default function RootLayout() {
-  // Blocks screenshots and screen recording for the whole app (Android:
-  // FLAG_SECURE, shows a black screen to anything that tries; iOS 13+:
-  // the OS itself refuses the capture). Case, client and financial data
-  // shown here should never end up in a photo library or a recording.
-  usePreventScreenCapture();
-
   useEffect(() => {
+    // Blocks screenshots and screen recording for the whole app (Android:
+    // FLAG_SECURE, shows a black screen to anything that tries; iOS 13+:
+    // the OS itself refuses the capture). Case, client and financial data
+    // shown here should never end up in a photo library or a recording.
+    // Not available on web, which has no OS-level capture to block.
+    if (Platform.OS !== "web") {
+      preventScreenCaptureAsync().catch(() => {});
+    }
+
     restoreThemePreference();
     restoreLanguagePreference();
     // iOS can't block the app-switcher snapshot the same way, so this blurs
     // it instead of leaving sensitive content visible when the app isn't focused.
     if (Platform.OS === "ios") enableAppSwitcherProtectionAsync().catch(() => {});
+
+    return () => {
+      if (Platform.OS !== "web") {
+        allowScreenCaptureAsync().catch(() => {});
+      }
+    };
   }, []);
 
   return (

@@ -1,4 +1,16 @@
-import type { AgendaItem } from "@/features/calendar/api";
+export type ReminderItemType = "hearing" | "meeting" | "task";
+
+// Deliberately its own type, not AgendaItem from @/features/calendar/api —
+// reminders draw on hearings, meetings, AND personal to-dos, while the
+// calendar's own agenda stays independent of to-dos entirely.
+export type ReminderSourceItem = {
+  id: string;
+  type: ReminderItemType;
+  title: string;
+  subtitle: string | null;
+  at: string;
+  caseId: string | null;
+};
 
 export type Reminder = {
   /** Stable id so re-scheduling replaces rather than duplicates. */
@@ -6,7 +18,7 @@ export type Reminder = {
   at: Date;
   title: string;
   body: string;
-  data: { kind: "agenda"; type: AgendaItem["type"]; itemId: string; caseId: string | null; at: string };
+  data: { kind: "agenda"; type: ReminderItemType; itemId: string; caseId: string | null; at: string };
 };
 
 /** iOS keeps at most 64 pending local notifications per app. */
@@ -25,7 +37,7 @@ const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
  *  - tasks: 9 AM on the due day (or 1 hour before if due earlier).
  * Only future times are kept, soonest first, capped at MAX_REMINDERS.
  */
-export function buildReminders(items: AgendaItem[], now: Date = new Date()): Reminder[] {
+export function buildReminders(items: ReminderSourceItem[], now: Date = new Date()): Reminder[] {
   const out: Reminder[] = [];
   for (const item of items) {
     const at = new Date(item.at);

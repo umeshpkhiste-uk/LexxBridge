@@ -30,6 +30,8 @@ import {
   sendConnectionRequest,
 } from "@/features/network/api";
 import { Avatar, ColleagueCard, ConnectStatus, mutualLabel, PortraitAvatar, PostCard, withAdvPrefix } from "@/features/network/NetworkCards";
+import { SmallButton } from "@/features/network/SmallButton";
+import { CommunityTab } from "@/features/community/CommunityTab";
 import { FeedPost, listFeed, toggleReaction } from "@/features/posts/api";
 import { AdvocateProfile, getMyProfile } from "@/features/profile/api";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
@@ -37,8 +39,8 @@ import { useSwipeTabs } from "@/shared/hooks/useSwipeTabs";
 import { HomeButton } from "@/shared/ui/HomeButton";
 import { useTheme } from "@/shared/ui/theme";
 
-type Segment = "feed" | "connections" | "messages";
-const SEGMENTS: Segment[] = ["feed", "connections", "messages"];
+type Segment = "feed" | "connections" | "messages" | "community";
+const SEGMENTS: Segment[] = ["feed", "connections", "messages", "community"];
 
 export default function NetworkScreen() {
   const { colors, spacing, radius, typography } = useTheme();
@@ -374,6 +376,7 @@ export default function NetworkScreen() {
               { key: "feed", label: "Feed" },
               { key: "connections", label: incoming.length ? `Connections (${incoming.length})` : "Connections" },
               { key: "messages", label: unreadMessages ? `Messages (${unreadMessages})` : "Messages" },
+              { key: "community", label: "Community" },
             ]}
             value={segment}
             onChange={(key) => changeSegment(key as Segment)}
@@ -554,6 +557,8 @@ export default function NetworkScreen() {
                 </View>
               )}
             </>
+          ) : segment === "community" ? (
+            <CommunityTab />
           ) : conversations.length === 0 && connectionsWithoutChat.length === 0 ? (
             <View style={{ alignItems: "center", gap: spacing.sm, marginTop: spacing.xl, paddingHorizontal: spacing.lg }}>
               <View style={[styles.emptyIcon, { backgroundColor: colors.surfaceAlt }]}>
@@ -718,36 +723,6 @@ function PersonRow({
   );
 }
 
-function SmallButton({
-  icon,
-  label,
-  onPress,
-  filled,
-  accessibilityLabel,
-}: {
-  icon: keyof typeof Ionicons.glyphMap;
-  label: string;
-  onPress: () => void;
-  filled?: boolean;
-  /** Required when label is empty (icon-only), since there's no text for screen readers to fall back on. */
-  accessibilityLabel?: string;
-}) {
-  const { colors, radius, typography } = useTheme();
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityLabel={accessibilityLabel ?? label}
-      style={({ pressed }) => [
-        styles.smallButton,
-        { borderRadius: radius.sm, backgroundColor: filled ? colors.brand : colors.surfaceAlt, opacity: pressed ? 0.85 : 1 },
-      ]}
-    >
-      <Ionicons name={icon} size={16} color={filled ? colors.textInverse : colors.brand} />
-      {label ? <Text style={[typography.label, { color: filled ? colors.textInverse : colors.brand }]}>{label}</Text> : null}
-    </Pressable>
-  );
-}
-
 const styles = StyleSheet.create({
   header: { height: 60, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   headerLeft: { flexDirection: "row", alignItems: "center", flexShrink: 1 },
@@ -763,7 +738,6 @@ const styles = StyleSheet.create({
   personRow: { flexDirection: "row", alignItems: "center" },
   photoViewer: { flex: 1, backgroundColor: "rgba(0,0,0,0.95)", alignItems: "center", justifyContent: "center" },
   photoViewerImage: { width: "100%", height: "80%" },
-  smallButton: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 10, height: 34 },
   emptyIcon: { width: 64, height: 64, borderRadius: 32, alignItems: "center", justifyContent: "center" },
   countPill: { minWidth: 20, height: 20, borderRadius: 10, alignItems: "center", justifyContent: "center", paddingHorizontal: 6 },
   publish: {

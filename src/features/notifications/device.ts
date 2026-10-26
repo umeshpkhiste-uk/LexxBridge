@@ -2,9 +2,10 @@ import Constants from "expo-constants";
 import * as Device from "expo-device";
 import { Platform } from "react-native";
 import { listAgendaItems } from "@/features/calendar/api";
+import { listPendingTasks } from "@/features/tasks/api";
 import { supabase } from "@/shared/lib/supabase";
 import { Notifications } from "./notificationsModule";
-import { buildReminders } from "./reminders";
+import { buildReminders, ReminderSourceItem } from "./reminders";
 
 /**
  * On-device notifications:
@@ -109,7 +110,14 @@ export async function syncCalendarReminders(enabled: boolean): Promise<void> {
   if (!enabled) return;
   const from = new Date();
   const to = new Date(from.getTime() + 14 * 86_400_000);
-  const items = await listAgendaItems({ from, to });
+  // Hearings/meetings come from the shared calendar agenda; to-dos are
+  // fetched separately from the Tasks feature, which stays otherwise
+  // independent of (never synced into) that calendar.
+  const [agendaItems, pendingTasks] = await Promise.all([listAgendaItems({ from, to }), listPendingTasks()]);
+  const taskItems: ReminderSourceItem[] = pendingTasks
+    .filter((t) => t.due_at && t.due_at >= from.toISOString() && t.due_at <= to.toISOString())
+    .map((t) => ({ id: t.id, type: "task", title: t.title, subtitle: null, at: t.due_at!, caseId: t.case_id }));
+  const items: ReminderSourceItem[] = [...agendaItems, ...taskItems];
   for (const r of buildReminders(items)) {
     await Notifications!.scheduleNotificationAsync({
       identifier: `${REMINDER_PREFIX}${r.id}`,

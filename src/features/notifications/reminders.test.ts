@@ -1,13 +1,11 @@
-import type { AgendaItem } from "@/features/calendar/api";
-import { buildReminders } from "./reminders";
+import { buildReminders, ReminderSourceItem } from "./reminders";
 
-const item = (over: Partial<AgendaItem>): AgendaItem => ({
+const item = (over: Partial<ReminderSourceItem>): ReminderSourceItem => ({
   id: "x",
   type: "hearing",
   title: "argument",
   subtitle: "Divorce Case",
   at: new Date(2026, 8, 30, 11, 0).toISOString(),
-  status: "scheduled",
   caseId: "c1",
   ...over,
 });

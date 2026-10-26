@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Href, router } from "expo-router";
 import { useState } from "react";
-import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import { useTheme } from "@/shared/ui/theme";
 import { AgendaItem } from "./api";
 import { isSameDay } from "./MonthCalendar";
@@ -9,13 +9,11 @@ import { isSameDay } from "./MonthCalendar";
 const TYPE_META: Record<AgendaItem["type"], { label: string; icon: keyof typeof Ionicons.glyphMap }> = {
   hearing: { label: "Hearing", icon: "briefcase-outline" },
   meeting: { label: "Meeting", icon: "calendar-outline" },
-  task: { label: "To Do", icon: "ellipse-outline" },
 };
 
 const EDIT_ROUTE: Record<AgendaItem["type"], (id: string) => Href> = {
   hearing: (id) => `/(app)/hearings/new?id=${id}`,
   meeting: (id) => `/(app)/meetings/new?id=${id}`,
-  task: (id) => `/(app)/tasks/new?id=${id}`,
 };
 
 const ACCENT = "#6C47F5";
@@ -25,22 +23,18 @@ function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" });
 }
 
-/** "Tasks for <day>" under a month calendar: collapsible list of that day's
- * hearings, meetings and tasks, with a + to add a task or meeting. */
+/** "Schedule for <day>" under a month calendar: collapsible list of that
+ * day's hearings and meetings, with a + to add a meeting. Personal to-dos
+ * are deliberately not shown here — that list stays fully independent. */
 export function DayAgenda({ selectedDate, items, isLoading }: { selectedDate: Date; items: AgendaItem[]; isLoading?: boolean }) {
   const { colors, spacing, radius, typography } = useTheme();
   const [isOpen, setIsOpen] = useState(true);
   const dayItems = items.filter((item) => isSameDay(new Date(item.at), selectedDate));
   const title = isSameDay(selectedDate, new Date())
-    ? "Today's Tasks"
-    : `Tasks for ${selectedDate.getDate()} ${selectedDate.toLocaleDateString("en-IN", { month: "short" })}`;
+    ? "Today's Schedule"
+    : `Schedule for ${selectedDate.getDate()} ${selectedDate.toLocaleDateString("en-IN", { month: "short" })}`;
 
-  const onAdd = () =>
-    Alert.alert("Add to calendar", undefined, [
-      { text: "New task", onPress: () => router.push("/(app)/tasks/new") },
-      { text: "New meeting", onPress: () => router.push("/(app)/meetings/new") },
-      { text: "Cancel", style: "cancel" },
-    ]);
+  const onAdd = () => router.push("/(app)/meetings/new");
 
   return (
     <View>
@@ -51,7 +45,7 @@ export function DayAgenda({ selectedDate, items, isLoading }: { selectedDate: Da
         </Pressable>
         <Pressable
           onPress={onAdd}
-          accessibilityLabel="Add task or meeting"
+          accessibilityLabel="Add meeting"
           style={({ pressed }) => [styles.addButton, { backgroundColor: ACCENT, borderRadius: radius.md, opacity: pressed ? 0.85 : 1 }]}
         >
           <Ionicons name="add" size={24} color="#FFFFFF" />

@@ -36,6 +36,9 @@ export function CenterFabTabBar({ state, descriptors, navigation, hiddenRoutes =
     .map((route, index) => ({ route, index }))
     .filter(({ route }) => !hiddenRoutes.includes(route.name));
 
+  // Home is the "index" route of the Tabs navigator (src/app/(app)/(tabs)/index.tsx).
+  const isHomeTab = state.routes[state.index]?.name === "index";
+
   const renderTab = ({ route, index }: (typeof visible)[number], onLayout?: (e: LayoutChangeEvent) => void) => {
     const { options } = descriptors[route.key];
     const focused = state.index === index;
@@ -98,7 +101,7 @@ export function CenterFabTabBar({ state, descriptors, navigation, hiddenRoutes =
     >
       <View style={styles.row}>{items}</View>
 
-      {fabAnchor ? (
+      {fabAnchor && isHomeTab ? (
         <Pressable
           onPress={onFabPress}
           accessibilityRole="button"

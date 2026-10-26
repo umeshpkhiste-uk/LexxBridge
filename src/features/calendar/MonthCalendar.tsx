@@ -9,7 +9,6 @@ const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 export const AGENDA_DOT_COLORS: Record<AgendaItem["type"], string> = {
   hearing: "#7C5CF5",
   meeting: "#22B07D",
-  task: "#F0647A",
 };
 
 export function startOfDay(date: Date) {

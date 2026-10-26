@@ -44,10 +44,16 @@ export default function AppLayout() {
         <Stack.Screen name="meetings/new" options={{ presentation: "modal", headerShown: true, title: "New meeting" }} />
         <Stack.Screen name="communications/new" options={{ presentation: "modal", headerShown: true, title: "New communication" }} />
         <Stack.Screen name="tasks/new" options={{ presentation: "modal", headerShown: true, title: "New task" }} />
+        <Stack.Screen name="todos/[date]" options={{ headerShown: true, title: "" }} />
+        <Stack.Screen name="calculator" options={{ headerShown: true, title: "Calculator" }} />
+        <Stack.Screen name="festivals" options={{ headerShown: true, title: "Festival Calendar" }} />
         <Stack.Screen name="transactions/new" options={{ presentation: "modal", headerShown: true, title: "New transaction" }} />
         <Stack.Screen name="transactions/receive" options={{ presentation: "modal", headerShown: true, title: "Edit payment" }} />
         <Stack.Screen name="transactions/[id]" options={{ headerShown: true, title: "Payment details" }} />
         <Stack.Screen name="network/[id]" options={{ headerShown: true, title: "" }} />
+        <Stack.Screen name="community/new" options={{ presentation: "modal", headerShown: true, title: "New community" }} />
+        <Stack.Screen name="community/[id]" options={{ headerShown: true, title: "" }} />
+        <Stack.Screen name="community/[id]/members" options={{ headerShown: true, title: "Members" }} />
         <Stack.Screen name="posts/new" options={{ presentation: "modal", headerShown: true, title: "New post" }} />
         <Stack.Screen name="posts/[id]" options={{ headerShown: true, title: "" }} />
         <Stack.Screen name="messages/[id]" options={{ headerShown: true, title: "Chat" }} />

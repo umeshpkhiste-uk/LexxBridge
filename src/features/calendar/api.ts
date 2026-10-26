@@ -1,6 +1,8 @@
 import { supabase } from "@/shared/lib/supabase";
 
-export type AgendaItemType = "hearing" | "meeting" | "task";
+// Personal to-dos (the "tasks" table) are deliberately NOT included here —
+// the To-Do feature stays fully independent of this calendar, never synced.
+export type AgendaItemType = "hearing" | "meeting";
 
 export type AgendaItem = {
   id: string;
@@ -16,7 +18,7 @@ export async function listAgendaItems(params: { from: Date; to: Date }): Promise
   const fromIso = params.from.toISOString();
   const toIso = params.to.toISOString();
 
-  const [hearings, meetings, tasks] = await Promise.all([
+  const [hearings, meetings] = await Promise.all([
     supabase
       .from("hearings")
       .select("id, case_id, hearing_at, hearing_type, status, cases(title)")
@@ -27,18 +29,10 @@ export async function listAgendaItems(params: { from: Date; to: Date }): Promise
       .select("id, case_id, meeting_at, meeting_type, cases(title), clients(full_name)")
       .gte("meeting_at", fromIso)
       .lte("meeting_at", toIso),
-    supabase
-      .from("tasks")
-      .select("id, case_id, title, due_at, status, priority")
-      .not("due_at", "is", null)
-      .neq("status", "completed")
-      .gte("due_at", fromIso)
-      .lte("due_at", toIso),
   ]);
 
   if (hearings.error) throw new Error(hearings.error.message);
   if (meetings.error) throw new Error(meetings.error.message);
-  if (tasks.error) throw new Error(tasks.error.message);
 
   const items: AgendaItem[] = [
     ...(hearings.data as any[]).map((h) => ({
@@ -58,15 +52,6 @@ export async function listAgendaItems(params: { from: Date; to: Date }): Promise
       at: m.meeting_at,
       status: "scheduled",
       caseId: m.case_id,
-    })),
-    ...(tasks.data as any[]).map((t) => ({
-      id: t.id,
-      type: "task" as const,
-      title: t.title,
-      subtitle: null,
-      at: t.due_at,
-      status: t.status,
-      caseId: t.case_id,
     })),
   ];
 

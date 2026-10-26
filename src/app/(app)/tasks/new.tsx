@@ -13,14 +13,20 @@ const PRIORITIES: TaskPriority[] = ["low", "medium", "high"];
 
 /** New task, or — with ?id= — edit an existing one. */
 export default function NewTaskScreen() {
-  const { caseId, clientId, id } = useLocalSearchParams<{ caseId?: string; clientId?: string; id?: string }>();
+  const { caseId, clientId, id, dueDate: dueDateParam } = useLocalSearchParams<{
+    caseId?: string;
+    clientId?: string;
+    id?: string;
+    /** Pre-fills the due date, e.g. when adding a task from the To-Do screen's selected day. */
+    dueDate?: string;
+  }>();
   const isEdit = !!id;
   const [loaded, setLoaded] = useState(!isEdit);
   const { colors, spacing } = useTheme();
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [dueDate, setDueDate] = useState<Date | null>(null);
+  const [dueDate, setDueDate] = useState<Date | null>(() => (dueDateParam ? new Date(`${dueDateParam}T00:00:00`) : null));
   const [priority, setPriority] = useState<TaskPriority>("medium");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);

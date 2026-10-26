@@ -36,6 +36,24 @@ export async function listPendingTasks(): Promise<Task[]> {
   return data as Task[];
 }
 
+/** All tasks (including completed ones) due on the given calendar day, for the
+ * per-day to-do list page where the advocate manages that day's items directly. */
+export async function listTasksForDate(date: Date): Promise<Task[]> {
+  const from = new Date(date);
+  from.setHours(0, 0, 0, 0);
+  const to = new Date(date);
+  to.setHours(23, 59, 59, 999);
+
+  const { data, error } = await supabase
+    .from("tasks")
+    .select(COLUMNS)
+    .gte("due_at", from.toISOString())
+    .lte("due_at", to.toISOString())
+    .order("created_at", { ascending: true });
+  if (error) throw new Error(error.message);
+  return data as Task[];
+}
+
 export async function createTask(input: {
   caseId?: string;
   clientId?: string;
@@ -67,6 +85,17 @@ export async function createTask(input: {
 
 export async function updateTaskStatus(id: string, status: TaskStatus): Promise<void> {
   const { error } = await supabase.from("tasks").update({ status }).eq("id", id);
+  if (error) throw new Error(error.message);
+}
+
+/** Renames a task in place — for the per-day to-do list's inline-editable rows. */
+export async function renameTask(id: string, title: string): Promise<void> {
+  const { error } = await supabase.from("tasks").update({ title: title.trim() }).eq("id", id);
+  if (error) throw new Error(error.message);
+}
+
+export async function deleteTask(id: string): Promise<void> {
+  const { error } = await supabase.from("tasks").delete().eq("id", id);
   if (error) throw new Error(error.message);
 }
 

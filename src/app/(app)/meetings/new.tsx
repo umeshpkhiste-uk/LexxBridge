@@ -1,11 +1,11 @@
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, ScrollView, Text, View } from "react-native";
+import { ActivityIndicator, Text } from "react-native";
 import { createMeeting, getMeeting, MeetingType, updateMeeting } from "@/features/meetings/api";
 import { Button } from "@/shared/ui/Button";
-import { Chip } from "@/shared/ui/Chip";
 import { DateField } from "@/shared/ui/DateField";
 import { ScreenContainer } from "@/shared/ui/ScreenContainer";
+import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { TextField } from "@/shared/ui/TextField";
 import { useTheme } from "@/shared/ui/theme";
 
@@ -100,13 +100,12 @@ export default function NewMeetingScreen() {
       <Text style={{ color: colors.textSecondary, fontSize: 13, fontWeight: "600", marginBottom: spacing.xs }}>
         Meeting type
       </Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.md }}>
-        <View style={{ flexDirection: "row", gap: spacing.sm }}>
-          {MEETING_TYPES.map((t) => (
-            <Chip key={t.key} label={t.label} selected={t.key === meetingType} onPress={() => setMeetingType(t.key)} />
-          ))}
-        </View>
-      </ScrollView>
+      <SegmentedControl
+        segments={MEETING_TYPES.map((t) => ({ key: t.key, label: t.label }))}
+        value={meetingType}
+        onChange={(key) => setMeetingType(key as MeetingType)}
+        scrollable
+      />
       <DateField label="Date & time" value={meetingAt} onChange={setMeetingAt} mode="datetime" />
       <TextField label="Location" placeholder="e.g. Chamber No. 12, District Court Complex" value={location} onChangeText={setLocation} />
       <TextField label="Participants" placeholder="e.g. Client, opposing counsel Mr. Verma" value={participants} onChangeText={setParticipants} />

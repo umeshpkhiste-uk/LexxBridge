@@ -18,10 +18,15 @@ import {
 import { alertMessage, confirmAlert } from "@/shared/lib/alert";
 import { Badge } from "@/shared/ui/Badge";
 import { Button } from "@/shared/ui/Button";
+import { DateField } from "@/shared/ui/DateField";
 import { ScreenContainer } from "@/shared/ui/ScreenContainer";
 import { SettingsGroup, SettingsRow } from "@/shared/ui/SettingsGroup";
 import { TextField } from "@/shared/ui/TextField";
 import { useTheme } from "@/shared/ui/theme";
+
+function isSameDay(a: Date, b: Date) {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
 
 /** Admin-only user directory + moderation. The RLS policies added in
  * supabase/migrations/0046_admin_and_blocking.sql are the real gate — a
@@ -37,6 +42,10 @@ export default function AdminScreen() {
   const [actingId, setActingId] = useState<string | null>(null);
   const [rejectReasons, setRejectReasons] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
+  // Hundreds of verification requests can pile up in a day — this lets an
+  // admin work through them one submission-date at a time instead of
+  // scrolling one long list.
+  const [verificationDate, setVerificationDate] = useState<Date | null>(null);
 
   useEffect(() => {
     isCurrentUserAdmin()
@@ -154,7 +163,10 @@ export default function AdminScreen() {
   }
 
   const openReports = reports?.filter((r) => r.status === "open") ?? [];
-  const pendingVerifications = verificationRequests?.filter((r) => r.status === "pending") ?? [];
+  const pendingVerificationsAllDates = verificationRequests?.filter((r) => r.status === "pending") ?? [];
+  const pendingVerifications = verificationDate
+    ? pendingVerificationsAllDates.filter((r) => isSameDay(new Date(r.created_at), verificationDate))
+    : pendingVerificationsAllDates;
 
   return (
     <ScreenContainer scroll>
@@ -168,11 +180,25 @@ export default function AdminScreen() {
 
       {error ? <Text style={[typography.body, { color: colors.danger, marginBottom: spacing.md }]}>{error}</Text> : null}
 
-      {pendingVerifications.length > 0 ? (
+      {pendingVerificationsAllDates.length > 0 ? (
         <View style={{ marginBottom: spacing.lg, gap: spacing.sm }}>
           <Text style={[typography.label, { color: colors.textSecondary, paddingHorizontal: spacing.xs }]}>
-            Verification requests ({pendingVerifications.length})
+            Verification requests ({pendingVerifications.length}
+            {verificationDate ? ` of ${pendingVerificationsAllDates.length}` : ""})
           </Text>
+          <DateField
+            label="Filter by request date"
+            value={verificationDate}
+            onChange={setVerificationDate}
+            optional
+            maximumDate={new Date()}
+            placeholder="Showing all dates"
+          />
+          {verificationDate && pendingVerifications.length === 0 ? (
+            <Text style={[typography.body, { color: colors.textSecondary, paddingHorizontal: spacing.xs }]}>
+              No verification requests came in on this date.
+            </Text>
+          ) : null}
           {pendingVerifications.map((request) => (
             <View
               key={request.id}
@@ -181,6 +207,9 @@ export default function AdminScreen() {
               <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>{request.full_name}</Text>
               <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 2 }]}>
                 {request.bar_registration_number} · {request.bar_council_state}
+              </Text>
+              <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 2 }]}>
+                Submitted {new Date(request.created_at).toLocaleString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit" })}
               </Text>
               <Pressable onPress={() => handleViewVerificationDocument(request)} style={{ marginTop: spacing.sm }}>
                 <Text style={[typography.label, { color: colors.brand }]}>View submitted document</Text>

@@ -176,11 +176,25 @@ create policy "recipient can read own payload"
   on public.community_message_payloads for select
   using (recipient_id = (select auth.uid()));
 
+-- Checking only "the caller sent this message" would let a sender address a
+-- payload's recipient_id to anyone at all — not just a current member of
+-- that message's community — bypassing the connection/block gating every
+-- other messaging surface in this app enforces. The recipient must actually
+-- be a member (or the creator) of the message's own community.
 create policy "sender can write payloads for own message"
   on public.community_message_payloads for insert
   with check (
     exists (
       select 1 from public.community_messages m
-      where m.id = message_id and m.sender_id = (select auth.uid())
+      join public.communities c on c.id = m.community_id
+      where m.id = message_id
+        and m.sender_id = (select auth.uid())
+        and (
+          c.creator_id = recipient_id
+          or exists (
+            select 1 from public.community_members cm
+            where cm.community_id = m.community_id and cm.advocate_id = recipient_id
+          )
+        )
     )
   );

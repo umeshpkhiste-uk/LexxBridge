@@ -1,7 +1,7 @@
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from "expo-router";
 import { allowScreenCaptureAsync, enableAppSwitcherProtectionAsync, preventScreenCaptureAsync } from "expo-screen-capture";
 import { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Alert, Platform, View } from "react-native";
+import { ActivityIndicator, Alert, AppState, Platform, View } from "react-native";
 import { AuthProvider, useAuth } from "@/features/auth/AuthProvider";
 import { getSavedLoginUser, isBiometricEnabledFor, loginWithSavedSession } from "@/features/biometric/biometric";
 import { getAppLockMethod, rememberLockedAccount } from "@/features/applock/appLock";
@@ -32,9 +32,11 @@ function RootNavigator() {
     if (session) ensureKeyPair().catch(() => {});
   }, [session]);
 
-  // The lock (Face ID and/or PIN / pattern) applies only to a session
-  // restored on cold start. A session created during this run (password or
-  // biometric login) has already proven who the user is.
+  // The lock (Face ID and/or PIN / pattern) only gates a session restored on
+  // cold start here. A session created during this run (password or
+  // biometric login) has already proven who the user is — but it still gets
+  // re-armed on every background transition below, so the lock isn't
+  // skippable for the rest of the process lifetime after that first proof.
   useEffect(() => {
     if (isLoading || hasCheckedLock.current) return;
     hasCheckedLock.current = true;
@@ -58,6 +60,30 @@ function RootNavigator() {
       .then(setLockState)
       .catch(() => setLockState("unlocked"));
   }, [isLoading, session, isPasswordRecovery]);
+
+  // The cold-start check above only runs once per process lifetime
+  // (`hasCheckedLock`), so without this, backgrounding the app and
+  // switching back (no relaunch, no cold start) would skip the lock screen
+  // entirely for the rest of the session — defeating the whole point of a
+  // PIN/Face ID lock. Re-arm it on every background transition instead.
+  const lockStateRef = useRef(lockState);
+  useEffect(() => {
+    lockStateRef.current = lockState;
+  }, [lockState]);
+  useEffect(() => {
+    if (!session || isPasswordRecovery) return;
+    const subscription = AppState.addEventListener("change", (nextAppState) => {
+      // "inactive" (iOS control center, share sheet, incoming call) is too
+      // noisy to lock on; only a real background transition counts.
+      if (nextAppState !== "background" || lockStateRef.current !== "unlocked") return;
+      Promise.all([isBiometricEnabledFor(session.user.id), getAppLockMethod(session.user.id)])
+        .then(([biometricOn, lockMethod]) => {
+          if (biometricOn || lockMethod) setLockState("locked");
+        })
+        .catch(() => {});
+    });
+    return () => subscription.remove();
+  }, [session, isPasswordRecovery]);
 
   // Logging out during this run: if a PIN / pattern is set, go straight to
   // the lock screen (log back in with it) instead of the login page.

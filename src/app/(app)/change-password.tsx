@@ -71,9 +71,11 @@ export default function ChangePasswordScreen() {
     // always resolves to a single bare "OK" button — so confirmAlert is
     // used directly here to navigate only once they've actually acknowledged
     // the change, not the moment the alert is shown.
-    confirmAlert("Password updated", "Use your new password next time you sign in.", [
-      { text: "OK", onPress: () => router.replace("/(app)/(tabs)") },
-    ]);
+    confirmAlert(
+      "Password updated",
+      "Use your new password next time you sign in. Any other device signed in to your account has been signed out.",
+      [{ text: "OK", onPress: () => router.replace("/(app)/(tabs)") }],
+    );
   };
 
   const handleForgotPassword = () => {

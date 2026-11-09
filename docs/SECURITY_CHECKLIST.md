@@ -6,7 +6,7 @@ A single checkable list pulling together what's actually been verified (or is st
 confirmed, live state — checked via the Supabase advisor, direct SQL verification, or an actual
 test call — not an assumption. Re-run this before any production release.
 
-**Open items right now:** 3 — see below, each with an owner-actionable next step.
+**Open items right now:** 8 — see below, each with an owner-actionable next step.
 
 ## Authentication & sessions
 
@@ -32,6 +32,25 @@ test call — not an assumption. Re-run this before any production release.
       past which quick login falls back to requiring the password again. *Next step: periodically
       confirm the dashboard JWT expiry is still short (≤1hr); the 7-day quick-login window is a
       product tradeoff, not a bug — revisit the TTL value if device-theft risk changes.*
+- [x] **Changing a password revokes every other session's refresh token**
+      (`supabase.auth.signOut({ scope: "others" })` in `updatePassword()`,
+      `src/features/auth/api.ts`) — closes the gap where changing a compromised password used to
+      leave a stolen token's session alive elsewhere. Settings → Security also has a self-service
+      "Log out of all other devices" row for the same action without a password change
+      (`signOutOtherSessions()`). As above, this revokes refresh tokens, not any already-issued
+      access token still short of its own expiry.
+- [ ] **No active-sessions list, device tracking, or new-device/suspicious-login detection.**
+      Supabase Auth has no per-device session list or IP/user-agent history exposed to this repo's
+      tooling to build on. *Next step: would need either Supabase Auth Hooks (dashboard-configured,
+      not available from this repo) feeding a custom sessions table, or direct `auth.sessions`
+      access via a `SECURITY DEFINER` function — not attempted here since this session has no
+      Supabase DB connection to verify the live schema against before writing that SQL.*
+- [ ] **Admin blocking a user doesn't revoke their session.** `admin_block_user` only inserts into
+      `blocked_users`, gating specific RLS policies (connections/follows/messages) — a blocked
+      user's existing access token keeps working elsewhere until it expires. *Next step: a
+      `SECURITY DEFINER` function revoking the target's sessions, callable from the admin screen —
+      deferred for the same reason as above (no live DB connection this session to verify
+      `auth.sessions`/`auth.refresh_tokens` against before writing migration SQL).*
 
 ## Database & Row Level Security
 

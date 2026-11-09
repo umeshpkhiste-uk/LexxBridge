@@ -200,3 +200,8 @@ also use.
 - **No dedicated "change email" screen in the app yet** — the Supabase template and the
   `email_changed` notice trigger are both ready for whenever that UI gets built; nothing in the
   app currently calls `supabase.auth.updateUser({ email })`.
+- **No active-sessions list, device tracking, or new-device/suspicious-login detection.** A
+  password change and Settings → Security's "Log out of all other devices" both revoke every
+  other session's refresh token (`signOutOtherSessions()` in `src/features/auth/api.ts`), but
+  there's no UI listing what those sessions were, and nothing alerts on a new device signing in.
+  Would need Supabase Auth Hooks (dashboard-configured) or direct `auth.sessions` access to build.

@@ -8,6 +8,7 @@ import { getAppLockMethod } from "@/features/applock/appLock";
 import { LockMethod } from "@/features/applock/rules";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { authenticateBiometric, disableBiometric, enableBiometric, getBiometricSupport, isBiometricEnabledFor } from "@/features/biometric/biometric";
+import { signOutOtherSessions } from "@/features/auth/api";
 import { alertMessage, confirmAlert } from "@/shared/lib/alert";
 import { SettingsGroup, SettingsRow } from "@/shared/ui/SettingsGroup";
 import { useTheme } from "@/shared/ui/theme";
@@ -25,6 +26,7 @@ export default function SettingsScreen() {
   const email = session?.user.email;
   const userId = session?.user.id ?? null;
   const [isExporting, setIsExporting] = useState(false);
+  const [isSigningOutOthers, setIsSigningOutOthers] = useState(false);
   const [themePref, setThemePref] = useState<ThemePreference>("system");
   const [biometric, setBiometric] = useState({ available: false, label: "Biometrics", enabled: false });
   const [lockMethod, setLockMethod] = useState<LockMethod | null>(null);
@@ -80,6 +82,32 @@ export default function SettingsScreen() {
     }
   };
 
+  const handleSignOutOthers = () => {
+    confirmAlert(
+      "Log out of all other devices?",
+      "Any other phone, tablet or browser signed in to your account will be signed out next time it tries to refresh its session. This device stays signed in.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Log out other devices",
+          style: "destructive",
+          onPress: async () => {
+            setIsSigningOutOthers(true);
+            try {
+              const { error } = await signOutOtherSessions();
+              if (error) throw new Error(error);
+              alertMessage("Done", "Every other device has been signed out.");
+            } catch (err) {
+              alertMessage("Couldn't sign out other devices", err instanceof Error ? err.message : "Something went wrong");
+            } finally {
+              setIsSigningOutOthers(false);
+            }
+          },
+        },
+      ],
+    );
+  };
+
   const handleExportData = async () => {
     setIsExporting(true);
     try {
@@ -125,6 +153,13 @@ export default function SettingsScreen() {
           label={t("settings.appLock")}
           subtitle={lockMethod === "pin" ? t("settings.appLockOnPin") : lockMethod === "pattern" ? t("settings.appLockOnPattern") : t("settings.appLockOff")}
           onPress={() => router.push("/(app)/app-lock")}
+        />
+        <SettingsRow
+          icon="log-out-outline"
+          label="Log out of all other devices"
+          subtitle={isSigningOutOthers ? "Signing out other devices…" : "If you think someone else is signed in to your account"}
+          destructive
+          onPress={handleSignOutOthers}
         />
       </SettingsGroup>
 

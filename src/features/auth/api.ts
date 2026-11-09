@@ -44,6 +44,18 @@ export async function signOut(): Promise<AuthResult> {
   return { error: error?.message ?? null };
 }
 
+/** Revokes every session's refresh token except this one — the self-service
+ * "I think someone else is signed in" action, and also run automatically
+ * after a password change (see updatePassword below). A revoked refresh
+ * token can no longer renew a session, but an already-issued access token
+ * on another device stays valid until it expires on its own (Supabase's
+ * default JWT lifetime is 1 hour) — there's no way to invalidate an
+ * already-issued access token from the client. */
+export async function signOutOtherSessions(): Promise<AuthResult> {
+  const { error } = await supabase.auth.signOut({ scope: "others" });
+  return { error: error?.message ?? null };
+}
+
 export async function requestPasswordReset(email: string): Promise<AuthResult> {
   const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
     redirectTo: authRedirect("reset-password"),
@@ -53,7 +65,12 @@ export async function requestPasswordReset(email: string): Promise<AuthResult> {
 
 export async function updatePassword(newPassword: string): Promise<AuthResult> {
   const { error } = await supabase.auth.updateUser({ password: newPassword });
-  return { error: error?.message ?? null };
+  if (error) return { error: error.message };
+  // If a hacked password is being changed to lock an intruder out, their
+  // existing session shouldn't just sit there — revoke every other
+  // session's refresh token so none of them can keep renewing.
+  await signOutOtherSessions();
+  return { error: null };
 }
 
 /** Re-authenticates with the account's current password to confirm "this is

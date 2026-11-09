@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useGuardedPress } from "@/shared/lib/useGuardedPress";
 import { useTheme } from "./theme";
 
 type Props = {
@@ -14,10 +15,11 @@ type Props = {
 export function ListRow({ icon, label, subtitle, onPress, destructive, showChevron = true }: Props) {
   const { colors, spacing, radius, typography } = useTheme();
   const labelColor = destructive ? colors.danger : colors.textPrimary;
+  const guardedOnPress = useGuardedPress(onPress ?? (() => {}));
 
   return (
     <Pressable
-      onPress={onPress}
+      onPress={onPress ? guardedOnPress : undefined}
       style={({ pressed }) => [
         styles.row,
         {

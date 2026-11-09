@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useEffect, useRef } from "react";
 import { Modal, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "./theme";
@@ -23,6 +24,13 @@ type Props = {
 export function ActionSheet({ visible, title, actions, onClose }: Props) {
   const { colors, spacing, radius, typography } = useTheme();
   const insets = useSafeAreaInsets();
+  // The sheet closes on the first tap, but two fast taps (two fingers, or a
+  // tap landing right as the sheet starts to dismiss) can both land before
+  // it unmounts — this guards against firing two actions from one open.
+  const firedRef = useRef(false);
+  useEffect(() => {
+    if (!visible) firedRef.current = false;
+  }, [visible]);
 
   const content = (
     <Pressable style={styles.backdrop} onPress={onClose} accessibilityLabel="Close menu">
@@ -50,6 +58,8 @@ export function ActionSheet({ visible, title, actions, onClose }: Props) {
           <Pressable
             key={action.label}
             onPress={() => {
+              if (firedRef.current) return;
+              firedRef.current = true;
               onClose();
               action.onPress();
             }}

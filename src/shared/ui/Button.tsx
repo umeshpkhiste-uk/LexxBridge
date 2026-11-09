@@ -1,4 +1,5 @@
 import { ActivityIndicator, Pressable, StyleSheet, Text } from "react-native";
+import { useGuardedPress } from "@/shared/lib/useGuardedPress";
 import { useTheme } from "./theme";
 
 type Variant = "primary" | "secondary" | "ghost" | "danger";
@@ -18,6 +19,7 @@ type Props = {
 export function Button({ label, onPress, variant = "primary", loading, disabled, pill }: Props) {
   const { colors, radius, spacing, typography } = useTheme();
   const isDisabled = disabled || loading;
+  const guardedOnPress = useGuardedPress(onPress);
 
   const backgroundColor =
     variant === "primary"
@@ -32,7 +34,7 @@ export function Button({ label, onPress, variant = "primary", loading, disabled,
 
   return (
     <Pressable
-      onPress={onPress}
+      onPress={guardedOnPress}
       disabled={isDisabled}
       style={({ pressed }) => [
         styles.base,

@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Link, useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -50,6 +50,10 @@ export default function WelcomeScreen() {
 
   const [enabled, setEnabled] = useState<Record<SocialProvider, boolean> | null>(null);
   const [busy, setBusy] = useState<SocialProvider | null>(null);
+  // `busy`-driven `disabled` only takes effect after a re-render, so a fast
+  // double-tap can call onSocial twice first — this ref blocks the second
+  // call synchronously, same frame.
+  const isActingRef = useRef(false);
 
   // A PIN / pattern is set on this phone but there's no saved sign-in for it
   // to unlock (e.g. the session ended): explain that one password login
@@ -64,20 +68,23 @@ export default function WelcomeScreen() {
   }, []);
 
   const onSocial = async (provider: SocialProvider) => {
-    const label = SOCIAL_LABEL[provider];
-    // Re-check in case it was switched on after this screen loaded.
-    const current = enabled?.[provider] ? enabled : await getEnabledProviders();
-    setEnabled(current);
-    if (!current[provider]) {
-      Alert.alert(`${label} sign-in unavailable`, `${label} sign-in isn't available yet. Please continue with your email for now.`);
-      return;
-    }
-    setBusy(provider);
+    if (isActingRef.current) return;
+    isActingRef.current = true;
     try {
+      const label = SOCIAL_LABEL[provider];
+      // Re-check in case it was switched on after this screen loaded.
+      const current = enabled?.[provider] ? enabled : await getEnabledProviders();
+      setEnabled(current);
+      if (!current[provider]) {
+        Alert.alert(`${label} sign-in unavailable`, `${label} sign-in isn't available yet. Please continue with your email for now.`);
+        return;
+      }
+      setBusy(provider);
       const result = await signInWithProvider(provider);
       // On success the auth listener switches the app to the signed-in screens.
       if (result.status === "error") Alert.alert(`Couldn't sign in with ${label}`, result.message);
     } finally {
+      isActingRef.current = false;
       setBusy(null);
     }
   };

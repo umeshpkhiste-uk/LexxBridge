@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, useFocusEffect, useLocalSearchParams } from "expo-router";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import {
   addCommunityMember,
@@ -30,6 +30,10 @@ export default function CommunityMembersScreen() {
   const [connections, setConnections] = useState<ConnectionRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
+  // busyId-driven `disabled` only takes effect after a re-render, so a fast
+  // double-tap can call addMember/removeMember twice first — this ref
+  // blocks the second call synchronously, same frame.
+  const actingRef = useRef(false);
 
   const load = useCallback(() => {
     setIsLoading(true);
@@ -55,7 +59,8 @@ export default function CommunityMembersScreen() {
   const addable = connections.filter((c) => !memberIds.has(c.otherParty.id));
 
   const addMember = async (advocateId: string) => {
-    if (!community) return;
+    if (!community || actingRef.current) return;
+    actingRef.current = true;
     setBusyId(advocateId);
     try {
       await addCommunityMember(community.id, advocateId);
@@ -63,18 +68,21 @@ export default function CommunityMembersScreen() {
     } catch (err) {
       console.warn("Community members: failed to add", err);
     } finally {
+      actingRef.current = false;
       setBusyId(null);
     }
   };
 
   const removeMember = (member: CommunityMember) => {
-    if (!community) return;
+    if (!community || actingRef.current) return;
     confirmAlert(`Remove ${member.full_name}?`, "They'll lose access to this community's chat.", [
       { text: "Cancel", style: "cancel" },
       {
         text: "Remove",
         style: "destructive",
         onPress: async () => {
+          if (actingRef.current) return;
+          actingRef.current = true;
           setBusyId(member.id);
           try {
             await removeCommunityMember(community.id, member.id);
@@ -82,6 +90,7 @@ export default function CommunityMembersScreen() {
           } catch (err) {
             console.warn("Community members: failed to remove", err);
           } finally {
+            actingRef.current = false;
             setBusyId(null);
           }
         },

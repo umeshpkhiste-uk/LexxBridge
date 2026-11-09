@@ -1,13 +1,15 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet } from "react-native";
+import { useGuardedPress } from "@/shared/lib/useGuardedPress";
 import { useTheme } from "./theme";
 
 export function Fab({ onPress, icon = "add" }: { onPress: () => void; icon?: keyof typeof Ionicons.glyphMap }) {
   const { colors, spacing } = useTheme();
+  const guardedOnPress = useGuardedPress(onPress);
 
   return (
     <Pressable
-      onPress={onPress}
+      onPress={guardedOnPress}
       style={({ pressed }) => [
         styles.fab,
         {

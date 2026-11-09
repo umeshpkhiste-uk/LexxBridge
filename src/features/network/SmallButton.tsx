@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, Text } from "react-native";
+import { useGuardedPress } from "@/shared/lib/useGuardedPress";
 import { useTheme } from "@/shared/ui/theme";
 
 /** Compact icon+label pill used for secondary actions across the Network
@@ -19,9 +20,10 @@ export function SmallButton({
   accessibilityLabel?: string;
 }) {
   const { colors, radius, typography } = useTheme();
+  const guardedOnPress = useGuardedPress(onPress);
   return (
     <Pressable
-      onPress={onPress}
+      onPress={guardedOnPress}
       accessibilityLabel={accessibilityLabel ?? label}
       style={({ pressed }) => [
         styles.smallButton,

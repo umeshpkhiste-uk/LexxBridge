@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { Children, Fragment, PropsWithChildren, ReactNode } from "react";
 import { Pressable, StyleSheet, Switch, Text, View } from "react-native";
+import { useGuardedPress } from "@/shared/lib/useGuardedPress";
 import { useTheme } from "./theme";
 
 /** White rounded card grouping settings rows, with dividers between them. */
@@ -53,6 +54,7 @@ type RowProps = {
 export function SettingsRow({ icon, avatarUri, label, subtitle, onPress, destructive, toggle, right, showChevron = true }: RowProps) {
   const { colors, spacing, typography } = useTheme();
   const tint = destructive ? colors.danger : colors.textSecondary;
+  const guardedPress = useGuardedPress(toggle ? () => !toggle.disabled && toggle.onChange(!toggle.value) : onPress ?? (() => {}));
 
   const trailing = toggle ? (
     <Switch
@@ -67,7 +69,7 @@ export function SettingsRow({ icon, avatarUri, label, subtitle, onPress, destruc
 
   return (
     <Pressable
-      onPress={toggle ? () => !toggle.disabled && toggle.onChange(!toggle.value) : onPress}
+      onPress={guardedPress}
       disabled={!onPress && !toggle}
       style={({ pressed }) => [styles.row, { paddingVertical: spacing.md, opacity: pressed ? 0.6 : 1 }]}
     >

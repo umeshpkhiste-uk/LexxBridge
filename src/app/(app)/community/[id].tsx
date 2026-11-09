@@ -33,6 +33,10 @@ export default function CommunityChatScreen() {
   const [draft, setDraft] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // isSending-driven disabling only takes effect after a re-render, so a
+  // fast double-tap on Send can fire send() twice first — this ref blocks
+  // the second call synchronously, same frame.
+  const isSendingRef = useRef(false);
   const listRef = useRef<FlatList>(null);
 
   useEffect(() => {
@@ -67,7 +71,8 @@ export default function CommunityChatScreen() {
   const isCreator = community ? community.creator_id === myId : false;
 
   const send = async () => {
-    if (!community || !draft.trim()) return;
+    if (!community || !draft.trim() || isSendingRef.current) return;
+    isSendingRef.current = true;
     const text = draft;
     setDraft("");
     setIsSending(true);
@@ -78,6 +83,7 @@ export default function CommunityChatScreen() {
       setError(err instanceof Error ? err.message : "Couldn't send that message");
       setDraft(text);
     } finally {
+      isSendingRef.current = false;
       setIsSending(false);
     }
   };

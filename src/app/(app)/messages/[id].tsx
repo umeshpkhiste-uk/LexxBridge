@@ -83,6 +83,11 @@ export default function ChatScreen() {
   const channelRef = useRef<ReturnType<typeof subscribeToConversation> | null>(null);
   const typingSentAt = useRef(0);
   const typingStopTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // handleSend clears `draft` synchronously but React doesn't flush that
+  // until the next render, so a same-frame double-tap on Send (or Enter plus
+  // a tap) can both read the old draft and each queue their own message.
+  // This ref blocks the second call synchronously, same frame.
+  const isSendingRef = useRef(false);
   const partnerTypingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isPartnerOnline = useIsOnline(partner?.id ?? null);
 
@@ -176,6 +181,12 @@ export default function ChatScreen() {
   };
 
   const handleSend = async () => {
+    if (isSendingRef.current) return;
+    isSendingRef.current = true;
+    setTimeout(() => {
+      isSendingRef.current = false;
+    }, 400);
+
     const text = draft.trim();
     if (editing) {
       if (!text) return;

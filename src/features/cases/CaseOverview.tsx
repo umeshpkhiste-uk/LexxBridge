@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
 import { router } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { NextHearingSheet } from "@/features/hearings/NextHearingSheet";
 import { CaseDocument, deleteDocument, getDocumentSignedUrl, listDocumentsForCase, uploadDocument } from "@/features/documents/api";
@@ -56,6 +56,10 @@ export function CaseOverview({
   const [documents, setDocuments] = useState<CaseDocument[] | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [hearingSheetOpen, setHearingSheetOpen] = useState(false);
+  // isUploading-driven `disabled` only takes effect after a re-render, so a
+  // fast double-tap can call handleUpload twice before the picker even
+  // opens — this ref blocks the second call synchronously, same frame.
+  const isUploadingRef = useRef(false);
 
   const loadDocuments = useCallback(() => {
     listDocumentsForCase(caseDetail.id)
@@ -68,11 +72,13 @@ export function CaseOverview({
   }, [loadDocuments]);
 
   const handleUpload = async () => {
-    const result = await DocumentPicker.getDocumentAsync({ type: "*/*", copyToCacheDirectory: true });
-    if (result.canceled || !result.assets?.[0]) return;
-    const file = result.assets[0];
-    setIsUploading(true);
+    if (isUploadingRef.current) return;
+    isUploadingRef.current = true;
     try {
+      const result = await DocumentPicker.getDocumentAsync({ type: "*/*", copyToCacheDirectory: true });
+      if (result.canceled || !result.assets?.[0]) return;
+      const file = result.assets[0];
+      setIsUploading(true);
       const doc = await uploadDocument({
         caseId: caseDetail.id,
         fileUri: file.uri,
@@ -85,6 +91,7 @@ export function CaseOverview({
     } catch (err) {
       Alert.alert("Upload failed", err instanceof Error ? err.message : "Something went wrong");
     } finally {
+      isUploadingRef.current = false;
       setIsUploading(false);
     }
   };

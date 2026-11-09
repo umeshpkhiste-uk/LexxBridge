@@ -285,6 +285,10 @@ export function PostCard({
 
   const [draft, setDraft] = useState(post.content);
   const [isSaving, setIsSaving] = useState(false);
+  // isSaving-driven `disabled` only takes effect after a re-render, so a
+  // fast double-tap can call saveEdit twice first — this ref blocks the
+  // second call synchronously, same frame.
+  const isSavingRef = useRef(false);
 
   const startEditing = () => {
     setDraft(post.content);
@@ -293,11 +297,12 @@ export function PostCard({
 
   const saveEdit = async () => {
     const text = draft.trim();
-    if (!text || isSaving) return;
+    if (!text || isSavingRef.current) return;
     if (text === post.content) {
       setIsEditing(false);
       return;
     }
+    isSavingRef.current = true;
     setIsSaving(true);
     try {
       onEdited(await updatePost(post.id, text));
@@ -305,6 +310,7 @@ export function PostCard({
     } catch (err) {
       Alert.alert("Couldn't update post", err instanceof Error ? err.message : "Something went wrong");
     } finally {
+      isSavingRef.current = false;
       setIsSaving(false);
     }
   };
@@ -459,6 +465,10 @@ function InlineComments({ postId, onAdded, onRemoved }: { postId: string; onAdde
   const [expanded, setExpanded] = useState(false);
   const [draft, setDraft] = useState("");
   const [isSending, setIsSending] = useState(false);
+  // isSending-driven `disabled` only takes effect after a re-render, so a
+  // fast double-tap can call send twice first — this ref blocks the second
+  // call synchronously, same frame.
+  const isSendingRef = useRef(false);
   const [typingNames, setTypingNames] = useState<Map<string, string>>(new Map());
   const meRef = useRef<{ id: string; name: string } | null>(null);
   const [myId, setMyId] = useState<string | null>(null);
@@ -524,7 +534,8 @@ function InlineComments({ postId, onAdded, onRemoved }: { postId: string; onAdde
 
   const send = async () => {
     const text = draft.trim();
-    if (!text || isSending) return;
+    if (!text || isSendingRef.current) return;
+    isSendingRef.current = true;
     setIsSending(true);
     const me = meRef.current;
     if (typingStopTimer.current) clearTimeout(typingStopTimer.current);
@@ -538,6 +549,7 @@ function InlineComments({ postId, onAdded, onRemoved }: { postId: string; onAdde
     } catch (err) {
       Alert.alert("Couldn't post comment", err instanceof Error ? err.message : "Something went wrong");
     } finally {
+      isSendingRef.current = false;
       setIsSending(false);
     }
   };
@@ -635,6 +647,10 @@ function CommentRow({
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(comment.content);
   const [isSaving, setIsSaving] = useState(false);
+  // isSaving-driven `disabled` only takes effect after a re-render, so a
+  // fast double-tap can call saveEdit twice first — this ref blocks the
+  // second call synchronously, same frame.
+  const isSavingRef = useRef(false);
   const mine: Record<ReactionKind, boolean> = {
     endorse: comment.liked_by_me,
     heart: comment.hearted_by_me,
@@ -644,11 +660,12 @@ function CommentRow({
 
   const saveEdit = async () => {
     const text = draft.trim();
-    if (!text || isSaving) return;
+    if (!text || isSavingRef.current) return;
     if (text === comment.content) {
       setIsEditing(false);
       return;
     }
+    isSavingRef.current = true;
     setIsSaving(true);
     try {
       onEdited(await updateComment(comment.id, text));
@@ -656,6 +673,7 @@ function CommentRow({
     } catch (err) {
       Alert.alert("Couldn't update comment", err instanceof Error ? err.message : "Something went wrong");
     } finally {
+      isSavingRef.current = false;
       setIsSaving(false);
     }
   };

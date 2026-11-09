@@ -3,6 +3,7 @@ import type { BottomTabBarProps } from "expo-router/tabs";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View, type LayoutChangeEvent } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useGuardedPress } from "@/shared/lib/useGuardedPress";
 import { useTheme } from "./theme";
 
 type ActionItem = {
@@ -31,6 +32,8 @@ export function CenterFabTabBar({ state, descriptors, navigation, hiddenRoutes =
   const { colors, typography } = useTheme();
   const insets = useSafeAreaInsets();
   const [fabAnchor, setFabAnchor] = useState<{ x: number; width: number } | null>(null);
+  const guardedFabPress = useGuardedPress(onFabPress);
+  const guardedActionPress = useGuardedPress(actionItem?.onPress ?? (() => {}));
 
   const visible = state.routes
     .map((route, index) => ({ route, index }))
@@ -72,7 +75,7 @@ export function CenterFabTabBar({ state, descriptors, navigation, hiddenRoutes =
   const renderAction = (item: ActionItem) => (
     <Pressable
       key="tab-bar-action"
-      onPress={item.onPress}
+      onPress={guardedActionPress}
       accessibilityRole="button"
       accessibilityLabel={item.label}
       style={styles.tab}
@@ -103,7 +106,7 @@ export function CenterFabTabBar({ state, descriptors, navigation, hiddenRoutes =
 
       {fabAnchor && isHomeTab ? (
         <Pressable
-          onPress={onFabPress}
+          onPress={guardedFabPress}
           accessibilityRole="button"
           accessibilityLabel={fabLabel}
           style={({ pressed }) => [

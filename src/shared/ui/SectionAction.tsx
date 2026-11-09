@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, Text } from "react-native";
+import { useGuardedPress } from "@/shared/lib/useGuardedPress";
 import { useTheme } from "./theme";
 
 type Props = {
@@ -11,9 +12,10 @@ type Props = {
 /** Compact brand pill for the action beside a section heading ("+ New case"). */
 export function SectionAction({ label, onPress, icon = "add" }: Props) {
   const { colors, radius, typography } = useTheme();
+  const guardedOnPress = useGuardedPress(onPress);
   return (
     <Pressable
-      onPress={onPress}
+      onPress={guardedOnPress}
       accessibilityRole="button"
       accessibilityLabel={label}
       hitSlop={6}

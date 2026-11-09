@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { Pressable } from "react-native";
+import { useGuardedPress } from "@/shared/lib/useGuardedPress";
 import { useTheme } from "./theme";
 
 /**
@@ -10,9 +11,10 @@ import { useTheme } from "./theme";
  */
 export function HeaderBackButton() {
   const { colors } = useTheme();
+  const onPress = useGuardedPress(() => (router.canGoBack() ? router.back() : router.replace("/")));
   return (
     <Pressable
-      onPress={() => (router.canGoBack() ? router.back() : router.replace("/"))}
+      onPress={onPress}
       hitSlop={12}
       accessibilityRole="button"
       accessibilityLabel="Go back"

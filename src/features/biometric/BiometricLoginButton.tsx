@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import { ActivityIndicator, Alert, Pressable, Text } from "react-native";
+import { useGuardedPress } from "@/shared/lib/useGuardedPress";
 import { useTheme } from "@/shared/ui/theme";
 import { getBiometricLoginEmail, getBiometricSupport, loginWithBiometric } from "./biometric";
 
@@ -30,9 +31,8 @@ export function BiometricLoginButton() {
     }, [])
   );
 
-  if (!state) return null;
-
-  const onPress = async () => {
+  const onPress = useGuardedPress(async () => {
+    if (!state) return;
     setIsBusy(true);
     const { error } = await loginWithBiometric(state.label);
     setIsBusy(false);
@@ -40,7 +40,9 @@ export function BiometricLoginButton() {
       setState(null);
       Alert.alert("Couldn't log in", error);
     }
-  };
+  });
+
+  if (!state) return null;
 
   return (
     <Pressable

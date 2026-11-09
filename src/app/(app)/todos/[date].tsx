@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, Stack, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, TextInput, View, type TextInputInstance } from "react-native";
 import { createTask, deleteTask, listPendingTasks, listTasksForDate, renameTask, Task, updateTaskStatus } from "@/features/tasks/api";
 import { TaskMonthCalendar } from "@/features/tasks/TaskMonthCalendar";
 import { confirmAlert } from "@/shared/lib/alert";
@@ -24,7 +24,7 @@ export default function TodoDayScreen() {
   const [pendingTasks, setPendingTasks] = useState<Task[]>([]);
   const [visibleMonth, setVisibleMonth] = useState(() => new Date(date.getFullYear(), date.getMonth(), 1));
   const [focusedId, setFocusedId] = useState<string | null>(null);
-  const newInputRef = useRef<TextInput>(null);
+  const newInputRef = useRef<TextInputInstance>(null);
 
   const load = useCallback(() => {
     setIsLoading(true);

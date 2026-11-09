@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { forwardRef, useState } from "react";
-import { Pressable, StyleSheet, Text, TextInput, TextInputProps, View } from "react-native";
+import { Pressable, StyleSheet, Text, TextInput, TextInputProps, View, type TextInputInstance } from "react-native";
 import { useTheme } from "./theme";
 
 type Props = TextInputProps & {
@@ -8,7 +8,7 @@ type Props = TextInputProps & {
   error?: string;
 };
 
-export const TextField = forwardRef<TextInput, Props>(function TextField(
+export const TextField = forwardRef<TextInputInstance, Props>(function TextField(
   { label, error, style, secureTextEntry, multiline, ...inputProps },
   ref
 ) {

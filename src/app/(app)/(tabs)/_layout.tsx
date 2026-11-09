@@ -42,7 +42,7 @@ export default function TabsLayout() {
           options={{
             title: t("tabs.home"),
             tabBarIcon: ({ color, size, focused }) => (
-              <Ionicons name={focused ? "home" : "home-outline"} size={size} color={color} />
+              <Ionicons name={focused ? "home" : "home-outline"} size={size} color={typeof color === "string" ? color : undefined} />
             ),
           }}
         />
@@ -51,7 +51,7 @@ export default function TabsLayout() {
           options={{
             title: t("tabs.cases"),
             tabBarIcon: ({ color, size, focused }) => (
-              <Ionicons name={focused ? "briefcase" : "briefcase-outline"} size={size} color={color} />
+              <Ionicons name={focused ? "briefcase" : "briefcase-outline"} size={size} color={typeof color === "string" ? color : undefined} />
             ),
           }}
         />
@@ -60,7 +60,7 @@ export default function TabsLayout() {
           options={{
             title: t("tabs.calendar"),
             tabBarIcon: ({ color, size, focused }) => (
-              <Ionicons name={focused ? "calendar" : "calendar-outline"} size={size} color={color} />
+              <Ionicons name={focused ? "calendar" : "calendar-outline"} size={size} color={typeof color === "string" ? color : undefined} />
             ),
           }}
         />
@@ -69,7 +69,7 @@ export default function TabsLayout() {
           options={{
             title: t("tabs.network"),
             tabBarIcon: ({ color, size, focused }) => (
-              <Ionicons name={focused ? "people" : "people-outline"} size={size} color={color} />
+              <Ionicons name={focused ? "people" : "people-outline"} size={size} color={typeof color === "string" ? color : undefined} />
             ),
           }}
         />
@@ -78,7 +78,7 @@ export default function TabsLayout() {
           options={{
             title: t("tabs.profile"),
             tabBarIcon: ({ color, size, focused }) => (
-              <Ionicons name={focused ? "person-circle" : "person-circle-outline"} size={size} color={color} />
+              <Ionicons name={focused ? "person-circle" : "person-circle-outline"} size={size} color={typeof color === "string" ? color : undefined} />
             ),
           }}
         />

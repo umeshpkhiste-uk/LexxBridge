@@ -28,7 +28,7 @@ type Props = BottomTabBarProps & {
  * non-route action button inserted among them), and a small round FAB
  * floating above the bar, anchored above the last tab.
  */
-export function CenterFabTabBar({ state, descriptors, navigation, hiddenRoutes = [], actionItem, fabLabel, onFabPress }: Props) {
+export function CenterFabTabBar({ state, descriptors, emitter, navigateToTab, hiddenRoutes = [], actionItem, fabLabel, onFabPress }: Props) {
   const { colors, typography } = useTheme();
   const insets = useSafeAreaInsets();
   const [fabAnchor, setFabAnchor] = useState<{ x: number; width: number } | null>(null);
@@ -49,15 +49,15 @@ export function CenterFabTabBar({ state, descriptors, navigation, hiddenRoutes =
     const label = typeof options.title === "string" ? options.title : route.name;
 
     const onPress = () => {
-      const event = navigation.emit({ type: "tabPress", target: route.key, canPreventDefault: true });
-      if (!focused && !event.defaultPrevented) navigation.navigate(route.name, route.params);
+      const event = emitter.emit({ type: "tabPress", target: route.key, canPreventDefault: true });
+      if (!focused && !event.defaultPrevented) navigateToTab(route.key);
     };
 
     return (
       <Pressable
         key={route.key}
         onPress={onPress}
-        onLongPress={() => navigation.emit({ type: "tabLongPress", target: route.key })}
+        onLongPress={() => emitter.emit({ type: "tabLongPress", target: route.key })}
         accessibilityRole="tab"
         accessibilityState={{ selected: focused }}
         accessibilityLabel={label}

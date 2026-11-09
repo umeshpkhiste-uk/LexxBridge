@@ -13,14 +13,14 @@ import {
   KeyboardAvoidingView,
   Linking,
   Modal,
-  NativeSyntheticEvent,
   Platform,
   Pressable,
   StyleSheet,
   Text,
   TextInput,
-  TextInputKeyPressEventData,
   View,
+  type TextInputInstance,
+  type TextInputKeyPressEvent,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@/features/auth/AuthProvider";
@@ -79,7 +79,7 @@ export default function ChatScreen() {
   const [showJump, setShowJump] = useState(false);
 
   const listRef = useRef<FlatList>(null);
-  const inputRef = useRef<TextInput>(null);
+  const inputRef = useRef<TextInputInstance>(null);
   const channelRef = useRef<ReturnType<typeof subscribeToConversation> | null>(null);
   const typingSentAt = useRef(0);
   const typingStopTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -238,7 +238,7 @@ export default function ChatScreen() {
    * newline). Native keeps Enter as a newline: there's no keyboard-driven
    * send convention on a phone, and the on-screen return key already does
    * what users expect for a multiline message box. */
-  const onComposerKeyPress = (event: NativeSyntheticEvent<TextInputKeyPressEventData>) => {
+  const onComposerKeyPress = (event: TextInputKeyPressEvent) => {
     if (Platform.OS !== "web") return;
     const nativeEvent = event.nativeEvent as unknown as { key: string; shiftKey?: boolean };
     if (nativeEvent.key !== "Enter" || nativeEvent.shiftKey) return;

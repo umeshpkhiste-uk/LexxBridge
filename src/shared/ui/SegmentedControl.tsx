@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View, ViewStyle } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View, ViewStyle, type ScrollViewInstance } from "react-native";
 import { useTheme } from "./theme";
 
 type Segment = { key: string; label: string };
@@ -23,7 +23,7 @@ type Props = {
  */
 export function SegmentedControl({ segments, value, onChange, scrollable = false, disabled = false, style }: Props) {
   const { colors, radius, spacing, typography } = useTheme();
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<ScrollViewInstance>(null);
   const offsets = useRef<Record<string, number>>({});
   const activeIndex = segments.findIndex((s) => s.key === value);
   // Three or more equal tabs share a narrow screen: slightly smaller text.

@@ -114,9 +114,14 @@ export function ChatBubble({
         ) : null}
 
         {message.attachment_kind === "image" ? (
-          <ChatImage message={message} onOpen={onOpenImage} />
+          <ChatImage message={message} onOpen={onOpenImage} onLongPress={onLongPress} />
         ) : message.attachment_kind === "file" ? (
-          <Pressable onPress={onOpenFile} style={[styles.file, { backgroundColor: isMine ? "rgba(255,255,255,0.14)" : colors.surfaceAlt }]}>
+          <Pressable
+            onPress={onOpenFile}
+            onLongPress={onLongPress}
+            delayLongPress={300}
+            style={[styles.file, { backgroundColor: isMine ? "rgba(255,255,255,0.14)" : colors.surfaceAlt }]}
+          >
             <View style={[styles.fileIcon, { backgroundColor: isMine ? "rgba(255,255,255,0.2)" : colors.surface }]}>
               <Ionicons name={message.attachment_mime?.includes("pdf") ? "document-text" : "document"} size={22} color={isMine ? "#FFFFFF" : colors.brand} />
             </View>
@@ -158,7 +163,15 @@ function Ticks({ message, muted }: { message: ChatMessage; muted: string }) {
   return <Ionicons name="checkmark" size={15} color={muted} accessibilityLabel="Sent" />;
 }
 
-function ChatImage({ message, onOpen }: { message: ChatMessage; onOpen: (uri: string) => void }) {
+function ChatImage({
+  message,
+  onOpen,
+  onLongPress,
+}: {
+  message: ChatMessage;
+  onOpen: (uri: string) => void;
+  onLongPress: () => void;
+}) {
   const [uri, setUri] = useState<string | null>(message.localUri ?? null);
 
   useEffect(() => {
@@ -173,7 +186,12 @@ function ChatImage({ message, onOpen }: { message: ChatMessage; onOpen: (uri: st
   }, [message.attachment_path, message.localUri]);
 
   return (
-    <Pressable onPress={() => uri && onOpen(uri)} style={styles.image}>
+    // A nested Pressable with its own onPress claims the touch responder,
+    // so the outer bubble's onLongPress (the "Delete for everyone" menu)
+    // never fired for a touch starting on the image — it needs its own
+    // long-press here. 2s rather than the bubble's usual 300ms, since a
+    // photo is also commonly held briefly just to preview/zoom.
+    <Pressable onPress={() => uri && onOpen(uri)} onLongPress={onLongPress} delayLongPress={2000} style={styles.image}>
       {uri ? (
         <Image source={{ uri }} style={StyleSheet.absoluteFill} contentFit="cover" transition={150} />
       ) : (

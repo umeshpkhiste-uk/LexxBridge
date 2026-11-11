@@ -27,10 +27,16 @@ export function ActionSheet({ visible, title, actions, onClose }: Props) {
   // The sheet closes on the first tap, but two fast taps (two fingers, or a
   // tap landing right as the sheet starts to dismiss) can both land before
   // it unmounts — this guards against firing two actions from one open.
+  // Keyed on `title` too, not just `visible`: a caller that opens a second
+  // sheet from inside the first one's onPress (e.g. picking a period, then
+  // immediately showing the share-channel sheet) never sees `visible` go
+  // false in between — React batches both state updates — so relying on
+  // `visible` alone left the guard permanently tripped for every sheet
+  // after the first. `title` changing is what actually marks a new sheet.
   const firedRef = useRef(false);
   useEffect(() => {
-    if (!visible) firedRef.current = false;
-  }, [visible]);
+    firedRef.current = false;
+  }, [visible, title]);
 
   const content = (
     <Pressable style={styles.backdrop} onPress={onClose} accessibilityLabel="Close menu">

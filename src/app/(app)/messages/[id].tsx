@@ -8,7 +8,6 @@ import { useHeaderHeight } from "expo-router/react-navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
   KeyboardAvoidingView,
   Linking,
@@ -41,7 +40,7 @@ import { ChatBubble, ChatMessage } from "@/features/messaging/ChatBubble";
 import { setActiveConversation } from "@/features/notifications/activeChat";
 import { buildChatItems, messagePreview } from "@/features/messaging/chatFormat";
 import { discardMessage, queueMessage, retryMessage, subscribeDelivered, subscribePending } from "@/features/messaging/pendingMessages";
-import { alertMessage } from "@/shared/lib/alert";
+import { alertMessage, confirmAlert } from "@/shared/lib/alert";
 import { Avatar, withAdvPrefix } from "@/features/network/NetworkCards";
 import { useIsOnline } from "@/features/presence/PresenceProvider";
 import { ActionSheet, SheetAction } from "@/shared/ui/ActionSheet";
@@ -300,7 +299,7 @@ export default function ChatScreen() {
   };
 
   const confirmDelete = (message: ChatMessage) =>
-    Alert.alert("Delete message?", "It will be deleted for everyone in this chat.", [
+    confirmAlert("Delete message?", "It will be deleted for everyone in this chat.", [
       { text: "Cancel", style: "cancel" },
       {
         text: "Delete for everyone",
@@ -373,7 +372,7 @@ export default function ChatScreen() {
 
   const handleBlock = () => {
     if (!partner) return;
-    Alert.alert(`Block ${withAdvPrefix(partner.full_name)}?`, "They won't be able to message or connect with you.", [
+    confirmAlert(`Block ${withAdvPrefix(partner.full_name)}?`, "They won't be able to message or connect with you.", [
       { text: "Cancel", style: "cancel" },
       {
         text: "Block",

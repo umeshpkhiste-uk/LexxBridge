@@ -1,5 +1,13 @@
 type FeeCase = { id: string; agreed_fee: number | string | null };
-type FeeTransaction = { case_id: string | null; type: "income" | "expense"; status: "completed" | "pending"; amount: number | string };
+type FeeTransaction = {
+  case_id: string | null;
+  type: "income" | "expense";
+  status: "completed" | "pending";
+  amount: number | string;
+  /** A refund of a past expense (money that came back) — nets against the
+   * running expense total instead of adding to it. Never set for income. */
+  is_refund?: boolean;
+};
 
 export type FeeTotals = { totalFees: number; received: number; pending: number; expenses: number };
 
@@ -25,7 +33,7 @@ export function computeFeeTotals(cases: FeeCase[], transactions: FeeTransaction[
   for (const t of transactions) {
     const amount = Number(t.amount);
     if (t.type === "expense") {
-      expenses += amount;
+      expenses += t.is_refund ? -amount : amount;
       continue;
     }
     if (t.case_id && caseIds.has(t.case_id)) {

@@ -17,6 +17,7 @@ const tx = (overrides: Partial<Transaction>): Transaction => ({
   reference_number: null,
   notes: null,
   receipt_path: null,
+  is_refund: false,
   ...overrides,
 });
 

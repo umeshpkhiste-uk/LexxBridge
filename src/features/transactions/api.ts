@@ -27,10 +27,13 @@ export type Transaction = {
   notes: string | null;
   /** Private storage path of the receipt / payment screenshot, if any. */
   receipt_path: string | null;
+  /** A refund of a past expense (money that came back) — always false for
+   * income; nets against the running expense total instead of adding to it. */
+  is_refund: boolean;
 };
 
 const COLUMNS =
-  "id, case_id, client_id, type, category, amount, currency, status, transaction_date, payment_method, reference_number, notes, receipt_path";
+  "id, case_id, client_id, type, category, amount, currency, status, transaction_date, payment_method, reference_number, notes, receipt_path, is_refund";
 
 export async function listTransactionsForCase(caseId: string): Promise<Transaction[]> {
   const { data, error } = await supabase
@@ -67,6 +70,9 @@ export async function createTransaction(input: {
   referenceNumber?: string;
   notes?: string;
   receipt?: { uri: string; mimeType: string } | null;
+  /** Money that came back for a past expense — only meaningful when
+   * type is "expense"; ignored (stored as false) for income. */
+  isRefund?: boolean;
 }): Promise<Transaction> {
   const { data: userData, error: userError } = await supabase.auth.getUser();
   if (userError || !userData.user) throw new Error(userError?.message ?? "Not signed in");
@@ -88,6 +94,7 @@ export async function createTransaction(input: {
       reference_number: input.referenceNumber?.trim() || null,
       notes: input.notes?.trim() || null,
       receipt_path: receiptPath,
+      is_refund: input.type === "expense" && !!input.isRefund,
     })
     .select(COLUMNS)
     .single();
@@ -143,6 +150,8 @@ export async function updateTransaction(
     paymentMethod?: string | null;
     referenceNumber?: string | null;
     notes?: string | null;
+    /** Only meaningful for an expense entry; omit (or pass false) for income. */
+    isRefund?: boolean;
   }
 ): Promise<Transaction> {
   const { data, error } = await supabase
@@ -154,6 +163,7 @@ export async function updateTransaction(
       payment_method: input.paymentMethod?.trim() || null,
       reference_number: input.referenceNumber?.trim() || null,
       notes: input.notes?.trim() || null,
+      is_refund: !!input.isRefund,
     })
     .eq("id", id)
     .select(COLUMNS)

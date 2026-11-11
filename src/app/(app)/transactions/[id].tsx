@@ -19,6 +19,7 @@ import { formatINR } from "@/shared/lib/format";
 import { fromDateOnly } from "@/shared/lib/dateInput";
 import { Button } from "@/shared/ui/Button";
 import { DateField } from "@/shared/ui/DateField";
+import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { SelectField } from "@/shared/ui/SelectField";
 import { TextField } from "@/shared/ui/TextField";
 import { useTheme } from "@/shared/ui/theme";
@@ -42,6 +43,7 @@ export default function TransactionDetailsScreen() {
 
   const [isEditing, setIsEditing] = useState(false);
   const [amount, setAmount] = useState("");
+  const [isRefund, setIsRefund] = useState(false);
   const [category, setCategory] = useState("");
   const [date, setDate] = useState<Date | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
@@ -74,11 +76,15 @@ export default function TransactionDetailsScreen() {
   }
 
   const isExpense = tx.type === "expense";
-  const tone = isExpense ? colors.danger : colors.success;
+  // While editing, the sign/tone track the toggle the advocate is currently
+  // choosing, not the saved value, so it updates live.
+  const showingRefund = isExpense && (isEditing ? isRefund : tx.is_refund);
+  const tone = isExpense && !showingRefund ? colors.danger : colors.success;
   const categories = isExpense ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
 
   const startEditing = () => {
     setAmount(String(tx.amount));
+    setIsRefund(tx.is_refund);
     setCategory(tx.category);
     setDate(fromDateOnly(tx.transaction_date));
     setPaymentMethod(tx.payment_method);
@@ -113,6 +119,7 @@ export default function TransactionDetailsScreen() {
         paymentMethod,
         referenceNumber,
         notes,
+        isRefund: isExpense && isRefund,
       });
       setTx({ ...tx, ...updated });
       setIsEditing(false);
@@ -175,18 +182,29 @@ export default function TransactionDetailsScreen() {
 
       <View style={[styles.card, styles.hero, { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.lg }]}>
         <View style={[styles.badge, { backgroundColor: `${tone}1F` }]}>
-          <Ionicons name={isExpense ? "arrow-up" : "checkmark-circle"} size={14} color={tone} />
-          <Text style={[typography.label, { color: tone }]}>{isExpense ? "Expense" : "Received"}</Text>
+          <Ionicons name={isExpense ? (showingRefund ? "arrow-down" : "arrow-up") : "checkmark-circle"} size={14} color={tone} />
+          <Text style={[typography.label, { color: tone }]}>{isExpense ? (showingRefund ? "Refund" : "Expense") : "Received"}</Text>
         </View>
         {isEditing ? (
           <>
+            {isExpense ? (
+              <SegmentedControl
+                segments={[
+                  { key: "expense", label: "Expense" },
+                  { key: "refund", label: "Refund received" },
+                ]}
+                value={isRefund ? "refund" : "expense"}
+                onChange={(key) => setIsRefund(key === "refund")}
+                style={{ marginTop: spacing.sm }}
+              />
+            ) : null}
             <View
               style={[
                 styles.amountEdit,
                 { borderColor: amountFormatError ? colors.danger : colors.brand, borderRadius: radius.md, marginTop: spacing.sm },
               ]}
             >
-              <Text style={[typography.display, { color: tone, fontSize: 28 }]}>{isExpense ? "−₹" : "₹"}</Text>
+              <Text style={[typography.display, { color: tone, fontSize: 28 }]}>{isExpense ? (showingRefund ? "+₹" : "−₹") : "₹"}</Text>
               <TextInput
                 value={amount}
                 onChangeText={setAmount}
@@ -203,7 +221,7 @@ export default function TransactionDetailsScreen() {
           </>
         ) : (
           <Text style={[typography.display, { color: tone, fontSize: 34, marginTop: spacing.sm }]}>
-            {isExpense ? "−" : ""}
+            {isExpense ? (showingRefund ? "+" : "−") : ""}
             {formatINR(Number(tx.amount))}
           </Text>
         )}

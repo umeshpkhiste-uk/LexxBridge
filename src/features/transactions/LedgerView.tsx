@@ -611,10 +611,11 @@ async function openReceipt(path: string) {
 function TransactionRow({ item, showCase }: { item: ClientTransaction; showCase: boolean }) {
   const { colors, spacing, typography } = useTheme();
   const kind = kindOf(item);
-  const tone = kind === "received" ? colors.success : kind === "pending" ? colors.warning : colors.danger;
-  const icon = kind === "received" ? "arrow-down" : kind === "pending" ? "time-outline" : "arrow-up";
-  const sign = kind === "received" ? "+" : kind === "expenses" ? "−" : "";
-  const status = kind === "received" ? "Received" : kind === "pending" ? "Pending · tap to edit" : "Expense";
+  const isRefund = kind === "expenses" && item.is_refund;
+  const tone = kind === "received" || isRefund ? colors.success : kind === "pending" ? colors.warning : colors.danger;
+  const icon = kind === "received" || isRefund ? "arrow-down" : kind === "pending" ? "time-outline" : "arrow-up";
+  const sign = kind === "received" || isRefund ? "+" : kind === "expenses" ? "−" : "";
+  const status = kind === "received" ? "Received" : kind === "pending" ? "Pending · tap to edit" : isRefund ? "Refund" : "Expense";
 
   // Pending fees open the edit page; everything else opens read-only details.
   const onPress = () =>

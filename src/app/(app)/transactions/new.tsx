@@ -28,6 +28,7 @@ export default function NewTransactionScreen() {
   const { colors, spacing, radius, typography } = useTheme();
 
   const [type, setType] = useState<TransactionType>("income");
+  const [isRefund, setIsRefund] = useState(false);
   const [category, setCategory] = useState(INCOME_CATEGORIES[0]);
   const [amount, setAmount] = useState("");
   const [cases, setCases] = useState<CaseSummary[]>([]);
@@ -75,6 +76,7 @@ export default function NewTransactionScreen() {
   const handleTypeChange = (nextType: TransactionType) => {
     setType(nextType);
     setCategory(nextType === "income" ? INCOME_CATEGORIES[0] : EXPENSE_CATEGORIES[0]);
+    setIsRefund(false);
   };
 
   const handleSave = async () => {
@@ -112,6 +114,7 @@ export default function NewTransactionScreen() {
           paymentMethod: paymentMethod ?? undefined,
           notes,
           receipt,
+          isRefund: type === "expense" && isRefund,
         });
       }
       router.back();
@@ -132,6 +135,17 @@ export default function NewTransactionScreen() {
         value={type}
         onChange={(key) => handleTypeChange(key as TransactionType)}
       />
+
+      {type === "expense" ? (
+        <SegmentedControl
+          segments={[
+            { key: "expense", label: "Expense" },
+            { key: "refund", label: "Refund received" },
+          ]}
+          value={isRefund ? "refund" : "expense"}
+          onChange={(key) => setIsRefund(key === "refund")}
+        />
+      ) : null}
 
       <SelectField
         label="Category"
@@ -210,7 +224,7 @@ export default function NewTransactionScreen() {
       ) : null}
 
       <TextField
-        label={type === "income" ? "Amount received (₹)" : "Amount (₹)"}
+        label={type === "income" ? "Amount received (₹)" : isRefund ? "Amount refunded (₹)" : "Amount (₹)"}
         placeholder="e.g. 5000"
         value={amount}
         onChangeText={setAmount}

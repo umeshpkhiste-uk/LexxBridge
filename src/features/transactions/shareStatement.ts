@@ -70,6 +70,9 @@ type LedgerEntry = {
   status: "completed" | "pending";
   amount: number;
   cases?: { title: string } | null;
+  /** A refund of a past expense (money that came back) — nets against the
+   * expense total rather than adding to it. */
+  is_refund?: boolean;
 };
 
 /**
@@ -130,7 +133,7 @@ export function buildStatement({
   const expensesList = transactions.filter((t) => t.type === "expense");
   const periodExpenses = range ? expensesList.filter((t) => t.transaction_date >= range.from && t.transaction_date <= range.to) : expensesList;
 
-  const overallExpenses = totals?.expenses ?? expensesList.reduce((s, t) => s + Number(t.amount), 0);
+  const overallExpenses = totals?.expenses ?? expensesList.reduce((s, t) => s + (t.is_refund ? -Number(t.amount) : Number(t.amount)), 0);
   const overallReceived = totals?.received ?? fees.filter((t) => t.status === "completed").reduce((s, t) => s + Number(t.amount), 0);
   const overallPending =
     totals?.pending ?? fees.filter((t) => t.status === "pending").reduce((s, t) => s + Number(t.amount), 0) + overallExpenses;
@@ -170,7 +173,7 @@ export function buildStatement({
       : [...periodFees, ...periodExpenses]
           .sort((a, b) => a.transaction_date.localeCompare(b.transaction_date))
           .map((t) => {
-            const statusLabel = t.type === "expense" ? "(expense)" : t.status === "pending" ? "(due)" : "(received)";
+            const statusLabel = t.type === "expense" ? (t.is_refund ? "(refund)" : "(expense)") : t.status === "pending" ? "(due)" : "(received)";
             return `• ${formatDay(t.transaction_date)} — ${t.category}${!caseTitle && t.cases?.title ? ` (${t.cases.title})` : ""}: ${formatINR(Number(t.amount))} ${statusLabel}`;
           })),
     // The part of "Balance due" above that isn't covered by an explicit
@@ -221,7 +224,7 @@ export function buildStatementHtml({
   const sortedExpenses = [...expensesList].sort((a, b) => a.transaction_date.localeCompare(b.transaction_date));
   const periodExpenses = range ? sortedExpenses.filter((t) => t.transaction_date >= range.from && t.transaction_date <= range.to) : sortedExpenses;
 
-  const overallExpenses = totals?.expenses ?? expensesList.reduce((s, t) => s + Number(t.amount), 0);
+  const overallExpenses = totals?.expenses ?? expensesList.reduce((s, t) => s + (t.is_refund ? -Number(t.amount) : Number(t.amount)), 0);
   const overallReceived = totals?.received ?? fees.filter((t) => t.status === "completed").reduce((s, t) => s + Number(t.amount), 0);
   const overallPending =
     totals?.pending ?? fees.filter((t) => t.status === "pending").reduce((s, t) => s + Number(t.amount), 0) + overallExpenses;
@@ -278,8 +281,12 @@ export function buildStatementHtml({
     if (!monthGroups.has(key)) monthGroups.set(key, { rows: [], received: 0, pending: 0, expenses: 0 });
     const group = monthGroups.get(key)!;
     group.rows.push(row);
-    if (row.t.type === "expense") group.expenses += Number(row.t.amount);
-    else if (row.t.status === "completed") group.received += Number(row.t.amount);
+    if (row.t.type === "expense") {
+      // A refund is money coming back — shown (and totalled) as a credit
+      // alongside receipts, not as a further expense.
+      if (row.t.is_refund) group.received += Number(row.t.amount);
+      else group.expenses += Number(row.t.amount);
+    } else if (row.t.status === "completed") group.received += Number(row.t.amount);
     else group.pending += Number(row.t.amount);
   }
 
@@ -340,10 +347,10 @@ export function buildStatementHtml({
                 .map(
                   ({ t, balance }) => `<tr>
                     <td>${escapeHtml(formatShortDay(t.transaction_date))}</td>
-                    <td>${escapeHtml(t.category)}${!caseTitle && t.cases?.title ? ` <span class="muted">(${escapeHtml(t.cases.title)})</span>` : ""}</td>
+                    <td>${escapeHtml(t.category)}${t.type === "expense" && t.is_refund ? ` <span class="muted">(refund)</span>` : ""}${!caseTitle && t.cases?.title ? ` <span class="muted">(${escapeHtml(t.cases.title)})</span>` : ""}</td>
                     <td class="amount pending">${t.type === "income" && t.status === "pending" ? escapeHtml(formatINR(Number(t.amount))) : ""}</td>
-                    <td class="amount received">${t.type === "income" && t.status === "completed" ? escapeHtml(formatINR(Number(t.amount))) : ""}</td>
-                    <td class="amount expense">${t.type === "expense" ? escapeHtml(formatINR(Number(t.amount))) : ""}</td>
+                    <td class="amount received">${(t.type === "income" && t.status === "completed") || (t.type === "expense" && t.is_refund) ? escapeHtml(formatINR(Number(t.amount))) : ""}</td>
+                    <td class="amount expense">${t.type === "expense" && !t.is_refund ? escapeHtml(formatINR(Number(t.amount))) : ""}</td>
                     <td class="amount">${escapeHtml(formatINR(balance))}</td>
                   </tr>`
                 )

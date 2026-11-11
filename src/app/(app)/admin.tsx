@@ -20,6 +20,7 @@ import { Badge } from "@/shared/ui/Badge";
 import { Button } from "@/shared/ui/Button";
 import { DateField } from "@/shared/ui/DateField";
 import { ScreenContainer } from "@/shared/ui/ScreenContainer";
+import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { SettingsGroup, SettingsRow } from "@/shared/ui/SettingsGroup";
 import { TextField } from "@/shared/ui/TextField";
 import { useTheme } from "@/shared/ui/theme";
@@ -46,6 +47,10 @@ export default function AdminScreen() {
   // admin work through them one submission-date at a time instead of
   // scrolling one long list.
   const [verificationDate, setVerificationDate] = useState<Date | null>(null);
+  // Default view: today's unverified signups only, so an admin isn't stuck
+  // scrolling hundreds of existing users to spot who just joined. A search
+  // always overrides this — looking someone up should never be filtered.
+  const [userFilter, setUserFilter] = useState<"new" | "all">("new");
 
   useEffect(() => {
     isCurrentUserAdmin()
@@ -163,6 +168,13 @@ export default function AdminScreen() {
   }
 
   const openReports = reports?.filter((r) => r.status === "open") ?? [];
+  const allProfiles = profiles ?? [];
+  const today = new Date();
+  const isSearching = search.trim().length > 0;
+  const visibleProfiles =
+    isSearching || userFilter === "all"
+      ? allProfiles
+      : allProfiles.filter((p) => p.verification_status === "unverified" && isSameDay(new Date(p.created_at), today));
   const pendingVerificationsAllDates = verificationRequests?.filter((r) => r.status === "pending") ?? [];
   const pendingVerifications = verificationDate
     ? pendingVerificationsAllDates.filter((r) => isSameDay(new Date(r.created_at), verificationDate))
@@ -263,15 +275,30 @@ export default function AdminScreen() {
         </View>
       ) : null}
 
-      <SettingsGroup title={`Users${profiles ? ` (${profiles.length})` : ""}`}>
+      {profiles !== null && !isSearching ? (
+        <SegmentedControl
+          segments={[
+            { key: "new", label: "New & unverified" },
+            { key: "all", label: "All users" },
+          ]}
+          value={userFilter}
+          onChange={(key) => setUserFilter(key as "new" | "all")}
+        />
+      ) : null}
+
+      <SettingsGroup
+        title={`Users${profiles ? ` (${visibleProfiles.length}${userFilter === "new" && !isSearching ? ` of ${allProfiles.length}` : ""})` : ""}`}
+      >
         {profiles === null ? (
           <View style={{ padding: spacing.lg, alignItems: "center" }}>
             <ActivityIndicator color={colors.brand} />
           </View>
-        ) : profiles.length === 0 ? (
-          <Text style={[typography.body, { color: colors.textSecondary, padding: spacing.md }]}>No users found.</Text>
+        ) : visibleProfiles.length === 0 ? (
+          <Text style={[typography.body, { color: colors.textSecondary, padding: spacing.md }]}>
+            {userFilter === "new" && !isSearching ? "No new unverified users today." : "No users found."}
+          </Text>
         ) : (
-          profiles.map((profile) => (
+          visibleProfiles.map((profile) => (
             <SettingsRow
               key={profile.id}
               icon={profile.is_blocked ? "ban-outline" : "person-outline"}

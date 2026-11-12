@@ -85,7 +85,7 @@ export function ChatBubble({
     <View style={[styles.row, { justifyContent: isMine ? "flex-end" : "flex-start" }]}>
       <Pressable
         onLongPress={onLongPress}
-        delayLongPress={300}
+        delayLongPress={500}
         onPress={message.localStatus === "failed" || message.localStatus === "offline" ? onRetry : undefined}
         style={({ pressed }) => [
           styles.bubble,
@@ -119,7 +119,7 @@ export function ChatBubble({
           <Pressable
             onPress={onOpenFile}
             onLongPress={onLongPress}
-            delayLongPress={300}
+            delayLongPress={500}
             style={[styles.file, { backgroundColor: isMine ? "rgba(255,255,255,0.14)" : colors.surfaceAlt }]}
           >
             <View style={[styles.fileIcon, { backgroundColor: isMine ? "rgba(255,255,255,0.2)" : colors.surface }]}>
@@ -189,9 +189,8 @@ function ChatImage({
     // A nested Pressable with its own onPress claims the touch responder,
     // so the outer bubble's onLongPress (the "Delete for everyone" menu)
     // never fired for a touch starting on the image — it needs its own
-    // long-press here. 2s rather than the bubble's usual 300ms, since a
-    // photo is also commonly held briefly just to preview/zoom.
-    <Pressable onPress={() => uri && onOpen(uri)} onLongPress={onLongPress} delayLongPress={2000} style={styles.image}>
+    // long-press here, matching the rest of the bubble's 500ms.
+    <Pressable onPress={() => uri && onOpen(uri)} onLongPress={onLongPress} delayLongPress={500} style={styles.image}>
       {uri ? (
         <Image source={{ uri }} style={StyleSheet.absoluteFill} contentFit="cover" transition={150} />
       ) : (

@@ -65,7 +65,12 @@ export function CenterFabTabBar({ state, descriptors, emitter, navigateToTab, hi
         style={styles.tab}
       >
         {options.tabBarIcon?.({ focused, color, size: 24 })}
-        <Text style={[typography.caption, { color, fontSize: 12, fontWeight: focused ? "600" : "400", marginTop: 2 }]}>
+        <Text
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.8}
+          style={[typography.caption, styles.label, { color, fontSize: 12, fontWeight: focused ? "600" : "400" }]}
+        >
           {label}
         </Text>
       </Pressable>
@@ -81,7 +86,9 @@ export function CenterFabTabBar({ state, descriptors, emitter, navigateToTab, hi
       style={styles.tab}
     >
       <Ionicons name={item.icon} size={24} color={colors.textSecondary} />
-      <Text style={[typography.caption, { color: colors.textSecondary, fontSize: 12, marginTop: 2 }]}>{item.label}</Text>
+      <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={[typography.caption, styles.label, { color: colors.textSecondary, fontSize: 12 }]}>
+        {item.label}
+      </Text>
     </Pressable>
   );
 
@@ -140,7 +147,12 @@ const styles = StyleSheet.create({
     elevation: 12,
   },
   row: { flexDirection: "row" },
-  tab: { flex: 1, alignItems: "center", justifyContent: "center", minHeight: 48 },
+  tab: { flex: 1, alignItems: "center", justifyContent: "center", minHeight: 48, paddingHorizontal: 2 },
+  // Full width of the tab so numberOfLines/adjustsFontSizeToFit have a real
+  // boundary to shrink against — without this, a longer label (e.g. "New
+  // Client") just sizes to its own text and can run past the tab's edge
+  // instead of fitting it, most visibly on narrower Android screens.
+  label: { width: "100%", textAlign: "center", marginTop: 2 },
   fab: {
     position: "absolute",
     // Fully clear of the bar's own row (56px tall) plus a standard 16px gap,

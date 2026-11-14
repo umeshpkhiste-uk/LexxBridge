@@ -123,14 +123,19 @@ export type CommunityMessage = {
   sender_id: string;
   content: string;
   is_undecryptable: boolean;
+  is_deleted: boolean;
+  edited_at: string | null;
+  reply_to_id: string | null;
   created_at: string;
 };
 
+const MESSAGE_COLUMNS = "id, community_id, sender_id, reply_to_id, is_deleted, edited_at, created_at";
+
 async function decryptPayload(content: string, nonce: string, senderPublicKey: string | null): Promise<{ content: string; is_undecryptable: boolean }> {
-  if (!senderPublicKey) return { content: "Unable to decrypt — the sender hasn't enabled secure messaging yet.", is_undecryptable: true };
+  if (!senderPublicKey) return { content: "This message isn't available yet — ask the sender to open the app once.", is_undecryptable: true };
   const plaintext = await decryptFromParty({ content, nonce }, senderPublicKey);
   if (plaintext !== null) return { content: plaintext, is_undecryptable: false };
-  return { content: "Unable to decrypt this message on this device.", is_undecryptable: true };
+  return { content: "This message isn't available on this device.", is_undecryptable: true };
 }
 
 export async function listCommunityMessages(communityId: string): Promise<CommunityMessage[]> {
@@ -138,7 +143,7 @@ export async function listCommunityMessages(communityId: string): Promise<Commun
 
   const { data: messages, error } = await supabase
     .from("community_messages")
-    .select("id, community_id, sender_id, created_at")
+    .select(MESSAGE_COLUMNS)
     .eq("community_id", communityId)
     .order("created_at", { ascending: true })
     .limit(500);
@@ -161,21 +166,20 @@ export async function listCommunityMessages(communityId: string): Promise<Commun
 
   return Promise.all(
     messages.map(async (m) => {
+      if (m.is_deleted) return { ...m, content: "", is_undecryptable: false };
       const payload = payloadByMessageId.get(m.id);
-      if (!payload) return { ...m, content: "Unable to decrypt this message on this device.", is_undecryptable: true };
+      if (!payload) return { ...m, content: "This message isn't available on this device.", is_undecryptable: true };
       const decrypted = await decryptPayload(payload.content, payload.nonce, senderKeyById.get(m.sender_id) ?? null);
       return { ...m, ...decrypted };
     })
   );
 }
 
-/** Sends to every current member, including the sender (so they can decrypt
- * their own message again later, e.g. after reopening the app). */
-export async function sendCommunityMessage(community: Community, content: string): Promise<CommunityMessage> {
+/** Every current member's current public key, keyed by id — shared by send
+ * and edit, both of which fan the same plaintext out to everyone. Throws if
+ * anyone hasn't published a key yet. */
+async function currentMemberKeys(community: Community): Promise<{ id: string; key: string }[]> {
   const me = await currentUserId();
-  const trimmed = content.trim();
-  if (!trimmed) throw new Error("Message can't be empty");
-
   const members = await listCommunityMembers(community);
   const keyPairs = await Promise.all(
     members.map(async (m) => ({ id: m.id, key: m.id === me ? await getPublicKey(me) : await getPublicKey(m.id) }))
@@ -184,17 +188,28 @@ export async function sendCommunityMessage(community: Community, content: string
   if (missing.length) {
     throw new Error("Some members haven't enabled secure messaging yet — ask them to open the app once, then try again.");
   }
+  return keyPairs as { id: string; key: string }[];
+}
+
+/** Sends to every current member, including the sender (so they can decrypt
+ * their own message again later, e.g. after reopening the app). */
+export async function sendCommunityMessage(community: Community, content: string, replyToId?: string | null): Promise<CommunityMessage> {
+  const me = await currentUserId();
+  const trimmed = content.trim();
+  if (!trimmed) throw new Error("Message can't be empty");
+
+  const keyPairs = await currentMemberKeys(community);
 
   const { data: message, error } = await supabase
     .from("community_messages")
-    .insert({ community_id: community.id, sender_id: me })
-    .select("id, community_id, sender_id, created_at")
+    .insert({ community_id: community.id, sender_id: me, reply_to_id: replyToId ?? null })
+    .select(MESSAGE_COLUMNS)
     .single();
   if (error) throw new Error(error.message);
 
   const payloads = await Promise.all(
     keyPairs.map(async ({ id, key }) => {
-      const sealed = await encryptForRecipient(trimmed, key!);
+      const sealed = await encryptForRecipient(trimmed, key);
       return { message_id: message.id, recipient_id: id, content: sealed.content, nonce: sealed.nonce };
     })
   );
@@ -204,36 +219,89 @@ export async function sendCommunityMessage(community: Community, content: string
   return { ...message, content: trimmed, is_undecryptable: false };
 }
 
-/** Live updates for one community's chat. */
-export function subscribeToCommunityMessages(communityId: string, onNewMessage: (message: CommunityMessage) => void) {
+/** Re-encrypts new text for every current member and marks the message
+ * edited. Only the sender may call this — enforced by RLS on both tables. */
+export async function editCommunityMessage(community: Community, message: CommunityMessage, content: string): Promise<CommunityMessage> {
+  const trimmed = content.trim();
+  if (!trimmed) throw new Error("Message can't be empty");
+
+  const keyPairs = await currentMemberKeys(community);
+  const payloads = await Promise.all(
+    keyPairs.map(async ({ id, key }) => {
+      const sealed = await encryptForRecipient(trimmed, key);
+      return { message_id: message.id, recipient_id: id, content: sealed.content, nonce: sealed.nonce };
+    })
+  );
+  const { error: payloadsError } = await supabase.from("community_message_payloads").upsert(payloads, { onConflict: "message_id,recipient_id" });
+  if (payloadsError) throw new Error(payloadsError.message);
+
+  const editedAt = new Date().toISOString();
+  const { error } = await supabase.from("community_messages").update({ edited_at: editedAt }).eq("id", message.id);
+  if (error) throw new Error(error.message);
+
+  return { ...message, content: trimmed, edited_at: editedAt, is_undecryptable: false };
+}
+
+/** Deletes for everyone: clears every recipient's ciphertext and marks the
+ * message deleted. Only the sender may call this — enforced by RLS. */
+export async function deleteCommunityMessage(message: CommunityMessage): Promise<void> {
+  const { error: payloadsError } = await supabase.from("community_message_payloads").delete().eq("message_id", message.id);
+  if (payloadsError) throw new Error(payloadsError.message);
+  const { error } = await supabase.from("community_messages").update({ is_deleted: true }).eq("id", message.id);
+  if (error) throw new Error(error.message);
+}
+
+type CommunityMessageRow = {
+  id: string;
+  community_id: string;
+  sender_id: string;
+  reply_to_id: string | null;
+  is_deleted: boolean;
+  edited_at: string | null;
+  created_at: string;
+};
+
+/** Live updates for one community's chat — new messages, plus edits and
+ * deletes to existing ones (both land as a row UPDATE). */
+export function subscribeToCommunityMessages(communityId: string, onMessage: (message: CommunityMessage) => void) {
   let me: string | null = null;
   currentUserId()
     .then((id) => (me = id))
     .catch(() => {});
+
+  const resolve = async (row: CommunityMessageRow) => {
+    if (!me) return;
+    if (row.is_deleted) {
+      onMessage({ ...row, content: "", is_undecryptable: false });
+      return;
+    }
+    const { data: payloadRow } = await supabase
+      .from("community_message_payloads")
+      .select("content, nonce")
+      .eq("message_id", row.id)
+      .eq("recipient_id", me)
+      .maybeSingle();
+    if (!payloadRow) return;
+    const { data: sender } = await supabase
+      .from("public_advocate_profiles")
+      .select("messaging_public_key")
+      .eq("id", row.sender_id)
+      .maybeSingle();
+    const decrypted = await decryptPayload(payloadRow.content, payloadRow.nonce, sender?.messaging_public_key ?? null);
+    onMessage({ ...row, ...decrypted });
+  };
 
   const channel = supabase
     .channel(`community-chat:${communityId}`)
     .on(
       "postgres_changes",
       { event: "INSERT", schema: "public", table: "community_messages", filter: `community_id=eq.${communityId}` },
-      async (payload) => {
-        const row = payload.new as { id: string; community_id: string; sender_id: string; created_at: string };
-        if (!me) return;
-        const { data: payloadRow } = await supabase
-          .from("community_message_payloads")
-          .select("content, nonce")
-          .eq("message_id", row.id)
-          .eq("recipient_id", me)
-          .maybeSingle();
-        if (!payloadRow) return;
-        const { data: sender } = await supabase
-          .from("public_advocate_profiles")
-          .select("messaging_public_key")
-          .eq("id", row.sender_id)
-          .maybeSingle();
-        const decrypted = await decryptPayload(payloadRow.content, payloadRow.nonce, sender?.messaging_public_key ?? null);
-        onNewMessage({ ...row, ...decrypted });
-      }
+      (payload) => resolve(payload.new as CommunityMessageRow)
+    )
+    .on(
+      "postgres_changes",
+      { event: "UPDATE", schema: "public", table: "community_messages", filter: `community_id=eq.${communityId}` },
+      (payload) => resolve(payload.new as CommunityMessageRow)
     )
     .subscribe();
 

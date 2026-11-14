@@ -341,7 +341,7 @@ export function PostCard({
         { label: "Delete post", icon: "trash-outline", onPress: confirmDelete },
       ]
     : [
-        { label: "View author's profile", icon: "person-outline", onPress: () => router.push(`/(app)/network/${post.author_id}`) },
+        { label: "View profile", icon: "person-outline", onPress: () => router.push(`/(app)/network/${post.author_id}`) },
         {
           label: "Report post",
           icon: "flag-outline",

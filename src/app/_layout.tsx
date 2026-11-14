@@ -1,4 +1,4 @@
-import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from "expo-router";
+import { DarkTheme, DefaultTheme, router, Stack, ThemeProvider } from "expo-router";
 import { allowScreenCaptureAsync, enableAppSwitcherProtectionAsync, preventScreenCaptureAsync } from "expo-screen-capture";
 import { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Alert, AppState, Platform, View } from "react-native";
@@ -125,6 +125,14 @@ function RootNavigator() {
       active = false;
     };
   }, [session, isPasswordRecovery]);
+
+  // When recovery starts, the screen the user was on becomes locked and the
+  // router would otherwise fall back to any public route (e.g. /legal/terms)
+  // — send them to the reset screen explicitly instead.
+  const navigatorReady = !isLoading && lockState === "unlocked";
+  useEffect(() => {
+    if (isPasswordRecovery && navigatorReady) router.replace("/reset-password");
+  }, [isPasswordRecovery, navigatorReady]);
 
   if (isLoading || lockState === "checking") {
     return (

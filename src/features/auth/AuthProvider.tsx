@@ -30,22 +30,33 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const [deepLinkError, setDeepLinkError] = useState<string | null>(null);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      setIsLoading(false);
-    });
-
+    let active = true;
     const { data: authSubscription } = supabase.auth.onAuthStateChange((event, nextSession) => {
       if (event === "PASSWORD_RECOVERY") setIsPasswordRecovery(true);
       setSession(nextSession);
     });
 
     // Cold start: the app may have been opened directly from an email link.
-    Linking.getInitialURL().then((url) => consumeAuthDeepLink(url).then(setDeepLinkError));
+    // Stay "loading" until that link's code has been exchanged — otherwise
+    // the navigator renders first, sees /reset-password still locked (no
+    // recovery yet) and redirects away, then the recovery flag flips a
+    // moment later and the router falls back to whatever public route is
+    // left (it landed on /legal/terms).
+    (async () => {
+      const linkError = await Linking.getInitialURL()
+        .then(consumeAuthDeepLink)
+        .catch(() => null);
+      const { data } = await supabase.auth.getSession();
+      if (!active) return;
+      setDeepLinkError(linkError);
+      setSession(data.session);
+      setIsLoading(false);
+    })();
     // Warm start: the app was already open (backgrounded) when the link was tapped.
     const linkingSubscription = Linking.addEventListener("url", ({ url }) => consumeAuthDeepLink(url).then(setDeepLinkError));
 
     return () => {
+      active = false;
       authSubscription.subscription.unsubscribe();
       linkingSubscription.remove();
     };

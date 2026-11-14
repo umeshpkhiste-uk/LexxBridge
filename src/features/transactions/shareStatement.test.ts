@@ -18,6 +18,7 @@ const tx = (overrides: Partial<Transaction>): Transaction => ({
   notes: null,
   receipt_path: null,
   is_refund: false,
+  created_at: "2026-09-01T00:00:00.000Z",
   ...overrides,
 });
 

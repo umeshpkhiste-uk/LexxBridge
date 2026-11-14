@@ -30,17 +30,22 @@ export type Transaction = {
   /** A refund of a past expense (money that came back) — always false for
    * income; nets against the running expense total instead of adding to it. */
   is_refund: boolean;
+  /** When the row was created — used only to break ties between entries
+   * recorded on the same transaction_date, so the most recently added one
+   * lists first instead of in arbitrary database order. */
+  created_at: string;
 };
 
 const COLUMNS =
-  "id, case_id, client_id, type, category, amount, currency, status, transaction_date, payment_method, reference_number, notes, receipt_path, is_refund";
+  "id, case_id, client_id, type, category, amount, currency, status, transaction_date, payment_method, reference_number, notes, receipt_path, is_refund, created_at";
 
 export async function listTransactionsForCase(caseId: string): Promise<Transaction[]> {
   const { data, error } = await supabase
     .from("transactions")
     .select(COLUMNS)
     .eq("case_id", caseId)
-    .order("transaction_date", { ascending: false });
+    .order("transaction_date", { ascending: false })
+    .order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
   return data as Transaction[];
 }
@@ -53,6 +58,7 @@ export async function listTransactionsForClient(clientId: string): Promise<Clien
     .select(`${COLUMNS}, cases(title)`)
     .eq("client_id", clientId)
     .order("transaction_date", { ascending: false })
+    .order("created_at", { ascending: false })
     .limit(100);
   if (error) throw new Error(error.message);
   return data as unknown as ClientTransaction[];
@@ -117,7 +123,6 @@ async function uploadReceipt(userId: string, receipt: { uri: string; mimeType: s
 }
 
 export type TransactionDetail = Transaction & {
-  created_at: string;
   cases: { title: string } | null;
   clients: { full_name: string } | null;
 };
@@ -125,7 +130,7 @@ export type TransactionDetail = Transaction & {
 export async function getTransaction(id: string): Promise<TransactionDetail> {
   const { data, error } = await supabase
     .from("transactions")
-    .select(`${COLUMNS}, created_at, cases(title), clients(full_name)`)
+    .select(`${COLUMNS}, cases(title), clients(full_name)`)
     .eq("id", id)
     .single();
   if (error) throw new Error(error.message);

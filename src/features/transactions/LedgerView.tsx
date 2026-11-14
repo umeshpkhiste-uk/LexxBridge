@@ -139,7 +139,7 @@ export function LedgerView({ clientId, caseId, variant = "screen" }: Props) {
           !query ||
           [t.category, t.notes, t.reference_number, t.payment_method, t.cases?.title].some((f) => f?.toLowerCase().includes(query)),
       )
-      .sort((a, b) => b.transaction_date.localeCompare(a.transaction_date));
+      .sort((a, b) => b.transaction_date.localeCompare(a.transaction_date) || b.created_at.localeCompare(a.created_at));
     const byMonth = new Map<string, ClientTransaction[]>();
     for (const t of visible) {
       const key = t.transaction_date.slice(0, 7);

@@ -16,7 +16,7 @@ import { DateField, toDateOnly } from "@/shared/ui/DateField";
 import { DonutChart } from "@/shared/ui/DonutChart";
 import { ErrorNotice } from "@/shared/ui/ErrorNotice";
 import { useTheme } from "@/shared/ui/theme";
-import { ClientTransaction, getReceiptUrl, listTransactionsForCase, listTransactionsForClient } from "./api";
+import { ClientTransaction, createTransaction, getReceiptUrl, listTransactionsForCase, listTransactionsForClient } from "./api";
 import { computeFeeTotals } from "./feeTotals";
 import { buildStatement, downloadStatementPdf, shareStatementViaWhatsApp, shareViaEmail, shareViaSms, shareViaSystem, StatementRange } from "./shareStatement";
 
@@ -77,6 +77,7 @@ export function LedgerView({ clientId, caseId, variant = "screen" }: Props) {
   const [customRangeOpen, setCustomRangeOpen] = useState(false);
   const [customFrom, setCustomFrom] = useState<Date | null>(null);
   const [customTo, setCustomTo] = useState<Date | null>(null);
+  const [markingPaid, setMarkingPaid] = useState<"fee" | "expense" | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -227,6 +228,47 @@ export function LedgerView({ clientId, caseId, variant = "screen" }: Props) {
         ? `/(app)/transactions/new?caseId=${caseDetail.id}&clientId=${client.id}`
         : `/(app)/transactions/new?clientId=${client.id}`,
     );
+
+  /** Lets the advocate confirm, once a client says they've paid (e.g. over
+   * WhatsApp), that a case's pending fee or expense balance was received —
+   * no UPI link can report payment completion back to the app on its own,
+   * so this is the one explicit step that turns "client paid" into a real
+   * ledger entry and an updated pending figure. Only offered when this
+   * view is scoped to a single case (caseDetail set), since a client-wide
+   * balance can span several cases with no one case to attach the entry to. */
+  const markAsPaid = (kind: "fee" | "expense", amount: number) => {
+    if (!caseDetail) return;
+    Alert.alert(
+      kind === "fee" ? "Mark fees as paid?" : "Mark expenses as reimbursed?",
+      `Adds a completed entry of ${formatINR(amount)} to the ledger for ${caseDetail.title} and reduces the pending balance.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Mark as paid",
+          onPress: async () => {
+            setMarkingPaid(kind);
+            try {
+              await createTransaction({
+                caseId: caseDetail.id,
+                clientId: client.id,
+                type: kind === "fee" ? "income" : "expense",
+                category: kind === "fee" ? "Professional fee" : "Miscellaneous",
+                amount,
+                status: "completed",
+                isRefund: kind === "expense",
+                notes: kind === "fee" ? "Marked as paid from a payment reminder" : "Marked as reimbursed from a payment reminder",
+              });
+              setTransactions((await (caseId ? listTransactionsForCase(caseId) : listTransactionsForClient(clientId))) as ClientTransaction[]);
+            } catch (err) {
+              Alert.alert("Couldn't record payment", friendlyErrorMessage(err));
+            } finally {
+              setMarkingPaid(null);
+            }
+          },
+        },
+      ],
+    );
+  };
 
   const billed = totals.totalFees;
   // Fee-only portion of `billed` — the "Total agreed" legend entry is the
@@ -380,6 +422,24 @@ export function LedgerView({ clientId, caseId, variant = "screen" }: Props) {
               <Legend color={colors.warning} label="Pending" value={pendingDue} note="(Agreed Fees − Received)" />
             </View>
           </View>
+          {caseDetail && (pendingDue > 0 || totals.expenses > 0) ? (
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.md, marginTop: spacing.sm }}>
+              {pendingDue > 0 ? (
+                <Pressable onPress={() => markAsPaid("fee", pendingDue)} disabled={markingPaid !== null} hitSlop={6}>
+                  <Text style={[typography.label, { color: colors.accent, opacity: markingPaid === "fee" ? 0.5 : 1 }]}>
+                    {markingPaid === "fee" ? "Marking fees as paid…" : "Mark fees as paid"}
+                  </Text>
+                </Pressable>
+              ) : null}
+              {totals.expenses > 0 ? (
+                <Pressable onPress={() => markAsPaid("expense", totals.expenses)} disabled={markingPaid !== null} hitSlop={6}>
+                  <Text style={[typography.label, { color: colors.accent, opacity: markingPaid === "expense" ? 0.5 : 1 }]}>
+                    {markingPaid === "expense" ? "Marking expenses as reimbursed…" : "Mark expenses as reimbursed"}
+                  </Text>
+                </Pressable>
+              ) : null}
+            </View>
+          ) : null}
           <View style={[styles.cardFooter, { marginTop: spacing.md, paddingTop: spacing.md, borderTopColor: colors.border }]}>
             <View style={{ flex: 1 }}>
               <Text style={[typography.caption, { color: colors.textSecondary }]}>{hasAgreedFee ? "Agreed Fees" : "Fees"}</Text>

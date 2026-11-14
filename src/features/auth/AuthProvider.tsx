@@ -14,6 +14,11 @@ type AuthContextValue = {
    * root navigator treating the user as normally signed in. */
   isPasswordRecovery: boolean;
   clearPasswordRecovery: () => void;
+  /** Set when a password-reset or email-confirmation deep link's code
+   * failed to exchange for a session (expired, already used, wrong
+   * browser) — shown on the sign-in screen so the tap isn't silent. */
+  deepLinkError: string | null;
+  clearDeepLinkError: () => void;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -22,6 +27,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
+  const [deepLinkError, setDeepLinkError] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -35,9 +41,9 @@ export function AuthProvider({ children }: PropsWithChildren) {
     });
 
     // Cold start: the app may have been opened directly from an email link.
-    Linking.getInitialURL().then(consumeAuthDeepLink);
+    Linking.getInitialURL().then((url) => consumeAuthDeepLink(url).then(setDeepLinkError));
     // Warm start: the app was already open (backgrounded) when the link was tapped.
-    const linkingSubscription = Linking.addEventListener("url", ({ url }) => consumeAuthDeepLink(url));
+    const linkingSubscription = Linking.addEventListener("url", ({ url }) => consumeAuthDeepLink(url).then(setDeepLinkError));
 
     return () => {
       authSubscription.subscription.unsubscribe();
@@ -52,6 +58,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
         isLoading,
         isPasswordRecovery,
         clearPasswordRecovery: () => setIsPasswordRecovery(false),
+        deepLinkError,
+        clearDeepLinkError: () => setDeepLinkError(null),
       }}
     >
       {children}

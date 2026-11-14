@@ -13,6 +13,7 @@ import {
   View,
 } from "react-native";
 import { getEnabledProviders, signInWithProvider, SOCIAL_LABEL, SocialProvider } from "@/features/auth/socialLogin";
+import { useAuth } from "@/features/auth/AuthProvider";
 import { SignInForm } from "@/features/auth/SignInForm";
 import { getLastLockedAccountMethod } from "@/features/applock/appLock";
 import { getSavedLoginUser } from "@/features/biometric/biometric";
@@ -37,6 +38,7 @@ const SOCIAL: { provider: SocialProvider; icon: keyof typeof Ionicons.glyphMap; 
 export default function WelcomeScreen() {
   const { colors, spacing, radius, typography } = useTheme();
   const { justSignedUp } = useLocalSearchParams<{ justSignedUp?: string }>();
+  const { deepLinkError, clearDeepLinkError } = useAuth();
   // Phone width, or the app's centred column on the web.
   const width = useAppWidth();
   const [page, setPage] = useState(0);
@@ -148,6 +150,26 @@ export default function WelcomeScreen() {
               Your {lockHint === "pin" ? "PIN" : "pattern"} is set on this phone. Log in once with your password and LexxBridge will ask for
               your {lockHint === "pin" ? "PIN" : "pattern"} from then on.
             </Text>
+          </View>
+        ) : null}
+        {deepLinkError ? (
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "flex-start",
+              gap: spacing.sm,
+              backgroundColor: colors.surfaceAlt,
+              borderRadius: radius.lg,
+              padding: spacing.md,
+            }}
+          >
+            <Ionicons name="warning-outline" size={20} color={colors.danger} />
+            <View style={{ flex: 1, gap: 4 }}>
+              <Text style={[typography.caption, { color: colors.textPrimary }]}>{deepLinkError}</Text>
+              <Link href="/(auth)/forgot-password" onPress={clearDeepLinkError}>
+                <Text style={[typography.caption, { color: colors.accent, fontWeight: "600" }]}>Request a new link</Text>
+              </Link>
+            </View>
           </View>
         ) : null}
         {justSignedUp ? (

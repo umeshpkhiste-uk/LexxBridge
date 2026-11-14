@@ -8,6 +8,10 @@ export type AuthResult = { error: string | null };
  * the app on phones, or the site they signed up on in a browser. */
 function authRedirect(path: "verify-email" | "reset-password"): string {
   if (Platform.OS === "web" && typeof window !== "undefined") return `${window.location.origin}/${path}`;
+  // The reset email is often opened on a computer, where a lexxbridge://
+  // link can't open anything (it left a blank Gmail redirect page). The web
+  // reset screen works on any device; the user then signs in on the phone.
+  if (path === "reset-password") return "https://lexxbridge.app/reset-password";
   return `lexxbridge://${path}`;
 }
 

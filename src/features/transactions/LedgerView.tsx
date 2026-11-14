@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect } from "expo-router";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState, type ReactNode } from "react";
 import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type ViewInstance } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CaseDetail, getCase, listCases } from "@/features/cases/api";
@@ -420,27 +420,23 @@ export function LedgerView({ clientId, caseId, variant = "screen" }: Props) {
             <View style={{ flex: 1, marginLeft: spacing.lg, gap: spacing.md }}>
               <Legend color={colors.brand} label="Agreed Fees" value={agreedFeeOnly} />
               <Legend color={colors.success} label="Received" value={totals.received} />
-              <Legend color={colors.warning} label="Pending" value={pendingDue} note="(Agreed Fees − Received)" />
+              <Legend
+                color={colors.warning}
+                label="Pending"
+                value={pendingDue}
+                note="(Agreed Fees − Received)"
+                action={
+                  caseDetail && pendingDue > 0 ? (
+                    <Pressable onPress={() => markAsPaid("fee", pendingDue)} disabled={markingPaid !== null} hitSlop={6} style={{ marginTop: 2 }}>
+                      <Text style={[typography.label, { color: colors.accent, opacity: markingPaid === "fee" ? 0.5 : 1 }]}>
+                        {markingPaid === "fee" ? "Marking as paid…" : "Mark as paid"}
+                      </Text>
+                    </Pressable>
+                  ) : null
+                }
+              />
             </View>
           </View>
-          {caseDetail && (pendingDue > 0 || totals.expenses > 0) ? (
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.md, marginTop: spacing.sm }}>
-              {pendingDue > 0 ? (
-                <Pressable onPress={() => markAsPaid("fee", pendingDue)} disabled={markingPaid !== null} hitSlop={6}>
-                  <Text style={[typography.label, { color: colors.accent, opacity: markingPaid === "fee" ? 0.5 : 1 }]}>
-                    {markingPaid === "fee" ? "Marking fees as paid…" : "Mark fees as paid"}
-                  </Text>
-                </Pressable>
-              ) : null}
-              {totals.expenses > 0 ? (
-                <Pressable onPress={() => markAsPaid("expense", totals.expenses)} disabled={markingPaid !== null} hitSlop={6}>
-                  <Text style={[typography.label, { color: colors.accent, opacity: markingPaid === "expense" ? 0.5 : 1 }]}>
-                    {markingPaid === "expense" ? "Marking expenses as reimbursed…" : "Mark expenses as reimbursed"}
-                  </Text>
-                </Pressable>
-              ) : null}
-            </View>
-          ) : null}
           <View style={[styles.cardFooter, { marginTop: spacing.md, paddingTop: spacing.md, borderTopColor: colors.border }]}>
             <View style={{ flex: 1 }}>
               <Text style={[typography.caption, { color: colors.textSecondary }]}>{hasAgreedFee ? "Agreed Fees" : "Fees"}</Text>
@@ -457,6 +453,13 @@ export function LedgerView({ clientId, caseId, variant = "screen" }: Props) {
                 <View style={{ flex: 1 }}>
                   <Text style={[typography.caption, { color: colors.textSecondary }]}>Expenses</Text>
                   <Text style={[typography.title, { color: colors.danger, fontSize: 22 }]}>{formatINR(totals.expenses)}</Text>
+                  {caseDetail ? (
+                    <Pressable onPress={() => markAsPaid("expense", totals.expenses)} disabled={markingPaid !== null} hitSlop={6} style={{ marginTop: 2 }}>
+                      <Text style={[typography.label, { color: colors.accent, opacity: markingPaid === "expense" ? 0.5 : 1 }]}>
+                        {markingPaid === "expense" ? "Marking as reimbursed…" : "Mark as reimbursed"}
+                      </Text>
+                    </Pressable>
+                  ) : null}
                 </View>
               </>
             ) : null}
@@ -681,7 +684,19 @@ function CustomRangeSheet({
   );
 }
 
-function Legend({ color, label, value, note }: { color: string; label: string; value: number; note?: string }) {
+function Legend({
+  color,
+  label,
+  value,
+  note,
+  action,
+}: {
+  color: string;
+  label: string;
+  value: number;
+  note?: string;
+  action?: ReactNode;
+}) {
   const { colors, typography } = useTheme();
   return (
     <View style={styles.legend}>
@@ -690,6 +705,7 @@ function Legend({ color, label, value, note }: { color: string; label: string; v
         <Text style={[typography.caption, { color: colors.textSecondary }]}>{label}</Text>
         {note ? <Text style={[typography.caption, { color: colors.textSecondary }]}>{note}</Text> : null}
         <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>{formatINR(value)}</Text>
+        {action}
       </View>
     </View>
   );

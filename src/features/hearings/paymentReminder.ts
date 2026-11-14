@@ -24,7 +24,6 @@ function buildReminderMessage(opts: {
     ? buildUpiPayLink({
         upiId: opts.advocateUpiId,
         payeeName: opts.advocateName ?? opts.clientName,
-        amount: opts.pending,
         note: `Payment for ${opts.caseTitle}`,
       })
     : null;
@@ -90,7 +89,6 @@ function buildHearingDayMessage(opts: {
     ? buildUpiPayLink({
         upiId: opts.advocateUpiId,
         payeeName: opts.advocateName ?? opts.clientName,
-        amount: opts.pending,
         note: `Payment for ${opts.caseTitle}`,
       })
     : null;

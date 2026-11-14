@@ -247,6 +247,7 @@ export function ProfileDocket({ profile, email, audience, caseCount, connections
             <ContactRow icon="business-outline" label="Court chambers" value={profile.chamber_address} />
             <ContactRow icon="mail-outline" label="Login email" value={email} masked={email ? maskEmail(email) : null} />
             <ContactRow icon="call-outline" label="Mobile" value={profile.phone} masked={profile.phone ? maskPhone(profile.phone) : null} />
+            <ContactRow icon="cash-outline" label="UPI ID" value={profile.upi_id} />
           </View>
         </Section>
       ) : (

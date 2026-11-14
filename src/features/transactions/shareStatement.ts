@@ -56,15 +56,16 @@ function lastTransactionDate(fees: { transaction_date: string }[]): string | nul
   return fees.reduce<string | null>((latest, t) => (!latest || t.transaction_date > latest ? t.transaction_date : latest), null);
 }
 
-/** A tappable UPI "pay now" link pre-filled with the amount and a short
- * note, so the client's UPI app opens ready to pay. Returns null when
- * there's no UPI ID on file or nothing is due. */
-export function buildUpiPayLink(opts: { upiId: string; payeeName: string; amount: number; note: string }): string | null {
-  if (!opts.upiId || opts.amount <= 0) return null;
+/** A tappable UPI "pay now" link, so the client's UPI app opens ready to
+ * pay. `amount` is optional — when omitted, the client's UPI app leaves
+ * the amount blank for them to fill in rather than pre-filling it. Returns
+ * null when there's no UPI ID on file. */
+export function buildUpiPayLink(opts: { upiId: string; payeeName: string; amount?: number; note: string }): string | null {
+  if (!opts.upiId) return null;
   const params = [
     ["pa", opts.upiId],
     ["pn", opts.payeeName],
-    ["am", opts.amount.toFixed(2)],
+    ...(opts.amount != null && opts.amount > 0 ? [["am", opts.amount.toFixed(2)]] : []),
     ["cu", "INR"],
     ["tn", opts.note],
   ];

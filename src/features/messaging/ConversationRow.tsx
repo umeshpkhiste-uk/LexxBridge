@@ -46,7 +46,7 @@ export function ConversationRow({ conversation, myId, onPress }: { conversation:
             ]}
             numberOfLines={1}
           >
-            {last?.is_undecryptable ? "Message unavailable on this device" : last ? messagePreview(last) : "Tap to start chatting"}
+            {last?.is_undecryptable ? "Message is encrypted and can not see on this device" : last ? messagePreview(last) : "Tap to start chatting"}
           </Text>
           {unread ? (
             <View style={[styles.badge, { backgroundColor: colors.success }]}>

@@ -66,7 +66,7 @@ export function messagePreview(message: {
   attachment_name?: string | null;
 }): string {
   if (message.is_deleted) return "This message was deleted";
-  if (message.is_undecryptable) return "Message unavailable on this device";
+  if (message.is_undecryptable) return "Message is encrypted and can not see on this device";
   if (message.content) return message.content;
   if (message.attachment_kind === "image") return "Photo";
   if (message.attachment_kind === "file") return message.attachment_name ?? "File";

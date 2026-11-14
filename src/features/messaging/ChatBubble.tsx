@@ -73,7 +73,7 @@ export function ChatBubble({
         <View style={[styles.systemPill, { backgroundColor: colors.surfaceAlt }]}>
           <Ionicons name="lock-closed-outline" size={12} color={colors.textSecondary} />
           <Text style={[typography.caption, { color: colors.textSecondary, fontStyle: "italic" }]} numberOfLines={1}>
-            Message unavailable on this device
+            Message is encrypted and can not see on this device
           </Text>
           <Text style={[styles.meta, { color: colors.textSecondary }]}>{bubbleTime(message.created_at)}</Text>
         </View>

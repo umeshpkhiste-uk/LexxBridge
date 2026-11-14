@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
-import { router, useFocusEffect, useNavigation } from "expo-router";
+import { router, useFocusEffect, useLocalSearchParams, useNavigation } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Alert, FlatList, GestureResponderEvent, Linking, Pressable, SectionList, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -27,7 +27,18 @@ const CASES_SEGMENTS = ["cases", "clients"] as const;
 
 export default function CasesScreen() {
   const { colors, spacing, radius, typography } = useTheme();
-  const [segment, setSegment] = useState<"cases" | "clients">("cases");
+  // Mirrored into the URL (?segment=) below — on the web, going back to
+  // this screen from a case/client detail screen can remount it instead of
+  // leaving it mounted underneath the way native does, which would reset
+  // plain local state back to this default; reading the initial value from
+  // the URL survives that remount the same way the rest of the screen's
+  // own state (search, scroll position) doesn't need to.
+  const { segment: segmentParam } = useLocalSearchParams<{ segment?: string }>();
+  const [segment, setSegmentState] = useState<"cases" | "clients">(segmentParam === "clients" ? "clients" : "cases");
+  const setSegment = useCallback((next: "cases" | "clients") => {
+    setSegmentState(next);
+    router.setParams({ segment: next });
+  }, []);
   const [search, setSearch] = useState("");
   const [cases, setCases] = useState<CaseSummary[] | null>(null);
   const [clients, setClients] = useState<ClientListItem[] | null>(null);
@@ -49,7 +60,7 @@ export default function CasesScreen() {
     // doesn't know about "tabPress" — it exists at runtime regardless.
     const unsubscribe = (navigation as any).addListener("tabPress", () => setSegment("cases"));
     return unsubscribe;
-  }, [navigation]);
+  }, [navigation, setSegment]);
 
   const load = useCallback(() => {
     setIsLoading(true);

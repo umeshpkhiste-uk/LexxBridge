@@ -51,10 +51,18 @@ import { ErrorNotice } from "@/shared/ui/ErrorNotice";
 import { useTheme } from "@/shared/ui/theme";
 
 const EDIT_WINDOW_MS = 15 * 60 * 1000;
+const DELETE_FOR_EVERYONE_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 /** Like WhatsApp, a sent message can only be edited for a short while. */
 function isWithinEditWindow(createdAt: string) {
   return Date.now() - new Date(createdAt).getTime() < EDIT_WINDOW_MS;
+}
+
+/** "Delete for everyone" only stays offered to the sender for 24 hours
+ * after sending — past that it disappears from the menu entirely. The
+ * message itself is never auto-deleted; only this option expires. */
+function isWithinDeleteForEveryoneWindow(createdAt: string) {
+  return Date.now() - new Date(createdAt).getTime() < DELETE_FOR_EVERYONE_WINDOW_MS;
 }
 
 /** WhatsApp-style 1-to-1 chat with a connected advocate. */
@@ -368,7 +376,9 @@ export default function ChatScreen() {
         },
       });
     }
-    if (isMine && isSaved) actions.push({ label: "Delete for everyone", icon: "trash-outline", onPress: () => confirmDelete(message) });
+    if (isMine && isSaved && isWithinDeleteForEveryoneWindow(message.created_at)) {
+      actions.push({ label: "Delete for everyone", icon: "trash-outline", onPress: () => confirmDelete(message) });
+    }
     if (message.localStatus === "failed" || message.localStatus === "offline") {
       actions.push({ label: "Retry", icon: "refresh-outline", onPress: () => retry(message) });
       actions.push({ label: "Discard", icon: "close-circle-outline", onPress: () => discardMessage(id, message.id) });

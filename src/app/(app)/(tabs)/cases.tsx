@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { router, useFocusEffect, useNavigation } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, Alert, FlatList, Linking, Pressable, SectionList, Text, View } from "react-native";
+import { ActivityIndicator, Alert, FlatList, GestureResponderEvent, Linking, Pressable, SectionList, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CaseSummary, listCases } from "@/features/cases/api";
 import { CaseBriefCard } from "@/features/cases/CaseBriefCard";
@@ -11,9 +11,10 @@ import { clientCaseTargets, isOldClient } from "@/features/clients/clientCases";
 import { OldClientDetailSheet } from "@/features/clients/OldClientDetailSheet";
 import { useSwipeTabs } from "@/shared/hooks/useSwipeTabs";
 import { friendlyErrorMessage } from "@/shared/lib/errors";
-import { ActionSheet, SheetAction } from "@/shared/ui/ActionSheet";
+import { SheetAction } from "@/shared/ui/ActionSheet";
 import { ClientAvatar } from "@/features/clients/ClientAvatar";
 import { Badge } from "@/shared/ui/Badge";
+import { anchorFromEvent, ContextMenu, MenuAnchor } from "@/shared/ui/ContextMenu";
 import { ErrorNotice } from "@/shared/ui/ErrorNotice";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { TextField } from "@/shared/ui/TextField";
@@ -32,7 +33,7 @@ export default function CasesScreen() {
   const [clients, setClients] = useState<ClientListItem[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [clientMenu, setClientMenu] = useState<{ title: string; actions: SheetAction[] } | null>(null);
+  const [clientMenu, setClientMenu] = useState<{ anchor: MenuAnchor; title: string; actions: SheetAction[] } | null>(null);
   const [oldClientDetail, setOldClientDetail] = useState<ClientListItem | null>(null);
   const swipeHandlers = useSwipeTabs(CASES_SEGMENTS, segment, setSegment);
   const navigation = useNavigation();
@@ -67,11 +68,12 @@ export default function CasesScreen() {
   );
 
   // A client opens straight onto their case; with several open cases, pick one.
-  const openClient = (client: ClientListItem) => {
+  const openClient = (client: ClientListItem, event: GestureResponderEvent) => {
     const targets = clientCaseTargets(client.cases);
     if (targets.length === 0) return router.push(`/(app)/cases/new?clientId=${client.id}`);
     if (targets.length === 1) return router.push(`/(app)/cases/${targets[0].id}`);
     setClientMenu({
+      anchor: anchorFromEvent(event),
       title: `${client.full_name} · choose a case`,
       actions: targets.map((c) => ({
         label: c.title,
@@ -190,9 +192,10 @@ export default function CasesScreen() {
             const more = targets.length - 1;
             return (
               <Pressable
-                onPress={() => (section.kind === "old" ? setOldClientDetail(item) : openClient(item))}
-                onLongPress={() =>
+                onPress={(e) => (section.kind === "old" ? setOldClientDetail(item) : openClient(item, e))}
+                onLongPress={(e) =>
                   setClientMenu({
+                    anchor: anchorFromEvent(e),
                     title: item.full_name,
                     actions: [
                       { label: "Edit client", icon: "create-outline", onPress: () => router.push(`/(app)/clients/new?id=${item.id}`) },
@@ -280,8 +283,9 @@ export default function CasesScreen() {
       )}
       </View>
 
-      <ActionSheet
+      <ContextMenu
         visible={!!clientMenu}
+        anchor={clientMenu?.anchor ?? null}
         title={clientMenu?.title}
         actions={clientMenu?.actions ?? []}
         onClose={() => setClientMenu(null)}

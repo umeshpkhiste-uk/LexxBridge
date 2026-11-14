@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, GestureResponderEvent, Pressable, StyleSheet, Text, View } from "react-native";
 import { useTheme } from "@/shared/ui/theme";
 import { getAttachmentUrl, Message } from "./api";
 import { bubbleTime, fileSizeLabel, messagePreview } from "./chatFormat";
@@ -16,7 +16,7 @@ type Props = {
   replyTo: ChatMessage | null;
   replyToIsMine: boolean;
   partnerName: string;
-  onLongPress: () => void;
+  onLongPress: (event: GestureResponderEvent) => void;
   onPressReply: () => void;
   onOpenImage: (uri: string) => void;
   onOpenFile: () => void;
@@ -170,7 +170,7 @@ function ChatImage({
 }: {
   message: ChatMessage;
   onOpen: (uri: string) => void;
-  onLongPress: () => void;
+  onLongPress: (event: GestureResponderEvent) => void;
 }) {
   const [uri, setUri] = useState<string | null>(message.localUri ?? null);
 

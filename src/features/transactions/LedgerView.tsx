@@ -8,7 +8,8 @@ import { Client, getClient } from "@/features/clients/api";
 import { getMyProfile } from "@/features/profile/api";
 import { formatINR } from "@/shared/lib/format";
 import { friendlyErrorMessage } from "@/shared/lib/errors";
-import { ActionSheet, SheetAction } from "@/shared/ui/ActionSheet";
+import { SheetAction } from "@/shared/ui/ActionSheet";
+import { anchorFromEvent, ContextMenu, MenuAnchor } from "@/shared/ui/ContextMenu";
 import { Button } from "@/shared/ui/Button";
 import { DateField, toDateOnly } from "@/shared/ui/DateField";
 import { DonutChart } from "@/shared/ui/DonutChart";
@@ -66,6 +67,7 @@ export function LedgerView({ clientId, caseId, variant = "screen" }: Props) {
   const [search, setSearch] = useState("");
   const [month, setMonth] = useState<string | null>(null);
   const [sheet, setSheet] = useState<"sharePeriod" | "shareMonth" | "shareChannel" | "month" | null>(null);
+  const [sheetAnchor, setSheetAnchor] = useState<MenuAnchor | null>(null);
   const [sharePeriod, setSharePeriod] = useState<SharePeriod>({ label: "Complete transaction history" });
   const [customRangeOpen, setCustomRangeOpen] = useState(false);
   const [customFrom, setCustomFrom] = useState<Date | null>(null);
@@ -275,7 +277,14 @@ export function LedgerView({ clientId, caseId, variant = "screen" }: Props) {
                 <Pressable onPress={addTransaction} hitSlop={10} accessibilityLabel="Add transaction">
                   <Ionicons name="add-circle-outline" size={26} color={onHero} />
                 </Pressable>
-                <Pressable onPress={() => setSheet("sharePeriod")} hitSlop={10} accessibilityLabel="Share statement with client">
+                <Pressable
+                  onPress={(e) => {
+                    setSheetAnchor(anchorFromEvent(e));
+                    setSheet("sharePeriod");
+                  }}
+                  hitSlop={10}
+                  accessibilityLabel="Share statement with client"
+                >
                   <Ionicons name="share-social-outline" size={24} color={onHero} />
                 </Pressable>
               </View>
@@ -390,7 +399,10 @@ export function LedgerView({ clientId, caseId, variant = "screen" }: Props) {
                   <Ionicons name="add" size={24} color={colors.textInverse} />
                 </Pressable>
                 <Pressable
-                  onPress={() => setSheet("sharePeriod")}
+                  onPress={(e) => {
+                    setSheetAnchor(anchorFromEvent(e));
+                    setSheet("sharePeriod");
+                  }}
                   accessibilityLabel="Share statement with client"
                   style={({ pressed }) => [
                     styles.cardAction,
@@ -428,7 +440,10 @@ export function LedgerView({ clientId, caseId, variant = "screen" }: Props) {
             />
           </View>
           <Pressable
-            onPress={() => setSheet("month")}
+            onPress={(e) => {
+              setSheetAnchor(anchorFromEvent(e));
+              setSheet("month");
+            }}
             accessibilityLabel="Filter by month"
             style={[
               styles.calendarButton,
@@ -509,8 +524,9 @@ export function LedgerView({ clientId, caseId, variant = "screen" }: Props) {
         )}
       </ScrollView>
 
-      <ActionSheet
+      <ContextMenu
         visible={sheet !== null}
+        anchor={sheetAnchor}
         title={
           sheet === "sharePeriod"
             ? "Share statement — what period?"

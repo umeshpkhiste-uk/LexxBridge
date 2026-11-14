@@ -44,7 +44,8 @@ import { alertMessage, confirmAlert } from "@/shared/lib/alert";
 import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { Avatar, withAdvPrefix } from "@/features/network/NetworkCards";
 import { useIsOnline } from "@/features/presence/PresenceProvider";
-import { ActionSheet, SheetAction } from "@/shared/ui/ActionSheet";
+import { SheetAction } from "@/shared/ui/ActionSheet";
+import { anchorFromEvent, ContextMenu, MenuAnchor } from "@/shared/ui/ContextMenu";
 import { ErrorNotice } from "@/shared/ui/ErrorNotice";
 import { useTheme } from "@/shared/ui/theme";
 
@@ -73,9 +74,9 @@ export default function ChatScreen() {
   const [editing, setEditing] = useState<ChatMessage | null>(null);
   const [attachment, setAttachment] = useState<Attachment | null>(null);
   const [partnerTyping, setPartnerTyping] = useState(false);
-  const [menu, setMenu] = useState<{ title: string; actions: SheetAction[] } | null>(null);
-  const [attachMenuOpen, setAttachMenuOpen] = useState(false);
-  const [chatMenuOpen, setChatMenuOpen] = useState(false);
+  const [menu, setMenu] = useState<{ anchor: MenuAnchor; title: string; actions: SheetAction[] } | null>(null);
+  const [attachMenu, setAttachMenu] = useState<MenuAnchor | null>(null);
+  const [chatMenu, setChatMenu] = useState<MenuAnchor | null>(null);
   const [viewerUri, setViewerUri] = useState<string | null>(null);
   const [showJump, setShowJump] = useState(false);
 
@@ -425,7 +426,7 @@ export default function ChatScreen() {
               </Pressable>
             ) : null}
             <Pressable
-              onPress={() => setChatMenuOpen(true)}
+              onPress={(e) => setChatMenu(anchorFromEvent(e))}
               hitSlop={10}
               accessibilityLabel="Chat options"
               style={{ paddingRight: spacing.sm }}
@@ -485,7 +486,7 @@ export default function ChatScreen() {
               replyTo={quoted}
               replyToIsMine={quoted?.sender_id === myId}
               partnerName={partner?.full_name ?? "Advocate"}
-              onLongPress={() => setMenu({ title: messagePreview(message).slice(0, 60), actions: messageActions(message) })}
+              onLongPress={(e) => setMenu({ anchor: anchorFromEvent(e), title: messagePreview(message).slice(0, 60), actions: messageActions(message) })}
               onPressReply={() => quoted && scrollToMessage(quoted.id)}
               onOpenImage={setViewerUri}
               onOpenFile={() => openFile(message)}
@@ -556,7 +557,7 @@ export default function ChatScreen() {
       <View style={[styles.composer, { paddingBottom: Math.max(insets.bottom, spacing.sm), backgroundColor: colors.background }]}>
         <View style={[styles.inputPill, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           {!editing ? (
-            <Pressable onPress={() => setAttachMenuOpen(true)} hitSlop={8} accessibilityLabel="Attach" style={styles.inputIcon}>
+            <Pressable onPress={(e) => setAttachMenu(anchorFromEvent(e))} hitSlop={8} accessibilityLabel="Attach" style={styles.inputIcon}>
               <Ionicons name="attach" size={24} color={colors.textSecondary} style={{ transform: [{ rotate: "45deg" }] }} />
             </Pressable>
           ) : null}
@@ -587,14 +588,16 @@ export default function ChatScreen() {
         </Pressable>
       </View>
 
-      <ActionSheet
+      <ContextMenu
         visible={!!menu}
+        anchor={menu?.anchor ?? null}
         title={menu?.title}
         actions={menu?.actions ?? []}
         onClose={() => setMenu(null)}
       />
-      <ActionSheet
-        visible={attachMenuOpen}
+      <ContextMenu
+        visible={!!attachMenu}
+        anchor={attachMenu}
         title="Share"
         actions={[
           // iOS can't present a picker while the sheet is still animating closed.
@@ -602,10 +605,11 @@ export default function ChatScreen() {
           { label: "Camera", icon: "camera-outline", onPress: () => setTimeout(() => pickImage("camera"), 400) },
           { label: "Document", icon: "document-outline", onPress: () => setTimeout(pickDocument, 400) },
         ]}
-        onClose={() => setAttachMenuOpen(false)}
+        onClose={() => setAttachMenu(null)}
       />
-      <ActionSheet
-        visible={chatMenuOpen}
+      <ContextMenu
+        visible={!!chatMenu}
+        anchor={chatMenu}
         actions={[
           ...(partner ? [{ label: "View profile", icon: "person-outline" as const, onPress: () => router.push(`/(app)/network/${partner.id}`) }] : []),
           {
@@ -615,7 +619,7 @@ export default function ChatScreen() {
           },
           { label: "Block", icon: "ban-outline", onPress: handleBlock },
         ]}
-        onClose={() => setChatMenuOpen(false)}
+        onClose={() => setChatMenu(null)}
       />
 
       <Modal visible={!!viewerUri} transparent animationType="fade" onRequestClose={() => setViewerUri(null)}>

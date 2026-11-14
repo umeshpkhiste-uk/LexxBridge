@@ -22,7 +22,8 @@ import {
 import { getMyProfile } from "@/features/profile/api";
 import { OnlineDot } from "@/features/presence/OnlineDot";
 import { friendlyErrorMessage } from "@/shared/lib/errors";
-import { ActionSheet, SheetAction } from "@/shared/ui/ActionSheet";
+import { SheetAction } from "@/shared/ui/ActionSheet";
+import { anchorFromEvent, ContextMenu, MenuAnchor } from "@/shared/ui/ContextMenu";
 import { PostVideo } from "@/features/posts/PostVideo";
 import { useTheme } from "@/shared/ui/theme";
 import type { PublicProfile } from "./api";
@@ -279,7 +280,7 @@ export function PostCard({
   const author = post.author;
   const name = author?.full_name ?? "Advocate";
   const [commentsOpen, setCommentsOpen] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuAnchor, setMenuAnchor] = useState<MenuAnchor | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const reactWith = (kind: ReactionKind) =>
     kind === "endorse" ? onToggleEndorse() : kind === "heart" ? onToggleHeart() : kind === "eyes" ? onToggleEyes() : onTogglePray();
@@ -375,7 +376,7 @@ export function PostCard({
             </Text>
           </View>
         </Pressable>
-        <Pressable onPress={() => setMenuOpen(true)} hitSlop={10} accessibilityLabel="Post options">
+        <Pressable onPress={(e) => setMenuAnchor(anchorFromEvent(e))} hitSlop={10} accessibilityLabel="Post options">
           <Ionicons name="ellipsis-horizontal" size={20} color={colors.textSecondary} />
         </Pressable>
       </View>
@@ -443,7 +444,13 @@ export function PostCard({
 
       {commentsOpen ? <InlineComments postId={post.id} onAdded={onCommentAdded} onRemoved={onCommentRemoved} /> : null}
 
-      <ActionSheet visible={menuOpen} title={isOwn ? "Your post" : name} actions={menuActions} onClose={() => setMenuOpen(false)} />
+      <ContextMenu
+        visible={!!menuAnchor}
+        anchor={menuAnchor}
+        title={isOwn ? "Your post" : name}
+        actions={menuActions}
+        onClose={() => setMenuAnchor(null)}
+      />
     </View>
   );
 }
@@ -644,7 +651,7 @@ function CommentRow({
 }) {
   const { colors, spacing, radius, typography } = useTheme();
   const commenter = comment.author?.full_name ?? "Advocate";
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuAnchor, setMenuAnchor] = useState<MenuAnchor | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(comment.content);
   const [isSaving, setIsSaving] = useState(false);
@@ -718,7 +725,7 @@ function CommentRow({
             <Text style={[typography.label, { color: colors.brand, flex: 1 }]} numberOfLines={1}>
               {withAdvPrefix(commenter)}
             </Text>
-            <Pressable onPress={() => setMenuOpen(true)} hitSlop={10} accessibilityLabel="Comment options">
+            <Pressable onPress={(e) => setMenuAnchor(anchorFromEvent(e))} hitSlop={10} accessibilityLabel="Comment options">
               <Ionicons name="ellipsis-horizontal" size={16} color={colors.textSecondary} />
             </Pressable>
           </View>
@@ -767,7 +774,13 @@ function CommentRow({
           ) : null}
         </View>
       </View>
-      <ActionSheet visible={menuOpen} title={isOwn ? "Your comment" : commenter} actions={menuActions} onClose={() => setMenuOpen(false)} />
+      <ContextMenu
+        visible={!!menuAnchor}
+        anchor={menuAnchor}
+        title={isOwn ? "Your comment" : commenter}
+        actions={menuActions}
+        onClose={() => setMenuAnchor(null)}
+      />
     </View>
   );
 }

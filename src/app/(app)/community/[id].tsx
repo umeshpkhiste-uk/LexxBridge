@@ -20,7 +20,8 @@ import {
 import { confirmAlert } from "@/shared/lib/alert";
 import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { supabase } from "@/shared/lib/supabase";
-import { ActionSheet, SheetAction } from "@/shared/ui/ActionSheet";
+import { SheetAction } from "@/shared/ui/ActionSheet";
+import { anchorFromEvent, ContextMenu, MenuAnchor } from "@/shared/ui/ContextMenu";
 import { ErrorNotice } from "@/shared/ui/ErrorNotice";
 import { useTheme } from "@/shared/ui/theme";
 
@@ -51,7 +52,7 @@ export default function CommunityChatScreen() {
   const [error, setError] = useState<string | null>(null);
   const [replyTo, setReplyTo] = useState<CommunityMessage | null>(null);
   const [editing, setEditing] = useState<CommunityMessage | null>(null);
-  const [menu, setMenu] = useState<{ title: string; actions: SheetAction[] } | null>(null);
+  const [menu, setMenu] = useState<{ anchor: MenuAnchor; title: string; actions: SheetAction[] } | null>(null);
   // isSending-driven disabling only takes effect after a re-render, so a
   // fast double-tap on Send can fire send() twice first — this ref blocks
   // the second call synchronously, same frame.
@@ -223,7 +224,7 @@ export default function CommunityChatScreen() {
           return (
             <View style={{ alignItems: isMine ? "flex-end" : "flex-start" }}>
               <Pressable
-                onLongPress={() => setMenu({ title: preview(item).slice(0, 60), actions: messageActions(item) })}
+                onLongPress={(e) => setMenu({ anchor: anchorFromEvent(e), title: preview(item).slice(0, 60), actions: messageActions(item) })}
                 delayLongPress={500}
                 disabled={item.is_undecryptable}
                 style={[styles.bubble, { maxWidth: "80%", backgroundColor: isMine ? colors.brand : colors.surfaceAlt, borderRadius: radius.lg }]}
@@ -313,7 +314,7 @@ export default function CommunityChatScreen() {
         </Pressable>
       </View>
 
-      <ActionSheet visible={!!menu} title={menu?.title} actions={menu?.actions ?? []} onClose={() => setMenu(null)} />
+      <ContextMenu visible={!!menu} anchor={menu?.anchor ?? null} title={menu?.title} actions={menu?.actions ?? []} onClose={() => setMenu(null)} />
     </KeyboardAvoidingView>
   );
 }

@@ -3,6 +3,7 @@ import { router, useFocusEffect } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  GestureResponderEvent,
   Image,
   Pressable,
   RefreshControl,
@@ -28,7 +29,8 @@ import { downloadCaseStatementPdf } from "@/features/transactions/shareStatement
 import { alertMessage, confirmAlert } from "@/shared/lib/alert";
 import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { formatHearingDate, formatINR, toDateParam } from "@/shared/lib/format";
-import { ActionSheet, SheetAction } from "@/shared/ui/ActionSheet";
+import { SheetAction } from "@/shared/ui/ActionSheet";
+import { anchorFromEvent, ContextMenu, MenuAnchor } from "@/shared/ui/ContextMenu";
 import { useAppWidth } from "@/shared/ui/appFrame";
 import { useTheme } from "@/shared/ui/theme";
 
@@ -91,6 +93,7 @@ export default function HomeScreen() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [search, setSearch] = useState("");
   const [menuCase, setMenuCase] = useState<CaseSummary | null>(null);
+  const [menuAnchor, setMenuAnchor] = useState<MenuAnchor | null>(null);
 
   const load = useCallback(() => {
     const today = new Date();
@@ -349,7 +352,10 @@ export default function HomeScreen() {
                 highlighted={index === 0 && !search}
                 width={cardWidth}
                 onOpenCalendar={openCalendar}
-                onMenu={() => setMenuCase(c)}
+                onMenu={(e) => {
+                  setMenuAnchor(anchorFromEvent(e));
+                  setMenuCase(c);
+                }}
               />
             ))}
           </View>
@@ -439,7 +445,7 @@ export default function HomeScreen() {
         ) : null}
       </ScrollView>
 
-      <ActionSheet visible={!!menuCase} title={menuCase?.title} actions={menuActions} onClose={() => setMenuCase(null)} />
+      <ContextMenu visible={!!menuCase} anchor={menuAnchor} title={menuCase?.title} actions={menuActions} onClose={() => setMenuCase(null)} />
     </SafeAreaView>
   );
 }
@@ -634,7 +640,7 @@ function CaseCard({
   highlighted: boolean;
   width: number;
   onOpenCalendar: (dateIso?: string) => void;
-  onMenu: () => void;
+  onMenu: (event: GestureResponderEvent) => void;
 }) {
   const { colors, spacing, radius, typography } = useTheme();
   const fg = highlighted ? "#FFFFFF" : colors.textPrimary;

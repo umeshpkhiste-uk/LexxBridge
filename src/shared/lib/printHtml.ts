@@ -11,7 +11,12 @@ import { alertMessage } from "./alert";
  * prompt in a browser.
  */
 export function printHtmlOnWeb(html: string) {
-  const win = window.open("", "_blank");
+  // An empty URL isn't a reliable way to get a blank window — per the
+  // open() spec it resolves relative to the current page, so it can
+  // instead navigate the new window to *this app's own URL* a moment
+  // later, wiping out the document just written below. "about:blank" is
+  // the one URL that's guaranteed to stay put.
+  const win = window.open("about:blank", "_blank");
   if (!win) {
     alertMessage("Pop-up blocked", "Allow pop-ups for this site, then try again.");
     return;

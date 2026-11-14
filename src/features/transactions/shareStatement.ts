@@ -1,3 +1,4 @@
+import * as Clipboard from "expo-clipboard";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 import { Linking, Platform, Share } from "react-native";
@@ -596,13 +597,35 @@ export function shareViaEmail(text: string, subject: string, email?: string | nu
   );
 }
 
-export function shareViaSms(text: string, phone?: string | null) {
+export async function shareViaSms(text: string, phone?: string | null) {
+  // Desktop browsers have no registered handler for the sms: scheme at
+  // all — Linking.openURL still "succeeds" (it doesn't check whether
+  // anything was actually able to open it), so the tap would otherwise
+  // look like it did nothing. Copy the text instead of attempting it.
+  if (Platform.OS === "web") {
+    await Clipboard.setStringAsync(text);
+    alertMessage("Copied to clipboard", "Text messaging isn't available in a browser, so the statement text was copied instead.");
+    return;
+  }
   const separator = Platform.OS === "ios" ? "&" : "?";
-  return open(`sms:${phone ?? ""}${separator}body=${encodeURIComponent(text)}`, "Messages");
+  await open(`sms:${phone ?? ""}${separator}body=${encodeURIComponent(text)}`, "Messages");
 }
 
-export function shareViaSystem(text: string, title: string) {
-  return Share.share({ title, message: text });
+export async function shareViaSystem(text: string, title: string) {
+  try {
+    await Share.share({ title, message: text });
+  } catch (err) {
+    // Desktop browsers overwhelmingly don't implement the Web Share API —
+    // react-native-web's Share.share rejects outright there, with no
+    // native share sheet to fall back to, so copy the text instead of
+    // leaving the tap looking like it did nothing.
+    if (Platform.OS === "web") {
+      await Clipboard.setStringAsync(text);
+      alertMessage("Copied to clipboard", "Sharing isn't supported in this browser, so the statement text was copied instead.");
+      return;
+    }
+    alertMessage("Couldn't share", friendlyErrorMessage(err));
+  }
 }
 
 /**

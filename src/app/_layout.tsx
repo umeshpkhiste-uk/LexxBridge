@@ -6,7 +6,8 @@ import { AuthProvider, useAuth } from "@/features/auth/AuthProvider";
 import { getSavedLoginUser, isBiometricEnabledFor, loginWithSavedSession } from "@/features/biometric/biometric";
 import { getAppLockMethod, rememberLockedAccount } from "@/features/applock/appLock";
 import { AppLockScreen } from "@/features/applock/AppLockScreen";
-import { ensureKeyPair } from "@/features/messaging/encryption";
+import { ensureKeyPair, fetchKeyBackup, hasLocalKey, KeyBackupRow } from "@/features/messaging/encryption";
+import { MessageRestoreScreen } from "@/features/messaging/MessageRestoreScreen";
 import { PresenceProvider } from "@/features/presence/PresenceProvider";
 import { restoreLanguagePreference } from "@/shared/i18n/i18n";
 import { AppFrame } from "@/shared/ui/appFrame";
@@ -24,12 +25,31 @@ function RootNavigator() {
   const [lockState, setLockState] = useState<LockState>("checking");
   const [savedUserId, setSavedUserId] = useState<string | null>(null);
   const hasCheckedLock = useRef(false);
+  const [pendingRestore, setPendingRestore] = useState<{ userId: string; backup: KeyBackupRow } | null>(null);
 
   // Makes sure a device key pair exists (and its public half is uploaded)
   // as soon as this device has a session, so other advocates can message
-  // this account securely without waiting for it to open a chat first.
+  // this account securely without waiting for it to open a chat first. If
+  // this device has no local key yet but the account has a passphrase
+  // backup, hold off on generating a brand-new key — that would publish a
+  // new public key and strand the backup's messages — and ask for the
+  // passphrase instead via the gate rendered below.
   useEffect(() => {
-    if (session) ensureKeyPair().catch(() => {});
+    if (!session) return;
+    let active = true;
+    (async () => {
+      if (await hasLocalKey()) {
+        ensureKeyPair().catch(() => {});
+        return;
+      }
+      const backup = await fetchKeyBackup(session.user.id);
+      if (!active) return;
+      if (backup) setPendingRestore({ userId: session.user.id, backup });
+      else ensureKeyPair().catch(() => {});
+    })();
+    return () => {
+      active = false;
+    };
   }, [session]);
 
   // The lock (Face ID and/or PIN / pattern) only gates a session restored on
@@ -132,6 +152,16 @@ function RootNavigator() {
   if (lockState === "locked" && session) {
     return (
       <AppLockScreen userId={session.user.id} onUnlock={() => setLockState("unlocked")} onSignedOut={() => setLockState("unlocked")} />
+    );
+  }
+
+  if (pendingRestore && session) {
+    return (
+      <MessageRestoreScreen
+        userId={pendingRestore.userId}
+        backup={pendingRestore.backup}
+        onDone={() => setPendingRestore(null)}
+      />
     );
   }
 

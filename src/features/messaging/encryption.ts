@@ -1,4 +1,5 @@
 import "react-native-get-random-values";
+import { scryptAsync } from "@noble/hashes/scrypt.js";
 import { decode as decodeBase64, encode as encodeBase64 } from "base64-arraybuffer";
 import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
@@ -60,7 +61,19 @@ export async function ensureKeyPair(): Promise<nacl.BoxKeyPair> {
   const keyPair = stored ? nacl.box.keyPair.fromSecretKey(fromBase64(stored)) : nacl.box.keyPair();
   if (!stored) await storeSecretKey(toBase64(keyPair.secretKey));
   cachedKeyPair = keyPair;
+  await publishPublicKey(keyPair);
+  return keyPair;
+}
 
+/** Checks whether this device already has a stored key pair, without
+ * generating one if it doesn't — used to decide whether a backup needs to
+ * be restored before `ensureKeyPair()` would otherwise mint a fresh one. */
+export async function hasLocalKey(): Promise<boolean> {
+  if (cachedKeyPair) return true;
+  return (await getStoredSecretKey()) !== null;
+}
+
+async function publishPublicKey(keyPair: nacl.BoxKeyPair): Promise<void> {
   const publicKeyB64 = toBase64(keyPair.publicKey);
   const { data, error } = await supabase.auth.getUser();
   if (!error && data.user) {
@@ -68,7 +81,6 @@ export async function ensureKeyPair(): Promise<nacl.BoxKeyPair> {
     // us securely. A failure here just means we retry next launch.
     supabase.from("advocate_profiles").update({ messaging_public_key: publicKeyB64 }).eq("id", data.user.id).then(() => {}, () => {});
   }
-  return keyPair;
 }
 
 /** The other party's public key, cached for the session once found. A miss
@@ -108,4 +120,71 @@ export async function decryptFromParty(payload: EncryptedPayload, otherPartyPubl
   } catch {
     return null;
   }
+}
+
+// --- Passphrase-protected key backup -------------------------------------
+//
+// Reinstalling the app or signing in on a new device otherwise mints a new
+// key pair, permanently stranding every message encrypted under the old
+// one. To avoid that without weakening end-to-end encryption, the secret
+// key can be wrapped with a key derived (via scrypt) from a passphrase the
+// user chooses, and the wrapped blob backed up to Supabase. The server only
+// ever sees that ciphertext — the passphrase itself never leaves the device
+// — so nobody with database access can unwrap it or decrypt messages.
+
+const SCRYPT_OPTS = { N: 2 ** 14, r: 8, p: 1, dkLen: 32 };
+
+async function deriveWrappingKey(passphrase: string, salt: Uint8Array): Promise<Uint8Array> {
+  return scryptAsync(passphrase, salt, SCRYPT_OPTS);
+}
+
+export type KeyBackupRow = { wrapped_secret_key: string; nonce: string; salt: string };
+
+/** Fetches this user's key backup record, if one exists. `null` means no
+ * backup has ever been set up (not a "wrong passphrase" or error state). */
+export async function fetchKeyBackup(userId: string): Promise<KeyBackupRow | null> {
+  const { data, error } = await supabase.from("messaging_key_backups").select("wrapped_secret_key, nonce, salt").eq("user_id", userId).maybeSingle();
+  return error ? null : (data ?? null);
+}
+
+/** Wraps this device's current secret key under the given passphrase and
+ * upserts it as this user's backup, overwriting any previous one. */
+export async function backupKeyPair(userId: string, passphrase: string): Promise<void> {
+  const keyPair = await ensureKeyPair();
+  const salt = nacl.randomBytes(16);
+  const wrappingKey = await deriveWrappingKey(passphrase, salt);
+  const nonce = nacl.randomBytes(nacl.secretbox.nonceLength);
+  const wrapped = nacl.secretbox(keyPair.secretKey, nonce, wrappingKey);
+  const { error } = await supabase.from("messaging_key_backups").upsert({
+    user_id: userId,
+    wrapped_secret_key: toBase64(wrapped),
+    nonce: toBase64(nonce),
+    salt: toBase64(salt),
+    updated_at: new Date().toISOString(),
+  });
+  if (error) throw error;
+}
+
+/** Deletes this user's key backup (e.g. the user turns the feature off). */
+export async function deleteKeyBackup(userId: string): Promise<void> {
+  await supabase.from("messaging_key_backups").delete().eq("user_id", userId);
+}
+
+/**
+ * Restores this device's key pair from a backup using the given passphrase.
+ * On success, the restored key pair replaces whatever is cached/stored
+ * locally and its public key is republished, so future messages route to
+ * it again. Returns `false` for a wrong passphrase (never throws for that —
+ * a failed unwrap is an expected, retryable outcome, not an error).
+ */
+export async function restoreKeyPairFromBackup(userId: string, passphrase: string, backup: KeyBackupRow): Promise<boolean> {
+  const wrappingKey = await deriveWrappingKey(passphrase, fromBase64(backup.salt));
+  const opened = nacl.secretbox.open(fromBase64(backup.wrapped_secret_key), fromBase64(backup.nonce), wrappingKey);
+  if (!opened) return false;
+
+  const keyPair = nacl.box.keyPair.fromSecretKey(opened);
+  await storeSecretKey(toBase64(keyPair.secretKey));
+  cachedKeyPair = keyPair;
+  await publishPublicKey(keyPair);
+  return true;
 }

@@ -319,7 +319,7 @@ export default function ChatScreen() {
   const explainUndecryptable = (message: ChatMessage) =>
     alertMessage(
       "Message unavailable",
-      `${message.content} This can happen after reinstalling the app or signing in on a new device — messaging keys are generated on-device for end-to-end encryption and never leave it, so a message encrypted before that change can't be recovered. You can keep chatting as normal — new messages aren't affected.`
+      `${message.content} This can happen after reinstalling the app or signing in on a new device. You can keep chatting as normal — new messages aren't affected.`
     );
 
   const scrollToMessage = (messageId: string) => {

@@ -21,11 +21,11 @@ type DecryptResult = { content: string; undecryptable: boolean };
 async function decryptText(content: string, nonce: string | null, otherPartyPublicKey: string | null): Promise<DecryptResult> {
   if (!nonce || !content) return { content, undecryptable: false };
   if (!otherPartyPublicKey) {
-    return { content: "Unable to decrypt — the other person hasn't enabled secure messaging yet.", undecryptable: true };
+    return { content: "This message isn't available yet — ask the other person to open the app once.", undecryptable: true };
   }
   const plaintext = await decryptFromParty({ content, nonce }, otherPartyPublicKey);
   if (plaintext !== null) return { content: plaintext, undecryptable: false };
-  return { content: "Unable to decrypt this message on this device.", undecryptable: true };
+  return { content: "This message isn't available on this device.", undecryptable: true };
 }
 
 /** Decrypts a full message row for display. */

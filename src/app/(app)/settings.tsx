@@ -155,6 +155,12 @@ export default function SettingsScreen() {
           onPress={() => router.push("/(app)/app-lock")}
         />
         <SettingsRow
+          icon="key-outline"
+          label="Message backup"
+          subtitle="Recover past messages after a reinstall or new device"
+          onPress={() => router.push("/(app)/message-backup")}
+        />
+        <SettingsRow
           icon="log-out-outline"
           label="Log out of all other devices"
           subtitle={isSigningOutOthers ? "Signing out other devices…" : "If you think someone else is signed in to your account"}

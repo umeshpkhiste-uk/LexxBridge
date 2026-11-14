@@ -1,40 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
-import { RefObject, useState } from "react";
-import { GestureResponderEvent, Modal, Platform, Pressable, StyleSheet, Text, useWindowDimensions, View, type ViewInstance } from "react-native";
+import { useState } from "react";
+import { Modal, Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useAppWidth } from "./appFrame";
 import type { SheetAction } from "./ActionSheet";
+import type { MenuAnchor } from "./menuAnchor";
 import { useTheme } from "./theme";
 
-export type MenuAnchor = { x: number; y: number; width: number; height: number };
-
-/** Where to anchor the menu for a long-press on a content area (a chat
- * bubble, a list row) — pass straight through from the Pressable's own
- * handler:
- *
- *   onLongPress={(e) => setMenu({ anchor: anchorFromEvent(e), title, actions })}
- *
- * Anchoring to the exact touch point rather than the whole element's
- * bounds matches where the user's finger actually was, which is what
- * WhatsApp does too. For a small fixed button (⋮, attach, filter) use
- * measureAnchor instead — the touch point can land anywhere inside a
- * small hit-slop target, which misplaces the menu relative to the
- * button itself rather than wherever the finger happened to be. */
-export function anchorFromEvent(event: GestureResponderEvent): MenuAnchor {
-  const { pageX, pageY } = event.nativeEvent;
-  return { x: pageX, y: pageY, width: 0, height: 0 };
-}
-
-/** Anchors the menu to a button's own bounds instead of the touch point,
- * so it sits flush against that button regardless of where inside it was
- * tapped — give the button this ref and call this from its onPress:
- *
- *   const ref = useRef<ViewInstance>(null);
- *   <Pressable ref={ref} onPress={() => measureAnchor(ref, (anchor) => setMenu({ anchor, actions }))} />
- */
-export function measureAnchor(ref: RefObject<ViewInstance | null>, onDone: (anchor: MenuAnchor) => void) {
-  ref.current?.measureInWindow((x: number, y: number, width: number, height: number) => onDone({ x, y, width, height }));
-}
+export { anchorFromEvent, measureAnchor, type MenuAnchor } from "./menuAnchor";
 
 type Props = {
   visible: boolean;
@@ -47,27 +19,20 @@ type Props = {
 const MARGIN = 8;
 const CARD_MAX_WIDTH = 240;
 
-// RN's style types don't include "fixed" (it's web-only CSS), so this is
-// built directly rather than through StyleSheet.create.
-const webOverlay = { position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 1000 };
-
 /** A small menu that pops up right next to whatever was pressed — like
  * WhatsApp's message long-press menu — instead of a bottom sheet. Position
  * is resolved in two passes: it renders once invisibly to measure its own
  * size via onLayout, then places itself above or below the anchor
- * (whichever fits) and reveals. */
+ * (whichever fits) and reveals.
+ *
+ * Rendered through RN's own Modal here, which already portals above the
+ * whole app regardless of where ContextMenu itself is mounted — unlike
+ * the web counterpart (ContextMenu.web.tsx), native has no CSS
+ * containing-block/overflow quirks to work around. */
 export function ContextMenu({ visible, anchor, title, actions, onClose }: Props) {
   const { colors, radius, typography } = useTheme();
   const insets = useSafeAreaInsets();
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
-  const appWidth = useAppWidth();
-  // The overlay below always spans the real window on both platforms (see
-  // its own comment), so every coordinate here is window-relative — the
-  // app's own column is only used to keep the card from drifting into the
-  // grey margin beside it on a wide desktop browser; on a phone (native or
-  // mobile web) columnLeft is 0 and columnWidth is the full window anyway.
-  const columnLeft = Platform.OS === "web" ? Math.max(0, (windowWidth - appWidth) / 2) : 0;
-  const columnWidth = appWidth;
 
   const [size, setSize] = useState<{ width: number; height: number } | null>(null);
   // Same double-fire guard as ActionSheet — see its comment for why.
@@ -88,80 +53,61 @@ export function ContextMenu({ visible, anchor, title, actions, onClose }: Props)
   const cardWidth = size?.width ?? CARD_MAX_WIDTH;
   const cardHeight = size?.height ?? 0;
 
-  const onRight = anchor.x + anchor.width / 2 > columnLeft + columnWidth / 2;
+  const onRight = anchor.x + anchor.width / 2 > windowWidth / 2;
   let left = onRight ? anchor.x + anchor.width - cardWidth : anchor.x;
-  left = Math.min(Math.max(left, columnLeft + MARGIN), Math.max(columnLeft + columnWidth - cardWidth - MARGIN, columnLeft + MARGIN));
+  left = Math.min(Math.max(left, MARGIN), Math.max(windowWidth - cardWidth - MARGIN, MARGIN));
 
   const fitsBelow = anchor.y + anchor.height + MARGIN + cardHeight <= windowHeight - insets.bottom - MARGIN;
   const top = fitsBelow ? anchor.y + anchor.height + MARGIN : Math.max(anchor.y - cardHeight - MARGIN, insets.top + MARGIN);
 
-  const content = (
-    <Pressable style={styles.backdrop} onPress={onClose} accessibilityLabel="Close menu">
-      <View
-        onLayout={(e) => setSize({ width: e.nativeEvent.layout.width, height: e.nativeEvent.layout.height })}
-        style={[
-          styles.card,
-          {
-            backgroundColor: colors.surface,
-            borderRadius: radius.md,
-            maxWidth: Math.min(CARD_MAX_WIDTH, columnWidth - MARGIN * 2),
-            opacity: size ? 1 : 0,
-            left,
-            top,
-          },
-        ]}
-      >
-        {title ? (
-          <Text
-            numberOfLines={1}
-            style={[typography.caption, styles.title, { color: colors.textSecondary, borderBottomColor: colors.border }]}
-          >
-            {title}
-          </Text>
-        ) : null}
-        {actions.map((action, i) => (
-          <Pressable
-            key={action.label}
-            onPress={() => {
-              if (fired) return;
-              setFired(true);
-              onClose();
-              action.onPress();
-            }}
-            style={({ pressed }) => [
-              styles.row,
-              i < actions.length - 1 && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
-              { backgroundColor: pressed ? colors.surfaceAlt : "transparent" },
-            ]}
-          >
-            <Text style={[typography.body, { color: action.destructive ? colors.danger : colors.textPrimary, flex: 1 }]}>
-              {action.label}
-            </Text>
-            <Ionicons name={action.icon} size={18} color={action.destructive ? colors.danger : colors.textSecondary} />
-          </Pressable>
-        ))}
-      </View>
-    </Pressable>
-  );
-
-  // ContextMenu is often rendered deep inside a small item (a post card, a
-  // list row) rather than at the screen root, unlike ActionSheet. RN's
-  // Modal already escapes that nesting on native — it portals above the
-  // whole app regardless of where it's mounted, so the backdrop always
-  // covers the real screen and a tap anywhere outside the menu closes it.
-  // On the web, a plain in-place `position: absolute` overlay (the trick
-  // ActionSheet uses to stay inside AppFrame's phone-width column) only
-  // fills its *nearest* positioned ancestor — when that's a small item,
-  // not the screen, the backdrop was silently clipped to that item's
-  // bounds, so taps outside it did nothing and the menu never closed.
-  // `position: fixed` escapes that nesting the same way Modal does
-  // natively, while staying confined to the browser viewport rather than
-  // portalling past it — exactly the coverage the backdrop needs.
-  if (Platform.OS === "web") return <View style={webOverlay as object}>{content}</View>;
-
   return (
     <Modal visible transparent animationType="none" onRequestClose={onClose}>
-      {content}
+      <Pressable style={styles.backdrop} onPress={onClose} accessibilityLabel="Close menu">
+        <View
+          onLayout={(e) => setSize({ width: e.nativeEvent.layout.width, height: e.nativeEvent.layout.height })}
+          style={[
+            styles.card,
+            {
+              backgroundColor: colors.surface,
+              borderRadius: radius.md,
+              maxWidth: Math.min(CARD_MAX_WIDTH, windowWidth - MARGIN * 2),
+              opacity: size ? 1 : 0,
+              left,
+              top,
+            },
+          ]}
+        >
+          {title ? (
+            <Text
+              numberOfLines={1}
+              style={[typography.caption, styles.title, { color: colors.textSecondary, borderBottomColor: colors.border }]}
+            >
+              {title}
+            </Text>
+          ) : null}
+          {actions.map((action, i) => (
+            <Pressable
+              key={action.label}
+              onPress={() => {
+                if (fired) return;
+                setFired(true);
+                onClose();
+                action.onPress();
+              }}
+              style={({ pressed }) => [
+                styles.row,
+                i < actions.length - 1 && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
+                { backgroundColor: pressed ? colors.surfaceAlt : "transparent" },
+              ]}
+            >
+              <Text style={[typography.body, { color: action.destructive ? colors.danger : colors.textPrimary, flex: 1 }]}>
+                {action.label}
+              </Text>
+              <Ionicons name={action.icon} size={18} color={action.destructive ? colors.danger : colors.textSecondary} />
+            </Pressable>
+          ))}
+        </View>
+      </Pressable>
     </Modal>
   );
 }

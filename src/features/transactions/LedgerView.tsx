@@ -57,10 +57,11 @@ export function LedgerView({ clientId, caseId, variant = "screen" }: Props) {
   const [caseDetail, setCaseDetail] = useState<CaseDetail | null>(null);
   const [scopeCases, setScopeCases] = useState<{ id: string; title: string; case_number: string | null; agreed_fee: number | null }[]>([]);
   const [transactions, setTransactions] = useState<ClientTransaction[]>([]);
-  const [advocate, setAdvocate] = useState<{ name: string | null; phone: string | null; address: string | null }>({
+  const [advocate, setAdvocate] = useState<{ name: string | null; phone: string | null; address: string | null; upiId: string | null }>({
     name: null,
     phone: null,
     address: null,
+    upiId: null,
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -97,6 +98,7 @@ export function LedgerView({ clientId, caseId, variant = "screen" }: Props) {
             name: profile?.full_name ?? null,
             phone: profile?.phone ?? null,
             address: profile?.chamber_address ?? profile?.address_line ?? null,
+            upiId: profile?.upi_id ?? null,
           });
           setError(null);
         })
@@ -173,6 +175,7 @@ export function LedgerView({ clientId, caseId, variant = "screen" }: Props) {
     advocateName: advocate.name,
     advocatePhone: advocate.phone,
     advocateAddress: advocate.address,
+    advocateUpiId: advocate.upiId,
     transactions,
     totals: { totalFees: totals.totalFees, received: totals.received, pending: totals.pending, expenses: totals.expenses },
     range: sharePeriod.range,

@@ -8,7 +8,15 @@ import { SUPPORTED_LANGUAGES } from "@/shared/i18n/languages";
 import { alertMessage } from "@/shared/lib/alert";
 import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { isSameState, lookupPincode, PincodeOption, pincodesForCity } from "@/shared/lib/pincode";
-import { enrolmentError, mobileError, normalizeEnrolment, normalizeIndianMobile, pincodeError } from "@/shared/lib/validation";
+import {
+  enrolmentError,
+  mobileError,
+  normalizeEnrolment,
+  normalizeIndianMobile,
+  normalizeUpiId,
+  pincodeError,
+  upiIdError,
+} from "@/shared/lib/validation";
 import { Button } from "@/shared/ui/Button";
 import { DateField, fromDateOnly, toDateOnly } from "@/shared/ui/DateField";
 import { ErrorNotice } from "@/shared/ui/ErrorNotice";
@@ -74,6 +82,7 @@ export function ProfileEditForm({ profile, email, submitLabel, secondaryLabel, o
   const [memberships, setMemberships] = useState(profile.bar_memberships);
   const [chamber, setChamber] = useState(profile.chamber_address ?? "");
   const [phone, setPhone] = useState(profile.phone ?? "");
+  const [upiId, setUpiId] = useState(profile.upi_id ?? "");
   const [dob, setDob] = useState<Date | null>(fromDateOnly(profile.date_of_birth));
   const [gender, setGender] = useState<Gender | null>(profile.gender);
   const [addressLine, setAddressLine] = useState(profile.address_line ?? "");
@@ -81,7 +90,9 @@ export function ProfileEditForm({ profile, email, submitLabel, secondaryLabel, o
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   // Field-level errors show once a field has been left (or on save).
-  const [touched, setTouched] = useState<{ fullName?: boolean; years?: boolean; phone?: boolean; enrolment?: boolean }>({});
+  const [touched, setTouched] = useState<{ fullName?: boolean; years?: boolean; phone?: boolean; enrolment?: boolean; upiId?: boolean }>(
+    {}
+  );
   const [pinResult, setPinResult] = useState<{ key: string; options: PincodeOption[] } | null>(null);
   const [pinWarning, setPinWarning] = useState<string | null>(null);
 
@@ -89,6 +100,7 @@ export function ProfileEditForm({ profile, email, submitLabel, secondaryLabel, o
   const yearsError = touched.years && years.trim() && !/^\d{1,2}$/.test(years.trim()) ? "Enter a number between 0 and 99" : null;
   const phoneError = touched.phone ? mobileError(phone) : null;
   const enrolError = touched.enrolment ? enrolmentError(enrolment) : null;
+  const upiIdErrorText = touched.upiId ? upiIdError(upiId) : null;
   const cityOptions = (INDIA_STATES[state] ?? []).map((c) => ({ value: c, label: c }));
 
   // PIN codes for the chosen city (India Post lookup), remembered per city.
@@ -157,14 +169,16 @@ export function ProfileEditForm({ profile, email, submitLabel, secondaryLabel, o
   const handleSave = async () => {
     const dobValue = toDateOnly(dob);
     const pin = pincode.trim();
-    setTouched({ fullName: true, years: true, phone: true, enrolment: true });
+    setTouched({ fullName: true, years: true, phone: true, enrolment: true, upiId: true });
     if (!fullName.trim()) return setError("Full name is required");
     if (years.trim() && !/^\d{1,2}$/.test(years.trim())) return setError("Years of practice: enter a number between 0 and 99");
     if (mobileError(phone)) return setError(`Mobile number: ${mobileError(phone)}`);
     if (enrolmentError(enrolment)) return setError(`Enrolment no.: ${enrolmentError(enrolment)}`);
     if (pincodeError(pin)) return setError(`PIN code: ${pincodeError(pin)}`);
+    if (upiIdError(upiId)) return setError(`UPI ID: ${upiIdError(upiId)}`);
     const phoneValue = phone.trim() ? normalizeIndianMobile(phone) : null;
     const enrolmentValue = enrolment.trim() ? normalizeEnrolment(enrolment) : null;
+    const upiIdValue = upiId.trim() ? normalizeUpiId(upiId) : null;
 
     const cleanEducation = education
       .map((e) => ({
@@ -191,6 +205,7 @@ export function ProfileEditForm({ profile, email, submitLabel, secondaryLabel, o
       bar_memberships: memberships,
       chamber_address: chamber.trim() || null,
       phone: phoneValue,
+      upi_id: upiIdValue,
       date_of_birth: dobValue,
       gender,
       address_line: addressLine.trim() || null,
@@ -445,6 +460,19 @@ export function ProfileEditForm({ profile, email, submitLabel, secondaryLabel, o
           error={phoneError ?? undefined}
         />
         <TextField label="Email ID (login)" value={email ?? ""} editable={false} style={{ opacity: 0.6 }} />
+        <TextField
+          label="UPI ID"
+          placeholder="e.g. yourname@okaxis"
+          value={upiId}
+          onChangeText={setUpiId}
+          onBlur={() => setTouched((t) => ({ ...t, upiId: true }))}
+          autoCapitalize="none"
+          autoCorrect={false}
+          error={upiIdErrorText ?? undefined}
+        />
+        <Text style={[typography.caption, { color: colors.textSecondary, marginTop: -spacing.sm }]}>
+          Shown as a &quot;Pay now&quot; link on payment reminders and statements, so clients can pay you directly.
+        </Text>
       </View>
 
       {/* Personal */}

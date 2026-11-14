@@ -30,6 +30,7 @@ export type AdvocateProfile = {
   chamber_address: string | null;
   bar_registration_number: string | null;
   bar_council_state: string | null;
+  upi_id: string | null;
   onboarding_completed_at: string | null;
 };
 
@@ -44,7 +45,7 @@ export async function getMyProfile(): Promise<AdvocateProfile> {
   const { data, error } = await supabase
     .from("advocate_profiles")
     .select(
-      "id, full_name, headline, about, city, state, languages, practice_areas, courts, years_of_experience, website, profile_photo_url, verification_status, profile_visibility, date_of_birth, gender, phone, address_line, pincode, notifications_enabled, education, bar_memberships, chamber_address, bar_registration_number, bar_council_state, onboarding_completed_at"
+      "id, full_name, headline, about, city, state, languages, practice_areas, courts, years_of_experience, website, profile_photo_url, verification_status, profile_visibility, date_of_birth, gender, phone, address_line, pincode, notifications_enabled, education, bar_memberships, chamber_address, bar_registration_number, bar_council_state, upi_id, onboarding_completed_at"
     )
     .eq("id", userData.user.id)
     .single();
@@ -79,6 +80,7 @@ export async function updateMyProfile(
       | "chamber_address"
       | "bar_registration_number"
       | "bar_council_state"
+      | "upi_id"
       | "profile_photo_url"
       | "onboarding_completed_at"
     >

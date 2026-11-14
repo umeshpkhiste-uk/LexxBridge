@@ -3,7 +3,7 @@ import { getClient } from "@/features/clients/api";
 import { Notifications } from "@/features/notifications/notificationsModule";
 import { getMyProfile } from "@/features/profile/api";
 import { getPendingByCase } from "@/features/transactions/api";
-import { shareViaWhatsApp } from "@/features/transactions/shareStatement";
+import { buildUpiPayLink, shareViaWhatsApp } from "@/features/transactions/shareStatement";
 import { confirmAlert } from "@/shared/lib/alert";
 import { formatINR } from "@/shared/lib/format";
 import { listUpcomingHearings } from "./api";
@@ -15,16 +15,26 @@ function buildReminderMessage(opts: {
   pending: number;
   hearingAt: Date | null;
   advocateName: string | null;
+  advocateUpiId: string | null;
 }): string {
   const hearingLine = opts.hearingAt
     ? ` The next date of your mentioned case appears on ${opts.hearingAt.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}.`
     : "";
+  const upiLink = opts.advocateUpiId
+    ? buildUpiPayLink({
+        upiId: opts.advocateUpiId,
+        payeeName: opts.advocateName ?? opts.clientName,
+        amount: opts.pending,
+        note: `Payment for ${opts.caseTitle}`,
+      })
+    : null;
   const lines = [
     `Hi ${opts.clientName},`,
     "",
     `This is a reminder regarding your case ${opts.caseTitle}${opts.caseNumber ? ` (${opts.caseNumber})` : ""}.${hearingLine}`,
     `Please pay your pending fees: ${formatINR(opts.pending)} on or before the mentioned date.`,
   ];
+  if (upiLink) lines.push(`Pay now via UPI: ${upiLink}`);
   if (opts.advocateName) lines.push("", "Regards,", opts.advocateName);
   return lines.join("\n");
 }
@@ -50,6 +60,7 @@ export async function offerPaymentReminder(params: { caseId: string; hearingAt?:
       pending,
       hearingAt: params.hearingAt ?? null,
       advocateName: profile?.full_name ?? null,
+      advocateUpiId: profile?.upi_id ?? null,
     });
 
     confirmAlert(
@@ -73,7 +84,16 @@ function buildHearingDayMessage(opts: {
   court: string | null;
   pending: number;
   advocateName: string | null;
+  advocateUpiId: string | null;
 }): string {
+  const upiLink = opts.advocateUpiId
+    ? buildUpiPayLink({
+        upiId: opts.advocateUpiId,
+        payeeName: opts.advocateName ?? opts.clientName,
+        amount: opts.pending,
+        note: `Payment for ${opts.caseTitle}`,
+      })
+    : null;
   const lines = [
     `Hi ${opts.clientName},`,
     "",
@@ -81,6 +101,7 @@ function buildHearingDayMessage(opts: {
     `Today is the hearing day — please come to ${opts.court ? `the ${opts.court} court` : "court"}.`,
     `Please pay your pending fees before the hearing if not already paid: ${formatINR(opts.pending)}.`,
   ];
+  if (upiLink) lines.push(`Pay now via UPI: ${upiLink}`);
   if (opts.advocateName) lines.push("", "Regards,", opts.advocateName);
   return lines.join("\n");
 }
@@ -186,6 +207,7 @@ export async function handlePaymentReminderReceived(data: Record<string, unknown
           court: caseDetail.court,
           pending,
           advocateName: profile?.full_name ?? null,
+          advocateUpiId: profile?.upi_id ?? null,
         })
       : buildReminderMessage({
           clientName: client.full_name,
@@ -194,6 +216,7 @@ export async function handlePaymentReminderReceived(data: Record<string, unknown
           pending,
           hearingAt: caseDetail.next_hearing_at ? new Date(caseDetail.next_hearing_at) : null,
           advocateName: profile?.full_name ?? null,
+          advocateUpiId: profile?.upi_id ?? null,
         });
 
     confirmAlert(

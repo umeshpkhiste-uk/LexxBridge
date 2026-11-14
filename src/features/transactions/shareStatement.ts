@@ -32,6 +32,8 @@ type StatementInput = {
    * registration number, which stays out of a client-facing document. */
   advocatePhone?: string | null;
   advocateAddress?: string | null;
+  /** When set and a balance is due, a "Pay now" UPI link is included. */
+  advocateUpiId?: string | null;
   transactions: (Transaction & { cases?: { title: string } | null })[];
   /** Fee position from the agreed fees; defaults to summing the entries.
    * Always the running, all-time position — a period statement still shows
@@ -52,6 +54,21 @@ type StatementInput = {
  * transaction" is this running position evaluated as of that date. */
 function lastTransactionDate(fees: { transaction_date: string }[]): string | null {
   return fees.reduce<string | null>((latest, t) => (!latest || t.transaction_date > latest ? t.transaction_date : latest), null);
+}
+
+/** A tappable UPI "pay now" link pre-filled with the amount and a short
+ * note, so the client's UPI app opens ready to pay. Returns null when
+ * there's no UPI ID on file or nothing is due. */
+export function buildUpiPayLink(opts: { upiId: string; payeeName: string; amount: number; note: string }): string | null {
+  if (!opts.upiId || opts.amount <= 0) return null;
+  const params = [
+    ["pa", opts.upiId],
+    ["pn", opts.payeeName],
+    ["am", opts.amount.toFixed(2)],
+    ["cu", "INR"],
+    ["tn", opts.note],
+  ];
+  return `upi://pay?${params.map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join("&")}`;
 }
 
 /** "YYYY-MM-DD" for today, matching the app's date-only convention. */
@@ -124,6 +141,7 @@ export function buildStatement({
   advocateName,
   advocatePhone,
   advocateAddress,
+  advocateUpiId,
   transactions,
   totals,
   range,
@@ -142,6 +160,15 @@ export function buildStatement({
   const periodReceived = periodFees.filter((t) => t.status === "completed").reduce((s, t) => s + Number(t.amount), 0);
   const asOf = lastTransactionDate(fees);
   const unitemizedPending = unitemizedPendingBalance(fees, overallPending);
+  const upiLink =
+    advocateUpiId && overallPending > 0
+      ? buildUpiPayLink({
+          upiId: advocateUpiId,
+          payeeName: advocateName ?? clientName,
+          amount: overallPending,
+          note: `Payment for ${caseTitle ?? clientName}`,
+        })
+      : null;
 
   const lines = [
     `Payment statement — ${clientName}`,
@@ -165,6 +192,7 @@ export function buildStatement({
       : []),
     `Received so far: ${formatINR(overallReceived)}`,
     `Balance due: ${formatINR(overallPending)}`,
+    upiLink ? `Pay now via UPI: ${upiLink}` : null,
     asOf ? `As of last transaction (${formatDay(asOf)})` : null,
     ...(range ? ["", `Received in this period: ${formatINR(periodReceived)}`] : []),
     "",
@@ -213,6 +241,7 @@ export function buildStatementHtml({
   advocateName,
   advocatePhone,
   advocateAddress,
+  advocateUpiId,
   transactions,
   totals,
   range,
@@ -232,6 +261,15 @@ export function buildStatementHtml({
   const overallTotal = totals?.totalFees ?? overallReceived + overallPending;
   const asOf = lastTransactionDate(fees);
   const unitemizedPending = unitemizedPendingBalance(fees, overallPending);
+  const upiLink =
+    advocateUpiId && overallPending > 0
+      ? buildUpiPayLink({
+          upiId: advocateUpiId,
+          payeeName: advocateName ?? clientName,
+          amount: overallPending,
+          note: `Payment for ${caseTitle ?? clientName}`,
+        })
+      : null;
 
   // Ledger-style running balance: starts at the total owed (fees + any
   // unreimbursed expenses, nothing paid down yet) and is reduced by each
@@ -450,6 +488,7 @@ export function buildStatementHtml({
       .join("")}
   </tr></table>
   ${asOf ? `<p class="as-of">Position as of the last transaction, ${escapeHtml(formatDay(asOf))}.</p>` : ""}
+  ${upiLink ? `<p class="as-of"><a href="${escapeHtml(upiLink)}">Pay now via UPI</a></p>` : ""}
 
   <p class="entries-count">No. of entries: ${ledgerRows.length}${periodLabel ? ` (${escapeHtml(periodLabel)})` : ""}</p>
   ${ledgerTable}
@@ -516,6 +555,7 @@ export async function downloadCaseStatementPdf(caseId: string): Promise<void> {
       advocateName: profile?.full_name ?? null,
       advocatePhone: profile?.phone ?? null,
       advocateAddress: profile?.chamber_address ?? profile?.address_line ?? null,
+      advocateUpiId: profile?.upi_id ?? null,
       transactions,
       totals,
       periodLabel: "Complete transaction history",

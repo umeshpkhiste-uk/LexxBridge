@@ -110,3 +110,17 @@ export function panError(input: string): string | null {
   if (!input.trim()) return null;
   return normalizePan(input) ? null : "Enter a valid 10-character PAN, e.g. ABCDE1234F";
 }
+
+/**
+ * A UPI ID (VPA) is handle@bank, e.g. advocate@okaxis. Returns the
+ * lower-cased, trimmed form, or null if it doesn't fit.
+ */
+export function normalizeUpiId(input: string): string | null {
+  const cleaned = input.trim().toLowerCase();
+  return /^[a-z0-9.\-_]{2,256}@[a-z][a-z0-9.\-]{1,64}$/.test(cleaned) ? cleaned : null;
+}
+
+export function upiIdError(input: string): string | null {
+  if (!input.trim()) return null;
+  return normalizeUpiId(input) ? null : "Enter a valid UPI ID, e.g. yourname@okaxis";
+}

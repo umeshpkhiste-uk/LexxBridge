@@ -32,6 +32,10 @@ type Props = {
 const MARGIN = 8;
 const CARD_MAX_WIDTH = 240;
 
+// RN's style types don't include "fixed" (it's web-only CSS), so this is
+// built directly rather than through StyleSheet.create.
+const webOverlay = { position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 1000 };
+
 /** A small menu that pops up right next to whatever was pressed — like
  * WhatsApp's message long-press menu — instead of a bottom sheet. Position
  * is resolved in two passes: it renders once invisibly to measure its own
@@ -42,13 +46,13 @@ export function ContextMenu({ visible, anchor, title, actions, onClose }: Props)
   const insets = useSafeAreaInsets();
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const appWidth = useAppWidth();
-  // On the web the app renders in a centred phone-width column (see
-  // appFrame.tsx) while a touch event's pageX/pageY are relative to the
-  // real browser window, so an anchor must be shifted back into the
-  // column's own coordinate space before it's used for layout.
-  const webOffsetX = Platform.OS === "web" ? Math.max(0, (windowWidth - appWidth) / 2) : 0;
-  const screenWidth = appWidth;
-  const screenHeight = windowHeight;
+  // The overlay below always spans the real window on both platforms (see
+  // its own comment), so every coordinate here is window-relative — the
+  // app's own column is only used to keep the card from drifting into the
+  // grey margin beside it on a wide desktop browser; on a phone (native or
+  // mobile web) columnLeft is 0 and columnWidth is the full window anyway.
+  const columnLeft = Platform.OS === "web" ? Math.max(0, (windowWidth - appWidth) / 2) : 0;
+  const columnWidth = appWidth;
 
   const [size, setSize] = useState<{ width: number; height: number } | null>(null);
   // Same double-fire guard as ActionSheet — see its comment for why.
@@ -66,18 +70,15 @@ export function ContextMenu({ visible, anchor, title, actions, onClose }: Props)
 
   if (!visible || !anchor) return null;
 
-  const localAnchor = { x: anchor.x - webOffsetX, y: anchor.y, width: anchor.width, height: anchor.height };
   const cardWidth = size?.width ?? CARD_MAX_WIDTH;
   const cardHeight = size?.height ?? 0;
 
-  const onRight = localAnchor.x + localAnchor.width / 2 > screenWidth / 2;
-  let left = onRight ? localAnchor.x + localAnchor.width - cardWidth : localAnchor.x;
-  left = Math.min(Math.max(left, MARGIN), Math.max(screenWidth - cardWidth - MARGIN, MARGIN));
+  const onRight = anchor.x + anchor.width / 2 > columnLeft + columnWidth / 2;
+  let left = onRight ? anchor.x + anchor.width - cardWidth : anchor.x;
+  left = Math.min(Math.max(left, columnLeft + MARGIN), Math.max(columnLeft + columnWidth - cardWidth - MARGIN, columnLeft + MARGIN));
 
-  const fitsBelow = localAnchor.y + localAnchor.height + MARGIN + cardHeight <= screenHeight - insets.bottom - MARGIN;
-  const top = fitsBelow
-    ? localAnchor.y + localAnchor.height + MARGIN
-    : Math.max(localAnchor.y - cardHeight - MARGIN, insets.top + MARGIN);
+  const fitsBelow = anchor.y + anchor.height + MARGIN + cardHeight <= windowHeight - insets.bottom - MARGIN;
+  const top = fitsBelow ? anchor.y + anchor.height + MARGIN : Math.max(anchor.y - cardHeight - MARGIN, insets.top + MARGIN);
 
   const content = (
     <Pressable style={styles.backdrop} onPress={onClose} accessibilityLabel="Close menu">
@@ -88,7 +89,7 @@ export function ContextMenu({ visible, anchor, title, actions, onClose }: Props)
           {
             backgroundColor: colors.surface,
             borderRadius: radius.md,
-            maxWidth: Math.min(CARD_MAX_WIDTH, screenWidth - MARGIN * 2),
+            maxWidth: Math.min(CARD_MAX_WIDTH, columnWidth - MARGIN * 2),
             opacity: size ? 1 : 0,
             left,
             top,
@@ -128,14 +129,20 @@ export function ContextMenu({ visible, anchor, title, actions, onClose }: Props)
     </Pressable>
   );
 
-  // Same native/web split as ActionSheet, and for the same reason: RN's
-  // Modal portals to the window on web, breaking out of AppFrame's
-  // phone-width column, so web instead gets an absolutely-positioned
-  // overlay rendered in place (confined to that column — see webOffsetX
-  // above, which maps the window-relative anchor into it). Native keeps
-  // the real Modal, which already covers the full window, so the anchor's
-  // own window-relative coordinates need no offset there.
-  if (Platform.OS === "web") return <View style={styles.overlay}>{content}</View>;
+  // ContextMenu is often rendered deep inside a small item (a post card, a
+  // list row) rather than at the screen root, unlike ActionSheet. RN's
+  // Modal already escapes that nesting on native — it portals above the
+  // whole app regardless of where it's mounted, so the backdrop always
+  // covers the real screen and a tap anywhere outside the menu closes it.
+  // On the web, a plain in-place `position: absolute` overlay (the trick
+  // ActionSheet uses to stay inside AppFrame's phone-width column) only
+  // fills its *nearest* positioned ancestor — when that's a small item,
+  // not the screen, the backdrop was silently clipped to that item's
+  // bounds, so taps outside it did nothing and the menu never closed.
+  // `position: fixed` escapes that nesting the same way Modal does
+  // natively, while staying confined to the browser viewport rather than
+  // portalling past it — exactly the coverage the backdrop needs.
+  if (Platform.OS === "web") return <View style={webOverlay as object}>{content}</View>;
 
   return (
     <Modal visible transparent animationType="none" onRequestClose={onClose}>
@@ -145,7 +152,6 @@ export function ContextMenu({ visible, anchor, title, actions, onClose }: Props)
 }
 
 const styles = StyleSheet.create({
-  overlay: { ...StyleSheet.absoluteFill, zIndex: 1000, elevation: 20 },
   backdrop: { flex: 1 },
   card: {
     position: "absolute",

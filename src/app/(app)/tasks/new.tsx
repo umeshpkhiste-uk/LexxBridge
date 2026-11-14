@@ -2,8 +2,10 @@ import { router, Stack, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Text } from "react-native";
 import { createTask, getTask, TaskPriority, updateTask } from "@/features/tasks/api";
+import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { Button } from "@/shared/ui/Button";
 import { DateField } from "@/shared/ui/DateField";
+import { ErrorNotice } from "@/shared/ui/ErrorNotice";
 import { ScreenContainer } from "@/shared/ui/ScreenContainer";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { TextField } from "@/shared/ui/TextField";
@@ -43,7 +45,7 @@ export default function NewTaskScreen() {
         setDueDate(t.due_at ? new Date(t.due_at) : null);
         setPriority(t.priority);
       })
-      .catch((err) => setError(err instanceof Error ? err.message : "Couldn't load this task"))
+      .catch((err) => setError(friendlyErrorMessage(err)))
       .finally(() => setLoaded(true));
   }, [id]);
 
@@ -67,7 +69,7 @@ export default function NewTaskScreen() {
       else await createTask({ caseId, clientId, title, description, dueAt, priority });
       router.back();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      setError(friendlyErrorMessage(err));
     } finally {
       setIsSubmitting(false);
     }
@@ -113,7 +115,7 @@ export default function NewTaskScreen() {
         style={{ marginBottom: spacing.lg }}
       />
 
-      {error ? <Text style={{ color: colors.danger, marginBottom: spacing.md }}>{error}</Text> : null}
+      {error ? <ErrorNotice message={error} style={{ marginBottom: spacing.md }} /> : null}
 
       <Button label={isEdit ? "Save changes" : "Save task"} onPress={handleSave} loading={isSubmitting} />
     </ScreenContainer>

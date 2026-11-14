@@ -4,7 +4,9 @@ import { Text } from "react-native";
 import { downloadCaseHandoverPdf } from "@/features/cases/caseHandover";
 import { markCaseDiscontinued } from "@/features/cases/api";
 import { confirmAlert } from "@/shared/lib/alert";
+import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { Button } from "@/shared/ui/Button";
+import { ErrorNotice } from "@/shared/ui/ErrorNotice";
 import { ScreenContainer } from "@/shared/ui/ScreenContainer";
 import { TextField } from "@/shared/ui/TextField";
 import { useTheme } from "@/shared/ui/theme";
@@ -43,7 +45,7 @@ export default function DiscontinueCaseScreen() {
                 },
               ]);
             } catch (err) {
-              setError(err instanceof Error ? err.message : "Something went wrong");
+              setError(friendlyErrorMessage(err));
             } finally {
               setIsSubmitting(false);
             }
@@ -61,7 +63,7 @@ export default function DiscontinueCaseScreen() {
         and kept in your records — it won&apos;t show up in your active case lists any more.
       </Text>
       <TextField label="Reason (optional)" placeholder="e.g. Client switched advocates" value={reason} onChangeText={setReason} multiline numberOfLines={3} />
-      {error ? <Text style={{ color: colors.danger, marginBottom: spacing.md }}>{error}</Text> : null}
+      {error ? <ErrorNotice message={error} style={{ marginBottom: spacing.md }} /> : null}
       <Button label="Mark as discontinued" onPress={handleConfirm} loading={isSubmitting} variant="danger" />
     </ScreenContainer>
   );

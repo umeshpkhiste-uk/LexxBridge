@@ -26,6 +26,7 @@ import { getMyProfile } from "@/features/profile/api";
 import { getPendingByCase } from "@/features/transactions/api";
 import { downloadCaseStatementPdf } from "@/features/transactions/shareStatement";
 import { alertMessage, confirmAlert } from "@/shared/lib/alert";
+import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { formatHearingDate, formatINR, toDateParam } from "@/shared/lib/format";
 import { ActionSheet, SheetAction } from "@/shared/ui/ActionSheet";
 import { useAppWidth } from "@/shared/ui/appFrame";
@@ -156,7 +157,7 @@ export default function HomeScreen() {
     try {
       await downloadCaseStatementPdf(c.id);
     } catch (err) {
-      alertMessage("Couldn't download statement", err instanceof Error ? err.message : "Something went wrong");
+      alertMessage("Couldn't download statement", friendlyErrorMessage(err));
     }
   };
 
@@ -175,7 +176,7 @@ export default function HomeScreen() {
               setCases((prev) => prev.filter((x) => x.id !== c.id));
               alertMessage("Deleted", `"${c.title}" has been deleted.`);
             } catch (err) {
-              alertMessage("Couldn't delete", err instanceof Error ? err.message : "Something went wrong");
+              alertMessage("Couldn't delete", friendlyErrorMessage(err));
             }
           },
         },

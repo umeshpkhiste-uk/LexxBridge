@@ -8,6 +8,8 @@ import { CaseOverview } from "@/features/cases/CaseOverview";
 import { LedgerView } from "@/features/transactions/LedgerView";
 import { downloadCaseStatementPdf } from "@/features/transactions/shareStatement";
 import { useSwipeTabs } from "@/shared/hooks/useSwipeTabs";
+import { friendlyErrorMessage } from "@/shared/lib/errors";
+import { ErrorNotice } from "@/shared/ui/ErrorNotice";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { useTheme } from "@/shared/ui/theme";
 
@@ -36,7 +38,7 @@ export default function CaseDetailScreen() {
         setCaseDetail(data);
         setError(null);
       })
-      .catch((err) => setError(err instanceof Error ? err.message : "Something went wrong"))
+      .catch((err) => setError(friendlyErrorMessage(err)))
       .finally(() => setIsLoading(false));
   }, [id]);
 
@@ -49,7 +51,7 @@ export default function CaseDetailScreen() {
   if (isLoading || error || !caseDetail) {
     return (
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.background }}>
-        {isLoading ? <ActivityIndicator color={colors.brand} /> : <Text style={{ color: colors.danger }}>{error ?? "Case not found"}</Text>}
+        {isLoading ? <ActivityIndicator color={colors.brand} /> : <ErrorNotice message={error ?? "Case not found"} />}
       </View>
     );
   }
@@ -60,7 +62,7 @@ export default function CaseDetailScreen() {
     try {
       await downloadCaseStatementPdf(caseDetail.id);
     } catch (err) {
-      Alert.alert("Couldn't download statement", err instanceof Error ? err.message : "Something went wrong");
+      Alert.alert("Couldn't download statement", friendlyErrorMessage(err));
     } finally {
       setIsDownloading(false);
     }

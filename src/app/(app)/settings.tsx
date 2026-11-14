@@ -10,6 +10,7 @@ import { useAuth } from "@/features/auth/AuthProvider";
 import { authenticateBiometric, disableBiometric, enableBiometric, getBiometricSupport, isBiometricEnabledFor } from "@/features/biometric/biometric";
 import { signOutOtherSessions } from "@/features/auth/api";
 import { alertMessage, confirmAlert } from "@/shared/lib/alert";
+import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { SettingsGroup, SettingsRow } from "@/shared/ui/SettingsGroup";
 import { useTheme } from "@/shared/ui/theme";
 import { getThemePreference, setThemePreference, ThemePreference, themePreferenceLabel } from "@/shared/ui/themePreference";
@@ -98,7 +99,7 @@ export default function SettingsScreen() {
               if (error) throw new Error(error);
               alertMessage("Done", "Every other device has been signed out.");
             } catch (err) {
-              alertMessage("Couldn't sign out other devices", err instanceof Error ? err.message : "Something went wrong");
+              alertMessage("Couldn't sign out other devices", friendlyErrorMessage(err));
             } finally {
               setIsSigningOutOthers(false);
             }
@@ -126,7 +127,7 @@ export default function SettingsScreen() {
         await Share.share({ title: "LexxBridge data export", message: json });
       }
     } catch (err) {
-      alertMessage("Export failed", err instanceof Error ? err.message : "Something went wrong");
+      alertMessage("Export failed", friendlyErrorMessage(err));
     } finally {
       setIsExporting(false);
     }

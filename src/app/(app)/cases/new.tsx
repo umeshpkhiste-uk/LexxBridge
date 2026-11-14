@@ -5,8 +5,10 @@ import { CasePriority, createCase } from "@/features/cases/api";
 import { Client, getClient, listClients } from "@/features/clients/api";
 import { CASE_TYPE_OPTIONS } from "@/shared/data/caseTypes";
 import { COURT_OPTIONS } from "@/shared/data/courts";
+import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { caseNumberError, normalizeCaseNumber } from "@/shared/lib/validation";
 import { Button } from "@/shared/ui/Button";
+import { ErrorNotice } from "@/shared/ui/ErrorNotice";
 import { ScreenContainer } from "@/shared/ui/ScreenContainer";
 import { SelectField } from "@/shared/ui/SelectField";
 import { TextField } from "@/shared/ui/TextField";
@@ -48,9 +50,9 @@ export default function NewCaseScreen() {
 
   useEffect(() => {
     if (preselectedClientId) {
-      getClient(preselectedClientId).then(setSelectedClient).catch((err) => setError(err.message));
+      getClient(preselectedClientId).then(setSelectedClient).catch((err) => setError(friendlyErrorMessage(err)));
     } else {
-      listClients().then(setClientOptions).catch((err) => setError(err.message));
+      listClients().then(setClientOptions).catch((err) => setError(friendlyErrorMessage(err)));
     }
   }, [preselectedClientId]);
 
@@ -92,7 +94,7 @@ export default function NewCaseScreen() {
       });
       router.replace("/(app)/(tabs)/cases");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      setError(friendlyErrorMessage(err));
     } finally {
       setIsSubmitting(false);
     }
@@ -246,7 +248,7 @@ export default function NewCaseScreen() {
         numberOfLines={3}
       />
 
-      {error ? <Text style={{ color: colors.danger, marginBottom: spacing.md }}>{error}</Text> : null}
+      {error ? <ErrorNotice message={error} style={{ marginBottom: spacing.md }} /> : null}
 
       <Button label="Create case" onPress={handleSave} loading={isSubmitting} />
     </ScreenContainer>

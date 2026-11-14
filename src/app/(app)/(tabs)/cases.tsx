@@ -10,9 +10,11 @@ import { ClientListItem, listClients, uploadClientPhoto } from "@/features/clien
 import { clientCaseTargets, isOldClient } from "@/features/clients/clientCases";
 import { OldClientDetailSheet } from "@/features/clients/OldClientDetailSheet";
 import { useSwipeTabs } from "@/shared/hooks/useSwipeTabs";
+import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { ActionSheet, SheetAction } from "@/shared/ui/ActionSheet";
 import { ClientAvatar } from "@/features/clients/ClientAvatar";
 import { Badge } from "@/shared/ui/Badge";
+import { ErrorNotice } from "@/shared/ui/ErrorNotice";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { TextField } from "@/shared/ui/TextField";
 import { HomeButton } from "@/shared/ui/HomeButton";
@@ -54,7 +56,7 @@ export default function CasesScreen() {
     const request = segment === "cases" ? listCases({ search }) : listClients({ search });
     request
       .then((data) => (segment === "cases" ? setCases(data as CaseSummary[]) : setClients(data as ClientListItem[])))
-      .catch((err) => setError(err instanceof Error ? err.message : "Something went wrong"))
+      .catch((err) => setError(friendlyErrorMessage(err)))
       .finally(() => setIsLoading(false));
   }, [segment, search]);
 
@@ -89,7 +91,7 @@ export default function CasesScreen() {
       await uploadClientPhoto(client, asset.uri, asset.mimeType ?? "image/jpeg");
       load();
     } catch (err) {
-      Alert.alert("Couldn't save photo", err instanceof Error ? err.message : "Something went wrong");
+      Alert.alert("Couldn't save photo", friendlyErrorMessage(err));
     }
   };
 
@@ -133,7 +135,7 @@ export default function CasesScreen() {
       {isLoading ? (
         <ActivityIndicator color={colors.brand} style={{ marginTop: spacing.xl }} />
       ) : error ? (
-        <Text style={[typography.body, { color: colors.danger, padding: spacing.lg }]}>{error}</Text>
+        <ErrorNotice message={error} style={{ padding: spacing.lg }} />
       ) : segment === "cases" ? (
         <FlatList
           data={cases ?? []}

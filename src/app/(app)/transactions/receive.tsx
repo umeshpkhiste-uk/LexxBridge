@@ -11,7 +11,9 @@ import {
 } from "@/features/transactions/api";
 import { PickedReceipt, ReceiptPicker } from "@/shared/ui/ReceiptPicker";
 import { formatINR } from "@/shared/lib/format";
+import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { Button } from "@/shared/ui/Button";
+import { ErrorNotice } from "@/shared/ui/ErrorNotice";
 import { ScreenContainer } from "@/shared/ui/ScreenContainer";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { SelectField } from "@/shared/ui/SelectField";
@@ -50,14 +52,14 @@ export default function EditPendingPaymentScreen() {
         setAmountReceived(String(Number(t.amount)));
         setPaymentMethod(t.payment_method);
       })
-      .catch((err) => setLoadError(err instanceof Error ? err.message : "Couldn't load this entry"));
+      .catch((err) => setLoadError(friendlyErrorMessage(err)));
   }, [id]);
 
   if (!tx) {
     return (
       <ScreenContainer style={{ alignItems: "center", justifyContent: "center" }}>
         <Stack.Screen options={{ title: "Edit payment" }} />
-        {loadError ? <Text style={{ color: colors.danger }}>{loadError}</Text> : <ActivityIndicator color={colors.brand} />}
+        {loadError ? <ErrorNotice message={loadError} /> : <ActivityIndicator color={colors.brand} />}
       </ScreenContainer>
     );
   }
@@ -88,7 +90,7 @@ export default function EditPendingPaymentScreen() {
       if (status === "received") await recordPartialPayment(tx.id, received, { paymentMethod, receipt });
       router.back();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      setError(friendlyErrorMessage(err));
     } finally {
       setIsSubmitting(false);
     }
@@ -155,7 +157,7 @@ export default function EditPendingPaymentScreen() {
         </>
       ) : null}
 
-      {error ? <Text style={[typography.body, { color: colors.danger, marginBottom: spacing.md }]}>{error}</Text> : null}
+      {error ? <ErrorNotice message={error} style={{ marginBottom: spacing.md }} /> : null}
 
       <Button label={status === "received" ? "Record payment" : "Save changes"} onPress={handleSave} loading={isSubmitting} pill />
     </ScreenContainer>

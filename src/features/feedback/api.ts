@@ -1,3 +1,4 @@
+import { UserFacingError } from "@/shared/lib/errors";
 import { supabase } from "@/shared/lib/supabase";
 
 export const FEEDBACK_MAX_WORDS = 500;
@@ -25,12 +26,12 @@ export function sanitizeFeedback(text: string): string {
  * matters. */
 export async function submitFeedback(comment: string): Promise<void> {
   const trimmed = sanitizeFeedback(comment);
-  if (!trimmed) throw new Error("Write a comment before sending.");
+  if (!trimmed) throw new UserFacingError("Write a comment before sending.");
   if (trimmed.length > FEEDBACK_MAX_CHARS) {
-    throw new Error(`Please keep your comment under ${FEEDBACK_MAX_CHARS} characters.`);
+    throw new UserFacingError(`Please keep your comment under ${FEEDBACK_MAX_CHARS} characters.`);
   }
   if (countWords(trimmed) > FEEDBACK_MAX_WORDS) {
-    throw new Error(`Please keep your comment under ${FEEDBACK_MAX_WORDS} words.`);
+    throw new UserFacingError(`Please keep your comment under ${FEEDBACK_MAX_WORDS} words.`);
   }
   const { error } = await supabase.functions.invoke("send-feedback", { body: { comment: trimmed } });
   if (error) throw new Error(error.message || "Couldn't send your comment. Try again.");

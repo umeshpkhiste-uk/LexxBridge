@@ -1,4 +1,5 @@
 import { decryptFromParty, encryptForRecipient, getPublicKey } from "@/features/messaging/encryption";
+import { UserFacingError } from "@/shared/lib/errors";
 import { supabase } from "@/shared/lib/supabase";
 
 export const MAX_COMMUNITY_MEMBERS = 50;
@@ -80,7 +81,7 @@ export async function createCommunity(name: string): Promise<Community> {
     .select("id, creator_id, name, created_at")
     .single();
   if (error) {
-    if (error.code === "23505") throw new Error("You've already created a community — only one per advocate.");
+    if (error.code === "23505") throw new UserFacingError("You've already created a community — only one per advocate.");
     throw new Error(error.message);
   }
   return data;
@@ -186,7 +187,7 @@ async function currentMemberKeys(community: Community): Promise<{ id: string; ke
   );
   const missing = keyPairs.filter((k) => !k.key);
   if (missing.length) {
-    throw new Error("Some members haven't enabled secure messaging yet — ask them to open the app once, then try again.");
+    throw new UserFacingError("Some members haven't enabled secure messaging yet — ask them to open the app once, then try again.");
   }
   return keyPairs as { id: string; key: string }[];
 }
@@ -196,7 +197,7 @@ async function currentMemberKeys(community: Community): Promise<{ id: string; ke
 export async function sendCommunityMessage(community: Community, content: string, replyToId?: string | null): Promise<CommunityMessage> {
   const me = await currentUserId();
   const trimmed = content.trim();
-  if (!trimmed) throw new Error("Message can't be empty");
+  if (!trimmed) throw new UserFacingError("Message can't be empty");
 
   const keyPairs = await currentMemberKeys(community);
 
@@ -223,7 +224,7 @@ export async function sendCommunityMessage(community: Community, content: string
  * edited. Only the sender may call this — enforced by RLS on both tables. */
 export async function editCommunityMessage(community: Community, message: CommunityMessage, content: string): Promise<CommunityMessage> {
   const trimmed = content.trim();
-  if (!trimmed) throw new Error("Message can't be empty");
+  if (!trimmed) throw new UserFacingError("Message can't be empty");
 
   const keyPairs = await currentMemberKeys(community);
   const payloads = await Promise.all(

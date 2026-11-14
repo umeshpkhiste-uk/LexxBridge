@@ -21,6 +21,7 @@ import {
 } from "@/features/posts/api";
 import { getMyProfile } from "@/features/profile/api";
 import { OnlineDot } from "@/features/presence/OnlineDot";
+import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { ActionSheet, SheetAction } from "@/shared/ui/ActionSheet";
 import { PostVideo } from "@/features/posts/PostVideo";
 import { useTheme } from "@/shared/ui/theme";
@@ -308,7 +309,7 @@ export function PostCard({
       onEdited(await updatePost(post.id, text));
       setIsEditing(false);
     } catch (err) {
-      Alert.alert("Couldn't update post", err instanceof Error ? err.message : "Something went wrong");
+      Alert.alert("Couldn't update post", friendlyErrorMessage(err));
     } finally {
       isSavingRef.current = false;
       setIsSaving(false);
@@ -326,7 +327,7 @@ export function PostCard({
             await deletePost(post);
             onDeleted();
           } catch (err) {
-            Alert.alert("Couldn't delete post", err instanceof Error ? err.message : "Something went wrong");
+            Alert.alert("Couldn't delete post", friendlyErrorMessage(err));
           }
         },
       },
@@ -547,7 +548,7 @@ function InlineComments({ postId, onAdded, onRemoved }: { postId: string; onAdde
       await refresh();
       onAdded();
     } catch (err) {
-      Alert.alert("Couldn't post comment", err instanceof Error ? err.message : "Something went wrong");
+      Alert.alert("Couldn't post comment", friendlyErrorMessage(err));
     } finally {
       isSendingRef.current = false;
       setIsSending(false);
@@ -671,7 +672,7 @@ function CommentRow({
       onEdited(await updateComment(comment.id, text));
       setIsEditing(false);
     } catch (err) {
-      Alert.alert("Couldn't update comment", err instanceof Error ? err.message : "Something went wrong");
+      Alert.alert("Couldn't update comment", friendlyErrorMessage(err));
     } finally {
       isSavingRef.current = false;
       setIsSaving(false);
@@ -689,7 +690,7 @@ function CommentRow({
             await deleteComment(comment.id);
             onDeleted();
           } catch (err) {
-            Alert.alert("Couldn't delete comment", err instanceof Error ? err.message : "Something went wrong");
+            Alert.alert("Couldn't delete comment", friendlyErrorMessage(err));
           }
         },
       },

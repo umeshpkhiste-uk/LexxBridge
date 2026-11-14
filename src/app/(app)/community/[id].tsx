@@ -18,8 +18,10 @@ import {
   subscribeToCommunityMessages,
 } from "@/features/community/api";
 import { confirmAlert } from "@/shared/lib/alert";
+import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { supabase } from "@/shared/lib/supabase";
 import { ActionSheet, SheetAction } from "@/shared/ui/ActionSheet";
+import { ErrorNotice } from "@/shared/ui/ErrorNotice";
 import { useTheme } from "@/shared/ui/theme";
 
 function timeLabel(iso: string) {
@@ -69,7 +71,7 @@ export default function CommunityChatScreen() {
         setMembers(memberList);
         setMessages(messageList);
       })
-      .catch((err) => setError(err instanceof Error ? err.message : "Couldn't load this community"));
+      .catch((err) => setError(friendlyErrorMessage(err)));
   }, [id]);
 
   useFocusEffect(
@@ -113,7 +115,7 @@ export default function CommunityChatScreen() {
       }
       cancelContext();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't send that message");
+      setError(friendlyErrorMessage(err));
     } finally {
       isSendingRef.current = false;
       setIsSending(false);
@@ -168,7 +170,7 @@ export default function CommunityChatScreen() {
                   await deleteCommunityMessage(message);
                 } catch (err) {
                   setMessages(previous);
-                  setError(err instanceof Error ? err.message : "Couldn't delete that message");
+                  setError(friendlyErrorMessage(err));
                 }
               },
             },
@@ -195,7 +197,7 @@ export default function CommunityChatScreen() {
         }}
       />
 
-      {error ? <Text style={{ color: colors.danger, padding: spacing.md }}>{error}</Text> : null}
+      {error ? <ErrorNotice message={error} /> : null}
 
       <FlatList
         ref={listRef}

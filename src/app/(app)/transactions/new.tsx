@@ -6,11 +6,13 @@ import { CaseSummary, listCases, updateCase } from "@/features/cases/api";
 import { createTransaction, EXPENSE_CATEGORIES, INCOME_CATEGORIES, PAYMENT_METHODS, TransactionType } from "@/features/transactions/api";
 import { ReceiptPicker } from "@/shared/ui/ReceiptPicker";
 import { Button } from "@/shared/ui/Button";
+import { ErrorNotice } from "@/shared/ui/ErrorNotice";
 import { ScreenContainer } from "@/shared/ui/ScreenContainer";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { SelectField } from "@/shared/ui/SelectField";
 import { TextField } from "@/shared/ui/TextField";
 import { formatINR } from "@/shared/lib/format";
+import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { useTheme } from "@/shared/ui/theme";
 
 const PAYMENT_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
@@ -119,7 +121,7 @@ export default function NewTransactionScreen() {
       }
       router.back();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      setError(friendlyErrorMessage(err));
     } finally {
       setIsSubmitting(false);
     }
@@ -246,7 +248,7 @@ export default function NewTransactionScreen() {
 
       <TextField label="Notes" placeholder="e.g. Paid via UPI, receipt shared on WhatsApp" value={notes} onChangeText={setNotes} multiline />
 
-      {error ? <Text style={[typography.body, { color: colors.danger, marginBottom: spacing.md }]}>{error}</Text> : null}
+      {error ? <ErrorNotice message={error} style={{ marginBottom: spacing.md }} /> : null}
 
       <Button label="Save transaction" onPress={handleSave} loading={isSubmitting} pill />
     </ScreenContainer>

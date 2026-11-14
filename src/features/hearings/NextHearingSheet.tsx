@@ -3,6 +3,7 @@ import DateTimePicker, { DateTimePickerAndroid } from "@react-native-community/d
 import { useState } from "react";
 import { Alert, Modal, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { Button } from "@/shared/ui/Button";
 import { useTheme } from "@/shared/ui/theme";
 import { setNextHearing } from "./api";
@@ -50,7 +51,7 @@ export function NextHearingSheet({ caseId, caseTitle, current, onClose, onSaved 
       onClose();
       offerPaymentReminder({ caseId, hearingAt: draft }).catch(() => {});
     } catch (err) {
-      Alert.alert("Couldn't save hearing date", err instanceof Error ? err.message : "Something went wrong");
+      Alert.alert("Couldn't save hearing date", friendlyErrorMessage(err));
     } finally {
       setIsSaving(false);
     }

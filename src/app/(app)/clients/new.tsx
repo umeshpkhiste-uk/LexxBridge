@@ -5,8 +5,10 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, Alert, Pressable, Text, View } from "react-native";
 import { Client, ClientType, createClientRecord, getClient, updateClient, uploadClientPhoto } from "@/features/clients/api";
 import { ClientAvatar } from "@/features/clients/ClientAvatar";
+import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { mobileError, normalizeIndianMobile } from "@/shared/lib/validation";
 import { Button } from "@/shared/ui/Button";
+import { ErrorNotice } from "@/shared/ui/ErrorNotice";
 import { ScreenContainer } from "@/shared/ui/ScreenContainer";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { TextField } from "@/shared/ui/TextField";
@@ -50,7 +52,7 @@ export default function NewClientScreen() {
         setPrivateNotes(c.private_notes ?? "");
         setContactPersonName(c.contact_person_name ?? "");
       })
-      .catch((err) => setLoadError(err instanceof Error ? err.message : "Couldn't load this client"));
+      .catch((err) => setLoadError(friendlyErrorMessage(err)));
   }, [id]);
 
   const handleSave = async () => {
@@ -107,7 +109,7 @@ export default function NewClientScreen() {
       }
       router.replace(`/(app)/cases/new?clientId=${client.id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      setError(friendlyErrorMessage(err));
     } finally {
       setIsSubmitting(false);
     }
@@ -125,7 +127,7 @@ export default function NewClientScreen() {
     return (
       <ScreenContainer style={{ alignItems: "center", justifyContent: "center" }}>
         <Stack.Screen options={{ title: "Edit client" }} />
-        {loadError ? <Text style={{ color: colors.danger }}>{loadError}</Text> : <ActivityIndicator color={colors.brand} />}
+        {loadError ? <ErrorNotice message={loadError} /> : <ActivityIndicator color={colors.brand} />}
       </ScreenContainer>
     );
   }
@@ -241,7 +243,7 @@ export default function NewClientScreen() {
         numberOfLines={3}
       />
 
-      {error ? <Text style={{ color: colors.danger, marginBottom: spacing.md }}>{error}</Text> : null}
+      {error ? <ErrorNotice message={error} style={{ marginBottom: spacing.md }} /> : null}
 
       <Button label={isEdit ? "Save changes" : "Save client"} onPress={handleSave} loading={isSubmitting} />
     </ScreenContainer>

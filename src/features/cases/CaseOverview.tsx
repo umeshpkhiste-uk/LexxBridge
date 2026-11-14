@@ -8,9 +8,11 @@ import { CaseDocument, deleteDocument, getDocumentSignedUrl, listDocumentsForCas
 import { CASE_TYPE_OPTIONS } from "@/shared/data/caseTypes";
 import { COURT_OPTIONS } from "@/shared/data/courts";
 import { confirmAlert } from "@/shared/lib/alert";
+import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { formatHearingDate, formatINR } from "@/shared/lib/format";
 import { caseNumberError, normalizeCaseNumber } from "@/shared/lib/validation";
 import { Button } from "@/shared/ui/Button";
+import { ErrorNotice } from "@/shared/ui/ErrorNotice";
 import { SelectField } from "@/shared/ui/SelectField";
 import { TextField } from "@/shared/ui/TextField";
 import { useTheme } from "@/shared/ui/theme";
@@ -89,7 +91,7 @@ export function CaseOverview({
       });
       setDocuments((prev) => (prev ? [doc, ...prev] : [doc]));
     } catch (err) {
-      Alert.alert("Upload failed", err instanceof Error ? err.message : "Something went wrong");
+      Alert.alert("Upload failed", friendlyErrorMessage(err));
     } finally {
       isUploadingRef.current = false;
       setIsUploading(false);
@@ -100,7 +102,7 @@ export function CaseOverview({
     try {
       Linking.openURL(await getDocumentSignedUrl(doc.storage_path));
     } catch (err) {
-      Alert.alert("Couldn't open document", err instanceof Error ? err.message : "Something went wrong");
+      Alert.alert("Couldn't open document", friendlyErrorMessage(err));
     }
   };
 
@@ -115,7 +117,7 @@ export function CaseOverview({
             await deleteDocument(doc.id, doc.storage_path);
             setDocuments((prev) => prev?.filter((d) => d.id !== doc.id) ?? null);
           } catch (err) {
-            Alert.alert("Couldn't delete document", err instanceof Error ? err.message : "Something went wrong");
+            Alert.alert("Couldn't delete document", friendlyErrorMessage(err));
           }
         },
       },
@@ -274,7 +276,7 @@ function CaseEditForm({
   onSaved: () => void;
   onDeleted: () => void;
 }) {
-  const { colors, spacing, radius, typography } = useTheme();
+  const { colors, spacing, radius } = useTheme();
   const [isDeleting, setIsDeleting] = useState(false);
   const [isResuming, setIsResuming] = useState(false);
   const [title, setTitle] = useState(caseDetail.title);
@@ -321,7 +323,7 @@ function CaseEditForm({
       });
       onSaved();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      setError(friendlyErrorMessage(err));
     } finally {
       setIsSaving(false);
     }
@@ -412,7 +414,7 @@ function CaseEditForm({
         />
       </View>
 
-      {error ? <Text style={[typography.body, { color: colors.danger }]}>{error}</Text> : null}
+      {error ? <ErrorNotice message={error} /> : null}
       <Button label="Save changes" onPress={save} loading={isSaving} pill />
       {caseDetail.discontinued_at ? (
         <Button
@@ -435,7 +437,7 @@ function CaseEditForm({
                       onSaved();
                     } catch (err) {
                       setIsResuming(false);
-                      Alert.alert("Couldn't resume case", err instanceof Error ? err.message : "Something went wrong");
+                      Alert.alert("Couldn't resume case", friendlyErrorMessage(err));
                     }
                   },
                 },
@@ -472,7 +474,7 @@ function CaseEditForm({
                     onDeleted();
                   } catch (err) {
                     setIsDeleting(false);
-                    Alert.alert("Couldn't delete case", err instanceof Error ? err.message : "Something went wrong");
+                    Alert.alert("Couldn't delete case", friendlyErrorMessage(err));
                   }
                 },
               },

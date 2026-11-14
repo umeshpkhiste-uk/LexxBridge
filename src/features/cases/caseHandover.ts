@@ -5,6 +5,7 @@ import { getClient } from "@/features/clients/api";
 import { Hearing, listHearingsForCase } from "@/features/hearings/api";
 import { getMyProfile } from "@/features/profile/api";
 import { alertMessage } from "@/shared/lib/alert";
+import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { printHtmlOnWeb } from "@/shared/lib/printHtml";
 import { getCase } from "./api";
 
@@ -185,6 +186,6 @@ export async function downloadCaseHandoverPdf(caseId: string): Promise<void> {
       await Sharing.shareAsync(uri, { mimeType: "application/pdf", dialogTitle: `Case summary — ${caseDetail.title}`, UTI: "com.adobe.pdf" });
     }
   } catch (err) {
-    alertMessage("Couldn't create PDF", err instanceof Error ? err.message : "Something went wrong");
+    alertMessage("Couldn't create PDF", friendlyErrorMessage(err));
   }
 }

@@ -2,9 +2,11 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Text } from "react-native";
 import { completeHearing, getHearing, Hearing } from "@/features/hearings/api";
+import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { Badge } from "@/shared/ui/Badge";
 import { Button } from "@/shared/ui/Button";
 import { DateField } from "@/shared/ui/DateField";
+import { ErrorNotice } from "@/shared/ui/ErrorNotice";
 import { ScreenContainer } from "@/shared/ui/ScreenContainer";
 import { TextField } from "@/shared/ui/TextField";
 import { useTheme } from "@/shared/ui/theme";
@@ -32,7 +34,7 @@ export default function HearingDetailScreen() {
         setOrders(data.orders ?? "");
         setNextAction(data.next_action ?? "");
       })
-      .catch((err) => setError(err.message))
+      .catch((err) => setError(friendlyErrorMessage(err)))
       .finally(() => setIsLoading(false));
   }, [id]);
 
@@ -52,7 +54,7 @@ export default function HearingDetailScreen() {
       });
       router.back();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      setError(friendlyErrorMessage(err));
     } finally {
       setIsSubmitting(false);
     }
@@ -69,7 +71,7 @@ export default function HearingDetailScreen() {
   if (!hearing) {
     return (
       <ScreenContainer style={{ alignItems: "center", justifyContent: "center" }}>
-        <Text style={{ color: colors.danger }}>{error ?? "Hearing not found"}</Text>
+        <ErrorNotice message={error ?? "Hearing not found"} />
       </ScreenContainer>
     );
   }
@@ -126,7 +128,7 @@ export default function HearingDetailScreen() {
         optional
       />
 
-      {error ? <Text style={{ color: colors.danger, marginBottom: spacing.md }}>{error}</Text> : null}
+      {error ? <ErrorNotice message={error} style={{ marginBottom: spacing.md }} /> : null}
 
       <Button label="Mark hearing completed" onPress={handleComplete} loading={isSubmitting} />
     </ScreenContainer>

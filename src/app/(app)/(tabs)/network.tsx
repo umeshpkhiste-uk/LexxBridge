@@ -34,6 +34,7 @@ import { SmallButton } from "@/features/network/SmallButton";
 import { CommunityTab } from "@/features/community/CommunityTab";
 import { FeedPost, listFeed, toggleReaction } from "@/features/posts/api";
 import { AdvocateProfile, getMyProfile } from "@/features/profile/api";
+import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { useSwipeTabs } from "@/shared/hooks/useSwipeTabs";
 import { HomeButton } from "@/shared/ui/HomeButton";
@@ -286,7 +287,7 @@ export default function NetworkScreen() {
       load();
     } catch (err) {
       setConnections((prev) => prev.filter((c) => c.id !== `optimistic-${profile.id}`));
-      Alert.alert("Couldn't send request", err instanceof Error ? err.message : "Something went wrong");
+      Alert.alert("Couldn't send request", friendlyErrorMessage(err));
     }
   };
 
@@ -308,7 +309,7 @@ export default function NetworkScreen() {
       const conversationId = await getOrCreateConversation(otherId);
       router.push(`/(app)/messages/${conversationId}`);
     } catch (err) {
-      Alert.alert("Couldn't open chat", err instanceof Error ? err.message : "Something went wrong");
+      Alert.alert("Couldn't open chat", friendlyErrorMessage(err));
     }
   };
 

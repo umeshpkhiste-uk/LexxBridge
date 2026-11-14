@@ -5,7 +5,9 @@ import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import { addCommunityMember, createCommunity, MAX_COMMUNITY_MEMBERS } from "@/features/community/api";
 import { ConnectionRow, listMyConnections } from "@/features/network/api";
 import { Avatar } from "@/features/network/NetworkCards";
+import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { Button } from "@/shared/ui/Button";
+import { ErrorNotice } from "@/shared/ui/ErrorNotice";
 import { ScreenContainer } from "@/shared/ui/ScreenContainer";
 import { TextField } from "@/shared/ui/TextField";
 import { useTheme } from "@/shared/ui/theme";
@@ -24,7 +26,7 @@ export default function NewCommunityScreen() {
   useEffect(() => {
     listMyConnections()
       .then((rows) => setConnections(rows.filter((r) => r.status === "accepted")))
-      .catch((err) => setError(err instanceof Error ? err.message : "Couldn't load your connections"))
+      .catch((err) => setError(friendlyErrorMessage(err)))
       .finally(() => setIsLoading(false));
   }, []);
 
@@ -51,7 +53,7 @@ export default function NewCommunityScreen() {
       }
       router.replace(`/(app)/community/${community.id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      setError(friendlyErrorMessage(err));
       setIsSubmitting(false);
     }
   };
@@ -103,7 +105,7 @@ export default function NewCommunityScreen() {
         </View>
       )}
 
-      {error ? <Text style={{ color: colors.danger, marginBottom: spacing.md }}>{error}</Text> : null}
+      {error ? <ErrorNotice message={error} style={{ marginBottom: spacing.md }} /> : null}
 
       <Button label="Create community" onPress={handleCreate} loading={isSubmitting} />
     </ScreenContainer>

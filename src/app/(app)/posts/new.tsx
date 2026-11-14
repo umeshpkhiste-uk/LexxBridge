@@ -7,7 +7,9 @@ import { useVideoPlayer, VideoView } from "expo-video";
 import { useState } from "react";
 import { Alert, Image, Linking, Pressable, StyleSheet, Text, View } from "react-native";
 import { createPost, MAX_ATTACHMENT_BYTES, MAX_VIDEO_BYTES, PickedFile } from "@/features/posts/api";
+import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { Button } from "@/shared/ui/Button";
+import { ErrorNotice } from "@/shared/ui/ErrorNotice";
 import { ScreenContainer } from "@/shared/ui/ScreenContainer";
 import { TextField } from "@/shared/ui/TextField";
 import { useTheme } from "@/shared/ui/theme";
@@ -104,7 +106,7 @@ export default function NewPostScreen() {
       await createPost({ content, imageUri: image?.uri, imageMimeType: image?.mimeType, video, files });
       router.back();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      setError(friendlyErrorMessage(err));
     } finally {
       setIsSubmitting(false);
     }
@@ -221,7 +223,7 @@ export default function NewPostScreen() {
         </View>
       ) : null}
 
-      {error ? <Text style={{ color: colors.danger, marginBottom: spacing.md }}>{error}</Text> : null}
+      {error ? <ErrorNotice message={error} style={{ marginBottom: spacing.md }} /> : null}
 
       <Button label={isSubmitting && video ? "Uploading video…" : "Post"} onPress={handlePost} loading={isSubmitting} pill />
     </ScreenContainer>

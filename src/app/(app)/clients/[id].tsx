@@ -1,8 +1,10 @@
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Text, View } from "react-native";
+import { ActivityIndicator, View } from "react-native";
 import { listCases } from "@/features/cases/api";
 import { clientCaseTargets } from "@/features/clients/clientCases";
+import { friendlyErrorMessage } from "@/shared/lib/errors";
+import { ErrorNotice } from "@/shared/ui/ErrorNotice";
 import { useTheme } from "@/shared/ui/theme";
 
 /**
@@ -12,7 +14,7 @@ import { useTheme } from "@/shared/ui/theme";
  */
 export default function ClientRedirectScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { colors, typography } = useTheme();
+  const { colors } = useTheme();
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -22,13 +24,13 @@ export default function ClientRedirectScreen() {
         const [target] = clientCaseTargets(cases.map((c) => ({ ...c, is_archived: false, discontinued_at: null, discontinuation_reason: null })));
         router.replace(target ? `/(app)/cases/${target.id}` : `/(app)/cases/new?clientId=${id}`);
       })
-      .catch((err) => setError(err instanceof Error ? err.message : "Something went wrong"));
+      .catch((err) => setError(friendlyErrorMessage(err)));
   }, [id]);
 
   return (
     <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.background }}>
       <Stack.Screen options={{ title: "" }} />
-      {error ? <Text style={[typography.body, { color: colors.danger }]}>{error}</Text> : <ActivityIndicator color={colors.brand} />}
+      {error ? <ErrorNotice message={error} /> : <ActivityIndicator color={colors.brand} />}
     </View>
   );
 }

@@ -1,5 +1,6 @@
 import { decode } from "base64-arraybuffer";
 import { fileUriToBase64 } from "@/shared/lib/fileBase64";
+import { UserFacingError } from "@/shared/lib/errors";
 import { supabase } from "@/shared/lib/supabase";
 import { decryptFromParty, encryptForRecipient, getPublicKey } from "./encryption";
 
@@ -248,7 +249,7 @@ export async function sendMessage(
     const otherPartyPublicKey = await getPublicKey(await getConversationOtherParty(conversationId));
     if (!otherPartyPublicKey) {
       if (path) await supabase.storage.from(ATTACHMENT_BUCKET).remove([path]);
-      throw new Error("This advocate hasn't enabled secure messaging yet — ask them to open the app once, then try again.");
+      throw new UserFacingError("This advocate hasn't enabled secure messaging yet — ask them to open the app once, then try again.");
     }
     const sealed = await encryptForRecipient(trimmed, otherPartyPublicKey);
     sealedContent = sealed.content;
@@ -285,7 +286,7 @@ export async function sendMessage(
 export async function editMessage(conversationId: string, id: string, content: string): Promise<void> {
   const trimmed = content.trim();
   const otherPartyPublicKey = await getPublicKey(await getConversationOtherParty(conversationId));
-  if (!otherPartyPublicKey) throw new Error("This advocate hasn't enabled secure messaging yet.");
+  if (!otherPartyPublicKey) throw new UserFacingError("This advocate hasn't enabled secure messaging yet.");
   const sealed = await encryptForRecipient(trimmed, otherPartyPublicKey);
   const { error } = await supabase
     .from("messages")

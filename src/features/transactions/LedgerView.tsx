@@ -7,10 +7,12 @@ import { CaseDetail, getCase, listCases } from "@/features/cases/api";
 import { Client, getClient } from "@/features/clients/api";
 import { getMyProfile } from "@/features/profile/api";
 import { formatINR } from "@/shared/lib/format";
+import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { ActionSheet, SheetAction } from "@/shared/ui/ActionSheet";
 import { Button } from "@/shared/ui/Button";
 import { DateField, toDateOnly } from "@/shared/ui/DateField";
 import { DonutChart } from "@/shared/ui/DonutChart";
+import { ErrorNotice } from "@/shared/ui/ErrorNotice";
 import { useTheme } from "@/shared/ui/theme";
 import { ClientTransaction, getReceiptUrl, listTransactionsForCase, listTransactionsForClient } from "./api";
 import { computeFeeTotals } from "./feeTotals";
@@ -92,7 +94,7 @@ export function LedgerView({ clientId, caseId, variant = "screen" }: Props) {
           });
           setError(null);
         })
-        .catch((err) => isMounted && setError(err instanceof Error ? err.message : "Something went wrong"))
+        .catch((err) => isMounted && setError(friendlyErrorMessage(err)))
         .finally(() => isMounted && setIsLoading(false));
       return () => {
         isMounted = false;
@@ -146,7 +148,7 @@ export function LedgerView({ clientId, caseId, variant = "screen" }: Props) {
   if (error || !client) {
     return (
       <View style={[styles.center, { backgroundColor: colors.background, padding: spacing.lg }]}>
-        <Text style={{ color: colors.danger }}>{error ?? "Client not found"}</Text>
+        {error ? <ErrorNotice message={error} /> : <Text style={{ color: colors.danger }}>Client not found</Text>}
       </View>
     );
   }
@@ -604,7 +606,7 @@ async function openReceipt(path: string) {
   try {
     await Linking.openURL(await getReceiptUrl(path));
   } catch (err) {
-    Alert.alert("Couldn't open receipt", err instanceof Error ? err.message : "Something went wrong");
+    Alert.alert("Couldn't open receipt", friendlyErrorMessage(err));
   }
 }
 

@@ -17,8 +17,10 @@ import {
 import { confirmAsync } from "@/shared/lib/confirm";
 import { formatINR } from "@/shared/lib/format";
 import { fromDateOnly } from "@/shared/lib/dateInput";
+import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { Button } from "@/shared/ui/Button";
 import { DateField } from "@/shared/ui/DateField";
+import { ErrorNotice } from "@/shared/ui/ErrorNotice";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { SelectField } from "@/shared/ui/SelectField";
 import { TextField } from "@/shared/ui/TextField";
@@ -63,14 +65,14 @@ export default function TransactionDetailsScreen() {
         setTx(t);
         if (t.receipt_path) getReceiptUrl(t.receipt_path).then(setReceiptUrl).catch(() => {});
       })
-      .catch((err) => setError(err instanceof Error ? err.message : "Couldn't load this entry"));
+      .catch((err) => setError(friendlyErrorMessage(err)));
   }, [id]);
 
   if (!tx) {
     return (
       <View style={[styles.center, { backgroundColor: colors.background }]}>
         <Stack.Screen options={{ title: "Payment details" }} />
-        {error ? <Text style={{ color: colors.danger }}>{error}</Text> : <ActivityIndicator color={colors.brand} />}
+        {error ? <ErrorNotice message={error} /> : <ActivityIndicator color={colors.brand} />}
       </View>
     );
   }
@@ -124,7 +126,7 @@ export default function TransactionDetailsScreen() {
       setTx({ ...tx, ...updated });
       setIsEditing(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't save changes");
+      setError(friendlyErrorMessage(err));
     } finally {
       setIsSaving(false);
     }
@@ -143,7 +145,7 @@ export default function TransactionDetailsScreen() {
       router.back();
     } catch (err) {
       setIsDeleting(false);
-      Alert.alert("Couldn't delete entry", err instanceof Error ? err.message : "Something went wrong");
+      Alert.alert("Couldn't delete entry", friendlyErrorMessage(err));
     }
   };
 
@@ -242,7 +244,7 @@ export default function TransactionDetailsScreen() {
           <TextField label="Reference" placeholder="e.g. Cheque no. 452317" value={referenceNumber} onChangeText={setReferenceNumber} />
           <TextField label="Notes" placeholder="e.g. Paid via UPI" value={notes} onChangeText={setNotes} multiline />
 
-          {error ? <Text style={{ color: colors.danger, marginBottom: spacing.sm }}>{error}</Text> : null}
+          {error ? <ErrorNotice message={error} style={{ marginBottom: spacing.sm }} /> : null}
           <Button label="Save changes" onPress={saveEdit} loading={isSaving} pill />
         </View>
       ) : (

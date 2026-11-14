@@ -16,9 +16,11 @@ import {
   unblockUser,
 } from "@/features/admin/api";
 import { alertMessage, confirmAlert } from "@/shared/lib/alert";
+import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { Badge } from "@/shared/ui/Badge";
 import { Button } from "@/shared/ui/Button";
 import { DateField } from "@/shared/ui/DateField";
+import { ErrorNotice } from "@/shared/ui/ErrorNotice";
 import { ScreenContainer } from "@/shared/ui/ScreenContainer";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { SettingsGroup, SettingsRow } from "@/shared/ui/SettingsGroup";
@@ -74,7 +76,7 @@ export default function AdminScreen() {
         setReports(r);
         setVerificationRequests(v);
       })
-      .catch((err) => setError(err instanceof Error ? err.message : "Something went wrong"));
+      .catch((err) => setError(friendlyErrorMessage(err)));
   }, [checking, search]);
 
   useFocusEffect(
@@ -101,7 +103,7 @@ export default function AdminScreen() {
               else await blockUser(profile.id);
               load();
             } catch (err) {
-              alertMessage("Couldn't update", err instanceof Error ? err.message : "Something went wrong");
+              alertMessage("Couldn't update", friendlyErrorMessage(err));
             } finally {
               setActingId(null);
             }
@@ -114,13 +116,13 @@ export default function AdminScreen() {
   const handleDismissReport = (report: AdminReportRow) => {
     setReportStatus(report.id, "dismissed")
       .then(load)
-      .catch((err) => alertMessage("Couldn't update", err instanceof Error ? err.message : "Something went wrong"));
+      .catch((err) => alertMessage("Couldn't update", friendlyErrorMessage(err)));
   };
 
   const handleViewVerificationDocument = (request: AdminVerificationRequest) => {
     getVerificationDocumentUrl(request.document_storage_path)
       .then((url) => Linking.openURL(url))
-      .catch((err) => alertMessage("Couldn't open document", err instanceof Error ? err.message : "Something went wrong"));
+      .catch((err) => alertMessage("Couldn't open document", friendlyErrorMessage(err)));
   };
 
   const handleApproveVerification = (request: AdminVerificationRequest) => {
@@ -134,7 +136,7 @@ export default function AdminScreen() {
             await setVerificationStatus(request.id, "verified");
             load();
           } catch (err) {
-            alertMessage("Couldn't update", err instanceof Error ? err.message : "Something went wrong");
+            alertMessage("Couldn't update", friendlyErrorMessage(err));
           } finally {
             setActingId(null);
           }
@@ -153,7 +155,7 @@ export default function AdminScreen() {
       await setVerificationStatus(request.id, "rejected", reason);
       load();
     } catch (err) {
-      alertMessage("Couldn't update", err instanceof Error ? err.message : "Something went wrong");
+      alertMessage("Couldn't update", friendlyErrorMessage(err));
     } finally {
       setActingId(null);
     }
@@ -190,7 +192,7 @@ export default function AdminScreen() {
         autoCapitalize="none"
       />
 
-      {error ? <Text style={[typography.body, { color: colors.danger, marginBottom: spacing.md }]}>{error}</Text> : null}
+      {error ? <ErrorNotice message={error} style={{ marginBottom: spacing.md }} /> : null}
 
       {pendingVerificationsAllDates.length > 0 ? (
         <View style={{ marginBottom: spacing.lg, gap: spacing.sm }}>

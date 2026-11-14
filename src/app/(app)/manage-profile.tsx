@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import { AdvocateProfile, getMyProfile, updateMyProfile } from "@/features/profile/api";
 import { alertMessage, confirmAlert } from "@/shared/lib/alert";
+import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { ScreenContainer } from "@/shared/ui/ScreenContainer";
 import { useTheme } from "@/shared/ui/theme";
 
@@ -49,7 +50,7 @@ export default function ManageProfileScreen() {
       await updateMyProfile({ profile_visibility: value });
     } catch (err) {
       setSelected(previous);
-      alertMessage("Couldn't update visibility", err instanceof Error ? err.message : "Something went wrong");
+      alertMessage("Couldn't update visibility", friendlyErrorMessage(err));
     } finally {
       setSaving(null);
     }

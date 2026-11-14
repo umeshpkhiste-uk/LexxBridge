@@ -1,4 +1,5 @@
 import { alertMessage, confirmAlert } from "@/shared/lib/alert";
+import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { deleteMyAccount } from "./api";
 
 /**
@@ -28,7 +29,7 @@ export function confirmDeleteAccount(setBusy: (busy: boolean) => void) {
                   await deleteMyAccount();
                 } catch (err) {
                   setBusy(false);
-                  alertMessage("Couldn't delete account", err instanceof Error ? err.message : "Something went wrong");
+                  alertMessage("Couldn't delete account", friendlyErrorMessage(err));
                 }
               },
             },

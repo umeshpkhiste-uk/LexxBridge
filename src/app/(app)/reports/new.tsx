@@ -2,7 +2,9 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { Text } from "react-native";
 import { ReportTargetType, submitReport } from "@/features/reports/api";
+import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { Button } from "@/shared/ui/Button";
+import { ErrorNotice } from "@/shared/ui/ErrorNotice";
 import { ScreenContainer } from "@/shared/ui/ScreenContainer";
 import { TextField } from "@/shared/ui/TextField";
 import { useTheme } from "@/shared/ui/theme";
@@ -34,7 +36,7 @@ export default function NewReportScreen() {
       await submitReport({ targetType, targetId, reason });
       setSubmitted(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      setError(friendlyErrorMessage(err));
     } finally {
       setIsSubmitting(false);
     }
@@ -75,7 +77,7 @@ export default function NewReportScreen() {
         error={reasonError ?? undefined}
       />
 
-      {error ? <Text style={{ color: colors.danger, marginBottom: spacing.md }}>{error}</Text> : null}
+      {error ? <ErrorNotice message={error} style={{ marginBottom: spacing.md }} /> : null}
 
       <Button label="Submit report" onPress={handleSubmit} loading={isSubmitting} />
     </ScreenContainer>

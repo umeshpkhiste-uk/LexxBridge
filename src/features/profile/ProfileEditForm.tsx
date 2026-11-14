@@ -6,10 +6,12 @@ import { COURT_OPTIONS } from "@/shared/data/courts";
 import { BAR_COUNCILS, INDIA_STATES, STATE_NAMES } from "@/shared/data/indiaLocations";
 import { SUPPORTED_LANGUAGES } from "@/shared/i18n/languages";
 import { alertMessage } from "@/shared/lib/alert";
+import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { isSameState, lookupPincode, PincodeOption, pincodesForCity } from "@/shared/lib/pincode";
 import { enrolmentError, mobileError, normalizeEnrolment, normalizeIndianMobile, pincodeError } from "@/shared/lib/validation";
 import { Button } from "@/shared/ui/Button";
 import { DateField, fromDateOnly, toDateOnly } from "@/shared/ui/DateField";
+import { ErrorNotice } from "@/shared/ui/ErrorNotice";
 import { SelectField } from "@/shared/ui/SelectField";
 import { TagInput } from "@/shared/ui/TagInput";
 import { TextField } from "@/shared/ui/TextField";
@@ -143,7 +145,7 @@ export function ProfileEditForm({ profile, email, submitLabel, secondaryLabel, o
     try {
       setPhotoUrl(await uploadProfilePhoto(result.assets[0].uri, result.assets[0].mimeType));
     } catch (err) {
-      alertMessage("Couldn't upload photo", err instanceof Error ? err.message : "Something went wrong");
+      alertMessage("Couldn't upload photo", friendlyErrorMessage(err));
     } finally {
       setIsUploading(false);
     }
@@ -202,7 +204,7 @@ export function ProfileEditForm({ profile, email, submitLabel, secondaryLabel, o
       await updateMyProfile(patch);
       onSaved({ ...profile, ...patch, profile_photo_url: photoUrl });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      setError(friendlyErrorMessage(err));
     } finally {
       setIsSaving(false);
     }
@@ -481,7 +483,7 @@ export function ProfileEditForm({ profile, email, submitLabel, secondaryLabel, o
         />
       </View>
 
-      {error ? <Text style={[typography.body, { color: colors.danger }]}>{error}</Text> : null}
+      {error ? <ErrorNotice message={error} /> : null}
 
       <Button label={submitLabel} onPress={handleSave} loading={isSaving} pill />
       <Button label={secondaryLabel} variant="ghost" onPress={onSecondary} />

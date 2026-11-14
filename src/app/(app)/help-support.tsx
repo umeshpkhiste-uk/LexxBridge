@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Text } from "react-native";
 import { countWords, FEEDBACK_MAX_CHARS, FEEDBACK_MAX_WORDS, submitFeedback } from "@/features/feedback/api";
 import { alertMessage, confirmAlert } from "@/shared/lib/alert";
+import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { Button } from "@/shared/ui/Button";
 import { ScreenContainer } from "@/shared/ui/ScreenContainer";
 import { TextField } from "@/shared/ui/TextField";
@@ -29,7 +30,7 @@ export default function HelpSupportScreen() {
         { text: "OK", onPress: () => router.back() },
       ]);
     } catch (err) {
-      alertMessage("Couldn't send", err instanceof Error ? err.message : "Something went wrong");
+      alertMessage("Couldn't send", friendlyErrorMessage(err));
     } finally {
       setIsSending(false);
     }

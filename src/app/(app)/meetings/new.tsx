@@ -2,8 +2,10 @@ import { router, Stack, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Text } from "react-native";
 import { createMeeting, getMeeting, MeetingType, updateMeeting } from "@/features/meetings/api";
+import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { Button } from "@/shared/ui/Button";
 import { DateField } from "@/shared/ui/DateField";
+import { ErrorNotice } from "@/shared/ui/ErrorNotice";
 import { ScreenContainer } from "@/shared/ui/ScreenContainer";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { TextField } from "@/shared/ui/TextField";
@@ -48,7 +50,7 @@ export default function NewMeetingScreen() {
         setDecisions(m.decisions ?? "");
         setFollowUpActions(m.follow_up_actions ?? "");
       })
-      .catch((err) => setError(err instanceof Error ? err.message : "Couldn't load this meeting"))
+      .catch((err) => setError(friendlyErrorMessage(err)))
       .finally(() => setLoaded(true));
   }, [id]);
 
@@ -79,7 +81,7 @@ export default function NewMeetingScreen() {
       });
       router.back();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      setError(friendlyErrorMessage(err));
     } finally {
       setIsSubmitting(false);
     }
@@ -134,7 +136,7 @@ export default function NewMeetingScreen() {
         numberOfLines={2}
       />
 
-      {error ? <Text style={{ color: colors.danger, marginBottom: spacing.md }}>{error}</Text> : null}
+      {error ? <ErrorNotice message={error} style={{ marginBottom: spacing.md }} /> : null}
 
       <Button label={isEdit ? "Save changes" : "Save meeting"} onPress={handleSave} loading={isSubmitting} />
     </ScreenContainer>

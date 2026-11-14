@@ -7,6 +7,8 @@ import { getNetworkStats } from "@/features/network/api";
 import { AdvocateProfile, completeOnboarding, countMyCases, getMyProfile } from "@/features/profile/api";
 import { ProfileDocket } from "@/features/profile/ProfileDocket";
 import { ProfileEditForm } from "@/features/profile/ProfileEditForm";
+import { friendlyErrorMessage } from "@/shared/lib/errors";
+import { ErrorNotice } from "@/shared/ui/ErrorNotice";
 import { useTheme } from "@/shared/ui/theme";
 
 /**
@@ -35,7 +37,7 @@ export default function BasicInfoScreen() {
           .then((s) => setConnectionsCount(s.connections_count))
           .catch(() => {});
       })
-      .catch((err) => setError(err instanceof Error ? err.message : "Something went wrong"));
+      .catch((err) => setError(friendlyErrorMessage(err)));
     countMyCases().then(setCaseCount).catch(() => {});
   }, []);
 
@@ -58,7 +60,7 @@ export default function BasicInfoScreen() {
     return (
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.background, padding: spacing.lg }}>
         <Stack.Screen options={screenOptions} />
-        {error ? <Text style={{ color: colors.danger }}>{error}</Text> : <ActivityIndicator color={colors.brand} />}
+        {error ? <ErrorNotice message={error} /> : <ActivityIndicator color={colors.brand} />}
       </View>
     );
   }

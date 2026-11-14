@@ -14,6 +14,7 @@ import { SettingsGroup, SettingsRow } from "@/shared/ui/SettingsGroup";
 import { HomeButton } from "@/shared/ui/HomeButton";
 import { confirmDeleteAccount } from "@/features/account/confirmDeleteAccount";
 import { alertMessage, confirmAlert } from "@/shared/lib/alert";
+import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { useTheme } from "@/shared/ui/theme";
 
 const verificationLabel: Record<AdvocateProfile["verification_status"], string> = {
@@ -74,7 +75,7 @@ export default function ProfileScreen() {
       await syncCalendarReminders(enabled).catch(() => {});
     } catch (err) {
       setNotificationsOn(!enabled);
-      alertMessage("Couldn't update notifications", err instanceof Error ? err.message : "Something went wrong");
+      alertMessage("Couldn't update notifications", friendlyErrorMessage(err));
     }
   };
 
@@ -86,7 +87,7 @@ export default function ProfileScreen() {
         style: "destructive",
         onPress: async () => {
           const { error } = await signOutKeepingBiometric();
-          if (error) alertMessage("Couldn't log out", error);
+          if (error) alertMessage("Couldn't log out", friendlyErrorMessage(new Error(error)));
         },
       },
     ]);

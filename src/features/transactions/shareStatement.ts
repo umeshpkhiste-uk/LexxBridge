@@ -5,6 +5,7 @@ import { getCase } from "@/features/cases/api";
 import { getClient } from "@/features/clients/api";
 import { getMyProfile } from "@/features/profile/api";
 import { alertMessage } from "@/shared/lib/alert";
+import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { formatINR } from "@/shared/lib/format";
 import { printHtmlOnWeb } from "@/shared/lib/printHtml";
 import { listTransactionsForCase, type Transaction } from "./api";
@@ -483,7 +484,7 @@ export async function downloadStatementPdf(input: StatementInput, title: string)
       await Sharing.shareAsync(uri, { mimeType: "application/pdf", dialogTitle: title, UTI: "com.adobe.pdf" });
     }
   } catch (err) {
-    alertMessage("Couldn't create PDF", err instanceof Error ? err.message : "Something went wrong");
+    alertMessage("Couldn't create PDF", friendlyErrorMessage(err));
   }
 }
 
@@ -596,6 +597,6 @@ export async function shareStatementViaWhatsApp(input: StatementInput, phone: st
     }
     await Sharing.shareAsync(uri, { mimeType: "application/pdf", dialogTitle: title, UTI: "com.adobe.pdf" });
   } catch (err) {
-    alertMessage("Couldn't create PDF", err instanceof Error ? err.message : "Something went wrong");
+    alertMessage("Couldn't create PDF", friendlyErrorMessage(err));
   }
 }

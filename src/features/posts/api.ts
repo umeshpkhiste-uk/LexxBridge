@@ -1,6 +1,7 @@
 import { decode } from "base64-arraybuffer";
 import * as FileSystem from "expo-file-system/legacy";
 import { fileUriToBase64 } from "@/shared/lib/fileBase64";
+import { UserFacingError } from "@/shared/lib/errors";
 import { supabase } from "@/shared/lib/supabase";
 
 const BUCKET = "post-images";
@@ -85,7 +86,8 @@ async function uploadFileFromDisk(bucket: string, path: string, uri: string, con
   });
   if (result.status < 200 || result.status >= 300) {
     const tooLarge = result.status === 413 || /too large|maximum allowed size/i.test(result.body);
-    throw new Error(tooLarge ? "This video is larger than the upload limit (50 MB)." : `Upload failed (${result.status})`);
+    if (tooLarge) throw new UserFacingError("This video is larger than the upload limit (50 MB).");
+    throw new Error(`Upload failed (${result.status})`);
   }
 }
 
@@ -222,7 +224,7 @@ export async function createPost(input: {
 
   let videoPath: string | null = null;
   if (input.video) {
-    if (input.video.size && input.video.size > MAX_VIDEO_BYTES) throw new Error("Videos must be smaller than 50 MB.");
+    if (input.video.size && input.video.size > MAX_VIDEO_BYTES) throw new UserFacingError("Videos must be smaller than 50 MB.");
     const mime = input.video.mimeType ?? "video/mp4";
     const ext = mime.split("/")[1]?.replace("quicktime", "mov") ?? "mp4";
     videoPath = `${me}/${Date.now()}.${ext}`;
@@ -257,7 +259,7 @@ export async function createPost(input: {
 }
 
 async function addPostAttachment(postId: string, authorId: string, file: PickedFile): Promise<void> {
-  if (file.size && file.size > MAX_ATTACHMENT_BYTES) throw new Error(`${file.name} is larger than the 20 MB attachment limit.`);
+  if (file.size && file.size > MAX_ATTACHMENT_BYTES) throw new UserFacingError(`${file.name} is larger than the 20 MB attachment limit.`);
   const safeName = file.name.replace(/[^\w.\-]+/g, "_").slice(-80) || "file";
   const path = `${authorId}/${postId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${safeName}`;
   const base64 = await fileUriToBase64(file.uri);
@@ -284,7 +286,7 @@ export function isEdited(item: { created_at: string; updated_at: string }): bool
 
 export async function updatePost(id: string, content: string): Promise<{ content: string; updated_at: string }> {
   const trimmed = content.trim();
-  if (!trimmed) throw new Error("Post can't be empty");
+  if (!trimmed) throw new UserFacingError("Post can't be empty");
   const { data, error } = await supabase
     .from("posts")
     .update({ content: trimmed })
@@ -395,7 +397,7 @@ export async function addComment(postId: string, content: string): Promise<void>
 
 export async function updateComment(id: string, content: string): Promise<{ content: string; updated_at: string }> {
   const trimmed = content.trim();
-  if (!trimmed) throw new Error("Comment can't be empty");
+  if (!trimmed) throw new UserFacingError("Comment can't be empty");
   const { data, error } = await supabase.from("comments").update({ content: trimmed }).eq("id", id).select("content, updated_at").single();
   if (error) throw new Error(error.message);
   return data;

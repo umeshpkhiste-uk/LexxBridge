@@ -5,8 +5,10 @@ import { getMyProfile } from "@/features/profile/api";
 import { getMyVerification, submitVerificationRequest, VerificationStatus } from "@/features/verification/api";
 import { alertMessage } from "@/shared/lib/alert";
 import { STATE_NAMES } from "@/shared/data/indiaLocations";
+import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { Badge } from "@/shared/ui/Badge";
 import { Button } from "@/shared/ui/Button";
+import { ErrorNotice } from "@/shared/ui/ErrorNotice";
 import { PickedReceipt, ReceiptPicker } from "@/shared/ui/ReceiptPicker";
 import { ScreenContainer } from "@/shared/ui/ScreenContainer";
 import { SelectField } from "@/shared/ui/SelectField";
@@ -41,7 +43,7 @@ export default function VerificationScreen() {
         setBarNumber(profile.bar_registration_number ?? "");
         setBarState(profile.bar_council_state ?? "");
       })
-      .catch((err) => setError(err instanceof Error ? err.message : "Something went wrong"))
+      .catch((err) => setError(friendlyErrorMessage(err)))
       .finally(() => setLoading(false));
   }, []);
 
@@ -66,7 +68,7 @@ export default function VerificationScreen() {
       alertMessage("Submitted", "We've received your verification request. We'll review it and let you know.");
       router.back();
     } catch (err) {
-      alertMessage("Couldn't submit", err instanceof Error ? err.message : "Something went wrong");
+      alertMessage("Couldn't submit", friendlyErrorMessage(err));
     } finally {
       setSubmitting(false);
     }
@@ -82,7 +84,7 @@ export default function VerificationScreen() {
 
   return (
     <ScreenContainer scroll>
-      {error ? <Text style={[typography.body, { color: colors.danger, marginBottom: spacing.md }]}>{error}</Text> : null}
+      {error ? <ErrorNotice message={error} style={{ marginBottom: spacing.md }} /> : null}
 
       {status ? (
         <View style={{ marginBottom: spacing.lg }}>

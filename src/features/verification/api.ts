@@ -1,5 +1,6 @@
 import { decode } from "base64-arraybuffer";
 import { fileUriToBase64 } from "@/shared/lib/fileBase64";
+import { UserFacingError } from "@/shared/lib/errors";
 import { supabase } from "@/shared/lib/supabase";
 
 export type VerificationStatus = "unverified" | "pending" | "verified" | "rejected" | "expired";
@@ -56,7 +57,7 @@ export async function submitVerificationRequest(input: {
 }): Promise<void> {
   const mimeType = input.mimeType === "image/jpg" ? "image/jpeg" : input.mimeType;
   if (!ALLOWED_MIME_TYPES.includes(mimeType)) {
-    throw new Error("Unsupported file format. Please upload a PNG or JPEG/JPG image, or take a new photo.");
+    throw new UserFacingError("Unsupported file format. Please upload a PNG or JPEG/JPG image, or take a new photo.");
   }
 
   const { data: userData, error: userError } = await supabase.auth.getUser();

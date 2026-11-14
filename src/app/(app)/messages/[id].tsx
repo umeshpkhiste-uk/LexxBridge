@@ -41,9 +41,11 @@ import { setActiveConversation } from "@/features/notifications/activeChat";
 import { buildChatItems, messagePreview } from "@/features/messaging/chatFormat";
 import { discardMessage, queueMessage, retryMessage, subscribeDelivered, subscribePending } from "@/features/messaging/pendingMessages";
 import { alertMessage, confirmAlert } from "@/shared/lib/alert";
+import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { Avatar, withAdvPrefix } from "@/features/network/NetworkCards";
 import { useIsOnline } from "@/features/presence/PresenceProvider";
 import { ActionSheet, SheetAction } from "@/shared/ui/ActionSheet";
+import { ErrorNotice } from "@/shared/ui/ErrorNotice";
 import { useTheme } from "@/shared/ui/theme";
 
 const EDIT_WINDOW_MS = 15 * 60 * 1000;
@@ -117,7 +119,7 @@ export default function ChatScreen() {
         setPartner(other);
         markConversationRead(id).catch(() => {});
       })
-      .catch((err) => active && setError(err instanceof Error ? err.message : "Couldn't open this chat"));
+      .catch((err) => active && setError(friendlyErrorMessage(err)));
 
     const channel = subscribeToConversation(id, {
       onUpsert: (message: Message) => {
@@ -195,7 +197,7 @@ export default function ChatScreen() {
       upsert({ ...target, content: text, edited_at: new Date().toISOString() });
       editMessage(id, target.id, text).catch((err) => {
         upsert(target);
-        alertMessage("Couldn't edit message", err instanceof Error ? err.message : "Something went wrong");
+        alertMessage("Couldn't edit message", friendlyErrorMessage(err));
       });
       return;
     }
@@ -228,7 +230,7 @@ export default function ChatScreen() {
     signalTyping("");
     listRef.current?.scrollToOffset({ offset: 0, animated: true });
     queueMessage(id, temp, file).catch((err) => {
-      alertMessage("Couldn't send message", err instanceof Error ? err.message : "Something went wrong");
+      alertMessage("Couldn't send message", friendlyErrorMessage(err));
     });
   };
 
@@ -247,7 +249,7 @@ export default function ChatScreen() {
 
   const retry = (message: ChatMessage) => {
     retryMessage(id, message.id)?.catch((err) => {
-      alertMessage("Couldn't send message", err instanceof Error ? err.message : "Something went wrong");
+      alertMessage("Couldn't send message", friendlyErrorMessage(err));
     });
   };
 
@@ -294,7 +296,7 @@ export default function ChatScreen() {
     try {
       await Linking.openURL(await getAttachmentUrl(message.attachment_path));
     } catch (err) {
-      alertMessage("Couldn't open file", err instanceof Error ? err.message : "Something went wrong");
+      alertMessage("Couldn't open file", friendlyErrorMessage(err));
     }
   };
 
@@ -310,7 +312,7 @@ export default function ChatScreen() {
             await deleteMessage(message);
           } catch (err) {
             upsert(message);
-            alertMessage("Couldn't delete message", err instanceof Error ? err.message : "Something went wrong");
+            alertMessage("Couldn't delete message", friendlyErrorMessage(err));
           }
         },
       },
@@ -440,7 +442,7 @@ export default function ChatScreen() {
     return (
       <View style={[styles.center, { backgroundColor: colors.background }]}>
         {header}
-        {error ? <Text style={{ color: colors.danger }}>{error}</Text> : <ActivityIndicator color={colors.brand} />}
+        {error ? <ErrorNotice message={error} /> : <ActivityIndicator color={colors.brand} />}
       </View>
     );
   }

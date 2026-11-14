@@ -1,10 +1,12 @@
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Text } from "react-native";
+import { ActivityIndicator } from "react-native";
 import { createHearing, getHearing, updateHearing } from "@/features/hearings/api";
 import { offerPaymentReminder } from "@/features/hearings/paymentReminder";
+import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { Button } from "@/shared/ui/Button";
 import { DateField } from "@/shared/ui/DateField";
+import { ErrorNotice } from "@/shared/ui/ErrorNotice";
 import { ScreenContainer } from "@/shared/ui/ScreenContainer";
 import { TextField } from "@/shared/ui/TextField";
 import { useTheme } from "@/shared/ui/theme";
@@ -40,7 +42,7 @@ export default function NewHearingScreen() {
         setHearingType(h.hearing_type ?? "");
         setPurpose(h.purpose ?? "");
       })
-      .catch((err) => setError(err instanceof Error ? err.message : "Couldn't load this hearing"))
+      .catch((err) => setError(friendlyErrorMessage(err)))
       .finally(() => setLoaded(true));
   }, [id]);
 
@@ -62,7 +64,7 @@ export default function NewHearingScreen() {
       offerPaymentReminder({ caseId: resolvedCaseId!, hearingAt }).catch(() => {});
       router.back();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      setError(friendlyErrorMessage(err));
     } finally {
       setIsSubmitting(false);
     }
@@ -101,7 +103,7 @@ export default function NewHearingScreen() {
       <TextField label="Court" placeholder="e.g. Bombay High Court" value={court} onChangeText={setCourt} />
       <TextField label="Courtroom" placeholder="e.g. Court Room 4" value={courtroom} onChangeText={setCourtroom} />
 
-      {error ? <Text style={{ color: colors.danger, marginBottom: spacing.md }}>{error}</Text> : null}
+      {error ? <ErrorNotice message={error} style={{ marginBottom: spacing.md }} /> : null}
 
       <Button label={isEdit ? "Save changes" : "Schedule hearing"} onPress={handleSave} loading={isSubmitting} />
     </ScreenContainer>

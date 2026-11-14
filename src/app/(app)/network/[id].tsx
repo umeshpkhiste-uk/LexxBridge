@@ -21,6 +21,7 @@ import {
 } from "@/features/network/api";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { AdvocateIdentity, ConnectButton, mutualLabel } from "@/features/network/NetworkCards";
+import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { ScreenContainer } from "@/shared/ui/ScreenContainer";
 import { useTheme } from "@/shared/ui/theme";
 
@@ -138,7 +139,7 @@ export default function PublicProfileScreen() {
       const conversationId = await getOrCreateConversation(id);
       router.push(`/(app)/messages/${conversationId}`);
     } catch (err) {
-      Alert.alert("Couldn't start conversation", err instanceof Error ? err.message : "Something went wrong");
+      Alert.alert("Couldn't start conversation", friendlyErrorMessage(err));
     } finally {
       isActingRef.current = false;
       setIsActing(false);

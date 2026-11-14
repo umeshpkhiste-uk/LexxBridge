@@ -1,7 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useRef } from "react";
-import { Modal, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { AppModal } from "./AppModal";
 import { useTheme } from "./theme";
 
 export type SheetAction = {
@@ -90,25 +91,14 @@ export function ActionSheet({ visible, title, actions, onClose }: Props) {
     </Pressable>
   );
 
-  // react-native-web's Modal portals straight to document.body, breaking out
-  // of AppFrame's phone-width column and covering the whole browser window
-  // instead of just the app. An absolutely-positioned overlay rendered in
-  // place stays confined to that column; native keeps the real Modal, where
-  // there's no such frame to break out of.
-  if (Platform.OS === "web") {
-    if (!visible) return null;
-    return <View style={styles.webOverlay}>{content}</View>;
-  }
-
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+    <AppModal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       {content}
-    </Modal>
+    </AppModal>
   );
 }
 
 const styles = StyleSheet.create({
-  webOverlay: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, zIndex: 1000 },
   backdrop: { flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(15, 23, 42, 0.4)" },
   sheet: {},
   action: { flexDirection: "row", alignItems: "center", minHeight: 52 },

@@ -1,7 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { downloadCaseHandoverPdf } from "@/features/cases/caseHandover";
+import { AppModal } from "@/shared/ui/AppModal";
 import { Badge } from "@/shared/ui/Badge";
 import { useTheme } from "@/shared/ui/theme";
 import { ClientListItem } from "./api";
@@ -21,7 +22,7 @@ export function OldClientDetailSheet({ client, onClose }: Props) {
   const insets = useSafeAreaInsets();
 
   return (
-    <Modal visible transparent animationType="slide" onRequestClose={onClose}>
+    <AppModal visible transparent animationType="slide" onRequestClose={onClose}>
       <Pressable style={styles.backdrop} onPress={onClose}>
         <Pressable
           style={{
@@ -127,7 +128,7 @@ export function OldClientDetailSheet({ client, onClose }: Props) {
           </ScrollView>
         </Pressable>
       </Pressable>
-    </Modal>
+    </AppModal>
   );
 }
 

@@ -11,7 +11,6 @@ import {
   FlatList,
   KeyboardAvoidingView,
   Linking,
-  Modal,
   Platform,
   Pressable,
   StyleSheet,
@@ -46,6 +45,7 @@ import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { Avatar, withAdvPrefix } from "@/features/network/NetworkCards";
 import { useIsOnline } from "@/features/presence/PresenceProvider";
 import { SheetAction } from "@/shared/ui/ActionSheet";
+import { AppModal } from "@/shared/ui/AppModal";
 import { anchorFromEvent, ContextMenu, measureAnchor, MenuAnchor } from "@/shared/ui/ContextMenu";
 import { ErrorNotice } from "@/shared/ui/ErrorNotice";
 import { useTheme } from "@/shared/ui/theme";
@@ -632,14 +632,14 @@ export default function ChatScreen() {
         onClose={() => setChatMenu(null)}
       />
 
-      <Modal visible={!!viewerUri} transparent animationType="fade" onRequestClose={() => setViewerUri(null)}>
+      <AppModal visible={!!viewerUri} transparent animationType="fade" onRequestClose={() => setViewerUri(null)}>
         <Pressable style={styles.viewer} onPress={() => setViewerUri(null)} accessibilityLabel="Close photo">
           {viewerUri ? <Image source={{ uri: viewerUri }} style={{ width: "100%", height: "80%" }} contentFit="contain" /> : null}
           <View style={[styles.viewerClose, { top: insets.top + 12 }]}>
             <Ionicons name="close" size={28} color="#FFFFFF" />
           </View>
         </Pressable>
-      </Modal>
+      </AppModal>
     </KeyboardAvoidingView>
   );
 }

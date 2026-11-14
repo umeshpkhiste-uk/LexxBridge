@@ -6,7 +6,6 @@ import {
   Alert,
   Image,
   Linking,
-  Modal,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -35,6 +34,7 @@ import { CommunityTab } from "@/features/community/CommunityTab";
 import { FeedPost, listFeed, toggleReaction } from "@/features/posts/api";
 import { AdvocateProfile, getMyProfile } from "@/features/profile/api";
 import { friendlyErrorMessage } from "@/shared/lib/errors";
+import { AppModal } from "@/shared/ui/AppModal";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { useSwipeTabs } from "@/shared/hooks/useSwipeTabs";
 import { HomeButton } from "@/shared/ui/HomeButton";
@@ -714,11 +714,11 @@ function PersonRow({
       {right}
 
       {photoUrl ? (
-        <Modal visible={viewerOpen} transparent animationType="fade" onRequestClose={() => setViewerOpen(false)}>
+        <AppModal visible={viewerOpen} transparent animationType="fade" onRequestClose={() => setViewerOpen(false)}>
           <Pressable style={styles.photoViewer} onPress={() => setViewerOpen(false)} accessibilityLabel={`Close ${name}'s photo`}>
             <Image source={{ uri: photoUrl }} style={styles.photoViewerImage} resizeMode="contain" />
           </Pressable>
-        </Modal>
+        </AppModal>
       ) : null}
     </Pressable>
   );

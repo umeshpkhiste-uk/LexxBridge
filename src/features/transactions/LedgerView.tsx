@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Alert, Linking, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type ViewInstance } from "react-native";
+import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type ViewInstance } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CaseDetail, getCase, listCases } from "@/features/cases/api";
 import { Client, getClient } from "@/features/clients/api";
@@ -9,6 +9,7 @@ import { getMyProfile } from "@/features/profile/api";
 import { formatINR } from "@/shared/lib/format";
 import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { SheetAction } from "@/shared/ui/ActionSheet";
+import { AppModal } from "@/shared/ui/AppModal";
 import { ContextMenu, measureAnchor, MenuAnchor } from "@/shared/ui/ContextMenu";
 import { Button } from "@/shared/ui/Button";
 import { DateField, toDateOnly } from "@/shared/ui/DateField";
@@ -601,7 +602,7 @@ function CustomRangeSheet({
 }) {
   const { colors, spacing, radius, typography } = useTheme();
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onCancel}>
+    <AppModal visible={visible} transparent animationType="slide" onRequestClose={onCancel}>
       <Pressable style={styles.backdrop} onPress={onCancel}>
         <Pressable
           style={[styles.sheet, { backgroundColor: colors.surface, borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg, padding: spacing.lg }]}
@@ -612,7 +613,7 @@ function CustomRangeSheet({
           <Button label="Share this range" onPress={onConfirm} disabled={!from || !to} pill />
         </Pressable>
       </Pressable>
-    </Modal>
+    </AppModal>
   );
 }
 

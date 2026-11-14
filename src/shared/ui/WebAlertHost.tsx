@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { Modal, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { AlertButton, PendingAlert, registerWebAlertListener } from "@/shared/lib/alert";
+import { AppModal } from "./AppModal";
 import { useTheme } from "./theme";
 
 /** Renders confirmAlert()'s dialogs on web, where Alert.alert is a no-op.
@@ -29,7 +30,7 @@ export function WebAlertHost() {
   const sideBySide = pending.buttons.length === 2;
 
   return (
-    <Modal visible transparent animationType="fade" onRequestClose={() => close()}>
+    <AppModal visible transparent animationType="fade" onRequestClose={() => close()}>
       <Pressable style={styles.backdrop} onPress={() => close()}>
         <Pressable style={[styles.card, { backgroundColor: colors.surface, borderRadius: radius.lg }]}>
           <View style={{ padding: spacing.lg, paddingBottom: spacing.md }}>
@@ -71,7 +72,7 @@ export function WebAlertHost() {
           </View>
         </Pressable>
       </Pressable>
-    </Modal>
+    </AppModal>
   );
 }
 

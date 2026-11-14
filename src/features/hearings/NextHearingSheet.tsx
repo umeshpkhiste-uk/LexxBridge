@@ -1,9 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker, { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
 import { useState } from "react";
-import { Alert, Modal, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { Alert, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { friendlyErrorMessage } from "@/shared/lib/errors";
+import { AppModal } from "@/shared/ui/AppModal";
 import { Button } from "@/shared/ui/Button";
 import { useTheme } from "@/shared/ui/theme";
 import { setNextHearing } from "./api";
@@ -74,7 +75,7 @@ export function NextHearingSheet({ caseId, caseTitle, current, onClose, onSaved 
   const timeLabel = draft.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" });
 
   return (
-    <Modal visible transparent animationType="slide" onRequestClose={onClose}>
+    <AppModal visible transparent animationType="slide" onRequestClose={onClose}>
       <Pressable style={styles.backdrop} onPress={onClose}>
         <Pressable
           style={{
@@ -218,7 +219,7 @@ export function NextHearingSheet({ caseId, caseTitle, current, onClose, onSaved 
           </View>
         </Pressable>
       </Pressable>
-    </Modal>
+    </AppModal>
   );
 }
 

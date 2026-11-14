@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   deleteTransaction,
@@ -18,6 +18,7 @@ import { confirmAsync } from "@/shared/lib/confirm";
 import { formatINR } from "@/shared/lib/format";
 import { fromDateOnly } from "@/shared/lib/dateInput";
 import { friendlyErrorMessage } from "@/shared/lib/errors";
+import { AppModal } from "@/shared/ui/AppModal";
 import { Button } from "@/shared/ui/Button";
 import { DateField } from "@/shared/ui/DateField";
 import { ErrorNotice } from "@/shared/ui/ErrorNotice";
@@ -284,14 +285,14 @@ export default function TransactionDetailsScreen() {
         </View>
       ) : null}
 
-      <Modal visible={viewerOpen} transparent animationType="fade" onRequestClose={() => setViewerOpen(false)}>
+      <AppModal visible={viewerOpen} transparent animationType="fade" onRequestClose={() => setViewerOpen(false)}>
         <Pressable style={styles.viewer} onPress={() => setViewerOpen(false)} accessibilityLabel="Close receipt">
           {receiptUrl ? <Image source={{ uri: receiptUrl }} style={{ width: "100%", height: "85%" }} contentFit="contain" /> : null}
           <View style={[styles.viewerClose, { top: insets.top + 12 }]}>
             <Ionicons name="close" size={28} color="#FFFFFF" />
           </View>
         </Pressable>
-      </Modal>
+      </AppModal>
     </ScrollView>
   );
 }

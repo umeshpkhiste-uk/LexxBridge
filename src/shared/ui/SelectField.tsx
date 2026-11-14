@@ -3,7 +3,6 @@ import { useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
-  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -13,6 +12,7 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { AppModal } from "./AppModal";
 import { useTheme } from "./theme";
 
 export type SelectOption<T extends string> = { value: T; label: string; icon?: keyof typeof Ionicons.glyphMap };
@@ -103,7 +103,7 @@ export function SelectField<T extends string>({
         <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 4 }]}>{hint}</Text>
       ) : null}
 
-      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
+      <AppModal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
           <Pressable style={styles.backdrop} onPress={() => setOpen(false)} accessibilityLabel="Close">
             <Pressable
@@ -184,7 +184,7 @@ export function SelectField<T extends string>({
             </Pressable>
           </Pressable>
         </KeyboardAvoidingView>
-      </Modal>
+      </AppModal>
     </View>
   );
 }

@@ -28,7 +28,7 @@ import {
   searchAdvocates,
   sendConnectionRequest,
 } from "@/features/network/api";
-import { Avatar, ColleagueCard, ConnectStatus, mutualLabel, PortraitAvatar, PostCard, withAdvPrefix } from "@/features/network/NetworkCards";
+import { Avatar, ConnectStatus, mutualLabel, PortraitAvatar, PostCard, withAdvPrefix } from "@/features/network/NetworkCards";
 import { SmallButton } from "@/features/network/SmallButton";
 import { CommunityTab } from "@/features/community/CommunityTab";
 import { FeedPost, listFeed, toggleReaction } from "@/features/posts/api";
@@ -71,7 +71,6 @@ export default function NetworkScreen() {
   const [chip, setChip] = useState<string | null>(null);
   const [mutualCounts, setMutualCounts] = useState<Record<string, number>>({});
   const [followerCounts, setFollowerCounts] = useState<Record<string, number>>({});
-  const [discoverView, setDiscoverView] = useState<"grid" | "list">("grid");
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const load = useCallback(
@@ -507,42 +506,11 @@ export default function NetworkScreen() {
                     Clear filter
                   </Text>
                 ) : null}
-                <View style={[styles.viewToggle, { borderColor: colors.border, borderRadius: radius.sm }]}>
-                  <Pressable
-                    onPress={() => setDiscoverView("grid")}
-                    accessibilityLabel="Column view"
-                    accessibilityState={{ selected: discoverView === "grid" }}
-                    style={[styles.viewToggleBtn, { backgroundColor: discoverView === "grid" ? colors.surfaceAlt : "transparent" }]}
-                  >
-                    <Ionicons name="grid-outline" size={17} color={discoverView === "grid" ? colors.brand : colors.textSecondary} />
-                  </Pressable>
-                  <Pressable
-                    onPress={() => setDiscoverView("list")}
-                    accessibilityLabel="Row view"
-                    accessibilityState={{ selected: discoverView === "list" }}
-                    style={[styles.viewToggleBtn, { backgroundColor: discoverView === "list" ? colors.surfaceAlt : "transparent" }]}
-                  >
-                    <Ionicons name="list-outline" size={17} color={discoverView === "list" ? colors.brand : colors.textSecondary} />
-                  </Pressable>
-                </View>
               </View>
               {discoverList.length === 0 ? (
                 <Text style={[typography.body, { color: colors.textSecondary }]}>
                   {chip || search ? "No advocates match." : "No advocates to show yet."}
                 </Text>
-              ) : discoverView === "grid" ? (
-                <View style={[styles.grid, { gap: spacing.md }]}>
-                  {discoverList.map((p) => (
-                    <View key={p.id} style={styles.gridCell}>
-                      <ColleagueCard
-                        profile={p}
-                        status={statusById.get(p.id) ?? "none"}
-                        mutualCount={mutualCounts[p.id]}
-                        onConnect={() => handleConnect(p)}
-                      />
-                    </View>
-                  ))}
-                </View>
               ) : (
                 <View style={{ gap: spacing.sm }}>
                   {discoverList.map((p) => (
@@ -732,10 +700,6 @@ const styles = StyleSheet.create({
   dot: { position: "absolute", top: 1, right: 1, width: 8, height: 8, borderRadius: 4 },
   search: { flexDirection: "row", alignItems: "center", paddingHorizontal: 12, borderWidth: StyleSheet.hairlineWidth },
   sectionHeader: { flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between" },
-  viewToggle: { flexDirection: "row", borderWidth: StyleSheet.hairlineWidth, padding: 2 },
-  viewToggleBtn: { width: 30, height: 30, borderRadius: 6, alignItems: "center", justifyContent: "center" },
-  grid: { flexDirection: "row", flexWrap: "wrap" },
-  gridCell: { width: "47.5%" },
   personRow: { flexDirection: "row", alignItems: "center" },
   photoViewer: { flex: 1, backgroundColor: "rgba(0,0,0,0.95)", alignItems: "center", justifyContent: "center" },
   photoViewerImage: { width: "100%", height: "80%" },

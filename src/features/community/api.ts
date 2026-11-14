@@ -136,7 +136,7 @@ async function decryptPayload(content: string, nonce: string, senderPublicKey: s
   if (!senderPublicKey) return { content: "This message isn't available yet — ask the sender to open the app once.", is_undecryptable: true };
   const plaintext = await decryptFromParty({ content, nonce }, senderPublicKey);
   if (plaintext !== null) return { content: plaintext, is_undecryptable: false };
-  return { content: "This message isn't available on this device.", is_undecryptable: true };
+  return { content: "Message is encrypted and can not see on this device.", is_undecryptable: true };
 }
 
 export async function listCommunityMessages(communityId: string): Promise<CommunityMessage[]> {
@@ -169,7 +169,7 @@ export async function listCommunityMessages(communityId: string): Promise<Commun
     messages.map(async (m) => {
       if (m.is_deleted) return { ...m, content: "", is_undecryptable: false };
       const payload = payloadByMessageId.get(m.id);
-      if (!payload) return { ...m, content: "This message isn't available on this device.", is_undecryptable: true };
+      if (!payload) return { ...m, content: "Message is encrypted and can not see on this device.", is_undecryptable: true };
       const decrypted = await decryptPayload(payload.content, payload.nonce, senderKeyById.get(m.sender_id) ?? null);
       return { ...m, ...decrypted };
     })

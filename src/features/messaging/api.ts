@@ -26,7 +26,7 @@ async function decryptText(content: string, nonce: string | null, otherPartyPubl
   }
   const plaintext = await decryptFromParty({ content, nonce }, otherPartyPublicKey);
   if (plaintext !== null) return { content: plaintext, undecryptable: false };
-  return { content: "This message isn't available on this device.", undecryptable: true };
+  return { content: "Message is encrypted and can not see on this device.", undecryptable: true };
 }
 
 /** Decrypts a full message row for display. */

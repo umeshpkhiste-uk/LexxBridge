@@ -20,6 +20,7 @@ import {
   View,
   type TextInputInstance,
   type TextInputKeyPressEvent,
+  type ViewInstance,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@/features/auth/AuthProvider";
@@ -45,7 +46,7 @@ import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { Avatar, withAdvPrefix } from "@/features/network/NetworkCards";
 import { useIsOnline } from "@/features/presence/PresenceProvider";
 import { SheetAction } from "@/shared/ui/ActionSheet";
-import { anchorFromEvent, ContextMenu, MenuAnchor } from "@/shared/ui/ContextMenu";
+import { anchorFromEvent, ContextMenu, measureAnchor, MenuAnchor } from "@/shared/ui/ContextMenu";
 import { ErrorNotice } from "@/shared/ui/ErrorNotice";
 import { useTheme } from "@/shared/ui/theme";
 
@@ -82,6 +83,8 @@ export default function ChatScreen() {
 
   const listRef = useRef<FlatList>(null);
   const inputRef = useRef<TextInputInstance>(null);
+  const chatMenuButtonRef = useRef<ViewInstance>(null);
+  const attachButtonRef = useRef<ViewInstance>(null);
   const channelRef = useRef<ReturnType<typeof subscribeToConversation> | null>(null);
   const typingSentAt = useRef(0);
   const typingStopTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -426,7 +429,8 @@ export default function ChatScreen() {
               </Pressable>
             ) : null}
             <Pressable
-              onPress={(e) => setChatMenu(anchorFromEvent(e))}
+              ref={chatMenuButtonRef}
+              onPress={() => measureAnchor(chatMenuButtonRef, setChatMenu)}
               hitSlop={10}
               accessibilityLabel="Chat options"
               style={{ paddingRight: spacing.sm }}
@@ -557,7 +561,13 @@ export default function ChatScreen() {
       <View style={[styles.composer, { paddingBottom: Math.max(insets.bottom, spacing.sm), backgroundColor: colors.background }]}>
         <View style={[styles.inputPill, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           {!editing ? (
-            <Pressable onPress={(e) => setAttachMenu(anchorFromEvent(e))} hitSlop={8} accessibilityLabel="Attach" style={styles.inputIcon}>
+            <Pressable
+              ref={attachButtonRef}
+              onPress={() => measureAnchor(attachButtonRef, setAttachMenu)}
+              hitSlop={8}
+              accessibilityLabel="Attach"
+              style={styles.inputIcon}
+            >
               <Ionicons name="attach" size={24} color={colors.textSecondary} style={{ transform: [{ rotate: "45deg" }] }} />
             </Pressable>
           ) : null}

@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect } from "expo-router";
-import { useCallback, useMemo, useState } from "react";
-import { ActivityIndicator, Alert, Linking, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { useCallback, useMemo, useRef, useState } from "react";
+import { ActivityIndicator, Alert, Linking, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type ViewInstance } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CaseDetail, getCase, listCases } from "@/features/cases/api";
 import { Client, getClient } from "@/features/clients/api";
@@ -9,7 +9,7 @@ import { getMyProfile } from "@/features/profile/api";
 import { formatINR } from "@/shared/lib/format";
 import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { SheetAction } from "@/shared/ui/ActionSheet";
-import { anchorFromEvent, ContextMenu, MenuAnchor } from "@/shared/ui/ContextMenu";
+import { ContextMenu, measureAnchor, MenuAnchor } from "@/shared/ui/ContextMenu";
 import { Button } from "@/shared/ui/Button";
 import { DateField, toDateOnly } from "@/shared/ui/DateField";
 import { DonutChart } from "@/shared/ui/DonutChart";
@@ -68,6 +68,9 @@ export function LedgerView({ clientId, caseId, variant = "screen" }: Props) {
   const [month, setMonth] = useState<string | null>(null);
   const [sheet, setSheet] = useState<"sharePeriod" | "shareMonth" | "shareChannel" | "month" | null>(null);
   const [sheetAnchor, setSheetAnchor] = useState<MenuAnchor | null>(null);
+  const heroShareButtonRef = useRef<ViewInstance>(null);
+  const cardShareButtonRef = useRef<ViewInstance>(null);
+  const monthFilterButtonRef = useRef<ViewInstance>(null);
   const [sharePeriod, setSharePeriod] = useState<SharePeriod>({ label: "Complete transaction history" });
   const [customRangeOpen, setCustomRangeOpen] = useState(false);
   const [customFrom, setCustomFrom] = useState<Date | null>(null);
@@ -278,10 +281,13 @@ export function LedgerView({ clientId, caseId, variant = "screen" }: Props) {
                   <Ionicons name="add-circle-outline" size={26} color={onHero} />
                 </Pressable>
                 <Pressable
-                  onPress={(e) => {
-                    setSheetAnchor(anchorFromEvent(e));
-                    setSheet("sharePeriod");
-                  }}
+                  ref={heroShareButtonRef}
+                  onPress={() =>
+                    measureAnchor(heroShareButtonRef, (anchor) => {
+                      setSheetAnchor(anchor);
+                      setSheet("sharePeriod");
+                    })
+                  }
                   hitSlop={10}
                   accessibilityLabel="Share statement with client"
                 >
@@ -399,10 +405,13 @@ export function LedgerView({ clientId, caseId, variant = "screen" }: Props) {
                   <Ionicons name="add" size={24} color={colors.textInverse} />
                 </Pressable>
                 <Pressable
-                  onPress={(e) => {
-                    setSheetAnchor(anchorFromEvent(e));
-                    setSheet("sharePeriod");
-                  }}
+                  ref={cardShareButtonRef}
+                  onPress={() =>
+                    measureAnchor(cardShareButtonRef, (anchor) => {
+                      setSheetAnchor(anchor);
+                      setSheet("sharePeriod");
+                    })
+                  }
                   accessibilityLabel="Share statement with client"
                   style={({ pressed }) => [
                     styles.cardAction,
@@ -440,10 +449,13 @@ export function LedgerView({ clientId, caseId, variant = "screen" }: Props) {
             />
           </View>
           <Pressable
-            onPress={(e) => {
-              setSheetAnchor(anchorFromEvent(e));
-              setSheet("month");
-            }}
+            ref={monthFilterButtonRef}
+            onPress={() =>
+              measureAnchor(monthFilterButtonRef, (anchor) => {
+                setSheetAnchor(anchor);
+                setSheet("month");
+              })
+            }
             accessibilityLabel="Filter by month"
             style={[
               styles.calendarButton,

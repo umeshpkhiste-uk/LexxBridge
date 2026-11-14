@@ -1,9 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect } from "expo-router";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  GestureResponderEvent,
   Image,
   Pressable,
   RefreshControl,
@@ -12,6 +11,7 @@ import {
   Text,
   TextInput,
   View,
+  type ViewInstance,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { firstName, greetingFor } from "@/shared/lib/names";
@@ -30,7 +30,7 @@ import { alertMessage, confirmAlert } from "@/shared/lib/alert";
 import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { formatHearingDate, formatINR, toDateParam } from "@/shared/lib/format";
 import { SheetAction } from "@/shared/ui/ActionSheet";
-import { anchorFromEvent, ContextMenu, MenuAnchor } from "@/shared/ui/ContextMenu";
+import { ContextMenu, measureAnchor, MenuAnchor } from "@/shared/ui/ContextMenu";
 import { useAppWidth } from "@/shared/ui/appFrame";
 import { useTheme } from "@/shared/ui/theme";
 
@@ -352,8 +352,8 @@ export default function HomeScreen() {
                 highlighted={index === 0 && !search}
                 width={cardWidth}
                 onOpenCalendar={openCalendar}
-                onMenu={(e) => {
-                  setMenuAnchor(anchorFromEvent(e));
+                onMenu={(anchor) => {
+                  setMenuAnchor(anchor);
                   setMenuCase(c);
                 }}
               />
@@ -640,9 +640,10 @@ function CaseCard({
   highlighted: boolean;
   width: number;
   onOpenCalendar: (dateIso?: string) => void;
-  onMenu: (event: GestureResponderEvent) => void;
+  onMenu: (anchor: MenuAnchor) => void;
 }) {
   const { colors, spacing, radius, typography } = useTheme();
+  const menuButtonRef = useRef<ViewInstance>(null);
   const fg = highlighted ? "#FFFFFF" : colors.textPrimary;
   const muted = highlighted ? "rgba(255,255,255,0.75)" : colors.textSecondary;
   const faint = highlighted ? "rgba(255,255,255,0.55)" : colors.textSecondary;
@@ -673,7 +674,7 @@ function CaseCard({
         ) : (
           <View style={{ flex: 1 }} />
         )}
-        <Pressable onPress={onMenu} hitSlop={10} accessibilityLabel="Case options">
+        <Pressable ref={menuButtonRef} onPress={() => measureAnchor(menuButtonRef, onMenu)} hitSlop={10} accessibilityLabel="Case options">
           <Ionicons name="ellipsis-vertical" size={16} color={faint} />
         </Pressable>
       </View>

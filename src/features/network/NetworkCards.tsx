@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Alert, Image, Linking, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Alert, Image, Linking, Pressable, StyleSheet, Text, TextInput, View, type ViewInstance } from "react-native";
 import {
   addComment,
   deleteComment,
@@ -23,7 +23,7 @@ import { getMyProfile } from "@/features/profile/api";
 import { OnlineDot } from "@/features/presence/OnlineDot";
 import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { SheetAction } from "@/shared/ui/ActionSheet";
-import { anchorFromEvent, ContextMenu, MenuAnchor } from "@/shared/ui/ContextMenu";
+import { ContextMenu, measureAnchor, MenuAnchor } from "@/shared/ui/ContextMenu";
 import { PostVideo } from "@/features/posts/PostVideo";
 import { useTheme } from "@/shared/ui/theme";
 import type { PublicProfile } from "./api";
@@ -281,6 +281,7 @@ export function PostCard({
   const name = author?.full_name ?? "Advocate";
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState<MenuAnchor | null>(null);
+  const menuButtonRef = useRef<ViewInstance>(null);
   const [isEditing, setIsEditing] = useState(false);
   const reactWith = (kind: ReactionKind) =>
     kind === "endorse" ? onToggleEndorse() : kind === "heart" ? onToggleHeart() : kind === "eyes" ? onToggleEyes() : onTogglePray();
@@ -376,7 +377,7 @@ export function PostCard({
             </Text>
           </View>
         </Pressable>
-        <Pressable onPress={(e) => setMenuAnchor(anchorFromEvent(e))} hitSlop={10} accessibilityLabel="Post options">
+        <Pressable ref={menuButtonRef} onPress={() => measureAnchor(menuButtonRef, setMenuAnchor)} hitSlop={10} accessibilityLabel="Post options">
           <Ionicons name="ellipsis-horizontal" size={20} color={colors.textSecondary} />
         </Pressable>
       </View>
@@ -652,6 +653,7 @@ function CommentRow({
   const { colors, spacing, radius, typography } = useTheme();
   const commenter = comment.author?.full_name ?? "Advocate";
   const [menuAnchor, setMenuAnchor] = useState<MenuAnchor | null>(null);
+  const menuButtonRef = useRef<ViewInstance>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(comment.content);
   const [isSaving, setIsSaving] = useState(false);
@@ -725,7 +727,7 @@ function CommentRow({
             <Text style={[typography.label, { color: colors.brand, flex: 1 }]} numberOfLines={1}>
               {withAdvPrefix(commenter)}
             </Text>
-            <Pressable onPress={(e) => setMenuAnchor(anchorFromEvent(e))} hitSlop={10} accessibilityLabel="Comment options">
+            <Pressable ref={menuButtonRef} onPress={() => measureAnchor(menuButtonRef, setMenuAnchor)} hitSlop={10} accessibilityLabel="Comment options">
               <Ionicons name="ellipsis-horizontal" size={16} color={colors.textSecondary} />
             </Pressable>
           </View>

@@ -6,7 +6,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CaseDetail, getCase, listCases } from "@/features/cases/api";
 import { Client, getClient } from "@/features/clients/api";
 import { getMyProfile } from "@/features/profile/api";
-import { alertMessage, confirmAlert } from "@/shared/lib/alert";
 import { formatINR } from "@/shared/lib/format";
 import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { SheetAction } from "@/shared/ui/ActionSheet";
@@ -16,6 +15,7 @@ import { Button } from "@/shared/ui/Button";
 import { DateField, toDateOnly } from "@/shared/ui/DateField";
 import { DonutChart } from "@/shared/ui/DonutChart";
 import { ErrorNotice } from "@/shared/ui/ErrorNotice";
+import { TextField } from "@/shared/ui/TextField";
 import { useTheme } from "@/shared/ui/theme";
 import { ClientTransaction, createTransaction, getReceiptUrl, listTransactionsForCase, listTransactionsForClient } from "./api";
 import { computeFeeTotals } from "./feeTotals";
@@ -79,6 +79,9 @@ export function LedgerView({ clientId, caseId, variant = "screen" }: Props) {
   const [customFrom, setCustomFrom] = useState<Date | null>(null);
   const [customTo, setCustomTo] = useState<Date | null>(null);
   const [markingPaid, setMarkingPaid] = useState<"fee" | "expense" | null>(null);
+  const [markPaidRequest, setMarkPaidRequest] = useState<{ kind: "fee" | "expense"; pending: number } | null>(null);
+  const [markAmount, setMarkAmount] = useState("");
+  const [markAmountError, setMarkAmountError] = useState<string | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -237,38 +240,56 @@ export function LedgerView({ clientId, caseId, variant = "screen" }: Props) {
    * ledger entry and an updated pending figure. Only offered when this
    * view is scoped to a single case (caseDetail set), since a client-wide
    * balance can span several cases with no one case to attach the entry to. */
-  const markAsPaid = (kind: "fee" | "expense", amount: number) => {
+  const openMarkAsPaid = (kind: "fee" | "expense", pending: number) => {
     if (!caseDetail) return;
-    confirmAlert(
-      kind === "fee" ? "Mark fees as paid?" : "Mark expenses as reimbursed?",
-      `Adds a completed entry of ${formatINR(amount)} to the ledger for ${caseDetail.title} and reduces the pending balance.`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Mark as paid",
-          onPress: async () => {
-            setMarkingPaid(kind);
-            try {
-              await createTransaction({
-                caseId: caseDetail.id,
-                clientId: client.id,
-                type: kind === "fee" ? "income" : "expense",
-                category: kind === "fee" ? "Professional fee" : "Miscellaneous",
-                amount,
-                status: "completed",
-                isRefund: kind === "expense",
-                notes: kind === "fee" ? "Marked as paid from a payment reminder" : "Marked as reimbursed from a payment reminder",
-              });
-              setTransactions((await (caseId ? listTransactionsForCase(caseId) : listTransactionsForClient(clientId))) as ClientTransaction[]);
-            } catch (err) {
-              alertMessage("Couldn't record payment", friendlyErrorMessage(err));
-            } finally {
-              setMarkingPaid(null);
-            }
-          },
-        },
-      ],
-    );
+    setMarkPaidRequest({ kind, pending });
+    setMarkAmount(Number.isInteger(pending) ? String(pending) : pending.toFixed(2));
+    setMarkAmountError(null);
+  };
+
+  /** The amount paid/reimbursed need not be the whole pending balance — the
+   * narration reflects that: a smaller amount is recorded as partial, and
+   * only an amount that clears the balance is recorded as the total. */
+  const confirmMarkAsPaid = async () => {
+    if (!markPaidRequest || !caseDetail) return;
+    const { kind, pending } = markPaidRequest;
+    const amount = Number(markAmount.trim());
+    if (!markAmount.trim() || Number.isNaN(amount) || amount <= 0) {
+      setMarkAmountError("Enter a valid amount");
+      return;
+    }
+    if (amount > pending + 0.01) {
+      setMarkAmountError(`Can't exceed the pending ${formatINR(pending)}`);
+      return;
+    }
+    const isFull = amount >= pending - 0.01;
+    const category =
+      kind === "fee"
+        ? isFull
+          ? "Total agreed amount paid"
+          : "Partial agreed amount paid"
+        : isFull
+          ? "Total expenses refunded"
+          : "Partial expenses refunded";
+
+    setMarkingPaid(kind);
+    try {
+      await createTransaction({
+        caseId: caseDetail.id,
+        clientId: client.id,
+        type: kind === "fee" ? "income" : "expense",
+        category,
+        amount,
+        status: "completed",
+        isRefund: kind === "expense",
+      });
+      setTransactions((await (caseId ? listTransactionsForCase(caseId) : listTransactionsForClient(clientId))) as ClientTransaction[]);
+      setMarkPaidRequest(null);
+    } catch (err) {
+      setMarkAmountError(friendlyErrorMessage(err));
+    } finally {
+      setMarkingPaid(null);
+    }
   };
 
   const billed = totals.totalFees;
@@ -427,7 +448,7 @@ export function LedgerView({ clientId, caseId, variant = "screen" }: Props) {
                 note="(Agreed Fees − Received)"
                 action={
                   caseDetail && pendingDue > 0 ? (
-                    <Pressable onPress={() => markAsPaid("fee", pendingDue)} disabled={markingPaid !== null} hitSlop={6} style={{ marginTop: 2 }}>
+                    <Pressable onPress={() => openMarkAsPaid("fee", pendingDue)} disabled={markingPaid !== null} hitSlop={6} style={{ marginTop: 2 }}>
                       <Text style={[typography.label, { color: colors.accent, opacity: markingPaid === "fee" ? 0.5 : 1 }]}>
                         {markingPaid === "fee" ? "Marking as paid…" : "Mark as paid"}
                       </Text>
@@ -454,7 +475,7 @@ export function LedgerView({ clientId, caseId, variant = "screen" }: Props) {
                   <Text style={[typography.caption, { color: colors.textSecondary }]}>Expenses</Text>
                   <Text style={[typography.title, { color: colors.danger, fontSize: 22 }]}>{formatINR(totals.expenses)}</Text>
                   {caseDetail ? (
-                    <Pressable onPress={() => markAsPaid("expense", totals.expenses)} disabled={markingPaid !== null} hitSlop={6} style={{ marginTop: 2 }}>
+                    <Pressable onPress={() => openMarkAsPaid("expense", totals.expenses)} disabled={markingPaid !== null} hitSlop={6} style={{ marginTop: 2 }}>
                       <Text style={[typography.label, { color: colors.accent, opacity: markingPaid === "expense" ? 0.5 : 1 }]}>
                         {markingPaid === "expense" ? "Marking as reimbursed…" : "Mark as reimbursed"}
                       </Text>
@@ -644,6 +665,19 @@ export function LedgerView({ clientId, caseId, variant = "screen" }: Props) {
           choosePeriod({ label, range: { from, to: to < from ? from : to } });
         }}
       />
+
+      <MarkAsPaidSheet
+        request={markPaidRequest}
+        amount={markAmount}
+        error={markAmountError}
+        isSaving={markingPaid !== null}
+        onChangeAmount={(t) => {
+          setMarkAmount(t);
+          setMarkAmountError(null);
+        }}
+        onCancel={() => setMarkPaidRequest(null)}
+        onConfirm={confirmMarkAsPaid}
+      />
     </View>
   );
 }
@@ -678,6 +712,55 @@ function CustomRangeSheet({
           <DateField label="From" value={from} onChange={onChangeFrom} maximumDate={to ?? new Date()} />
           <DateField label="To" value={to} onChange={onChangeTo} minimumDate={from ?? undefined} maximumDate={new Date()} />
           <Button label="Share this range" onPress={onConfirm} disabled={!from || !to} pill />
+        </Pressable>
+      </Pressable>
+    </AppModal>
+  );
+}
+
+/** Amount entry for "Mark as paid"/"Mark as reimbursed" — defaults to the
+ * full pending balance, but editable, so a partial payment can be recorded
+ * with its own narration (see confirmMarkAsPaid). */
+function MarkAsPaidSheet({
+  request,
+  amount,
+  error,
+  isSaving,
+  onChangeAmount,
+  onCancel,
+  onConfirm,
+}: {
+  request: { kind: "fee" | "expense"; pending: number } | null;
+  amount: string;
+  error: string | null;
+  isSaving: boolean;
+  onChangeAmount: (text: string) => void;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  const { colors, spacing, radius, typography } = useTheme();
+  const isFee = request?.kind === "fee";
+  return (
+    <AppModal visible={!!request} transparent animationType="slide" onRequestClose={onCancel}>
+      <Pressable style={styles.backdrop} onPress={onCancel}>
+        <Pressable
+          style={[styles.sheet, { backgroundColor: colors.surface, borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg, padding: spacing.lg }]}
+        >
+          <Text style={[typography.subtitle, { color: colors.textPrimary, marginBottom: spacing.sm }]}>
+            {isFee ? "Mark fees as paid" : "Mark expenses as reimbursed"}
+          </Text>
+          <Text style={[typography.caption, { color: colors.textSecondary, marginBottom: spacing.md }]}>
+            Pending: {request ? formatINR(request.pending) : ""}. The full amount is recorded as the total {isFee ? "fee paid" : "reimbursement"}; a
+            smaller amount is recorded as partial.
+          </Text>
+          <TextField
+            label={isFee ? "Amount received" : "Amount reimbursed"}
+            value={amount}
+            onChangeText={onChangeAmount}
+            keyboardType="decimal-pad"
+            error={error ?? undefined}
+          />
+          <Button label={isSaving ? "Saving…" : "Mark as paid"} onPress={onConfirm} disabled={isSaving} pill />
         </Pressable>
       </Pressable>
     </AppModal>

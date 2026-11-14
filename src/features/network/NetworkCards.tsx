@@ -448,7 +448,6 @@ export function PostCard({
       <ContextMenu
         visible={!!menuAnchor}
         anchor={menuAnchor}
-        title={isOwn ? "Your post" : name}
         actions={menuActions}
         onClose={() => setMenuAnchor(null)}
       />

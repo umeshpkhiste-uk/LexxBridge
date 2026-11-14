@@ -335,9 +335,14 @@ export default function NetworkScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top"]}>
-      {/* Header: who you are on the network */}
-      <View style={[styles.header, { paddingHorizontal: spacing.md, backgroundColor: colors.background }]}>
-        <Pressable onPress={() => router.push("/(app)/(tabs)/profile")} style={[styles.headerLeft, { gap: spacing.sm }]}>
+      {/* Header: screen title (matching Cases/Calendar — same paddingTop/paddingHorizontal
+          so the header lines up at the same height), then who you are on the network */}
+      <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.lg, backgroundColor: colors.background }}>
+        <View style={styles.titleRow}>
+          <Text style={[typography.title, { color: colors.textPrimary }]}>Network</Text>
+          <HomeButton color={colors.textSecondary} />
+        </View>
+        <Pressable onPress={() => router.push("/(app)/(tabs)/profile")} style={[styles.headerLeft, { gap: spacing.sm, marginTop: spacing.md }]}>
           <Avatar name={me?.full_name ?? "?"} photoUrl={me?.profile_photo_url} size={36} userId={me?.id} />
           <View style={{ flexShrink: 1 }}>
             <View style={styles.inline}>
@@ -355,7 +360,6 @@ export default function NetworkScreen() {
             ) : null}
           </View>
         </Pressable>
-        <HomeButton color={colors.textSecondary} />
       </View>
 
       {/* Left/right swipe moves between Feed / Connections / Messages, in
@@ -693,7 +697,7 @@ function PersonRow({
 }
 
 const styles = StyleSheet.create({
-  header: { height: 60, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  titleRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   headerLeft: { flexDirection: "row", alignItems: "center", flexShrink: 1 },
   inline: { flexDirection: "row", alignItems: "center", gap: 4 },
   forumChip: { alignSelf: "flex-start", paddingHorizontal: 6, paddingVertical: 1, marginTop: 2 },

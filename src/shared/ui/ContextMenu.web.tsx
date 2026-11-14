@@ -123,7 +123,8 @@ export function ContextMenu({ visible, anchor, title, actions, onClose }: Props)
 }
 
 const styles = StyleSheet.create({
-  backdrop: { flex: 1 },
+  // Matches ActionSheet's dimming — see ContextMenu.tsx for why.
+  backdrop: { flex: 1, backgroundColor: "rgba(15, 23, 42, 0.4)" },
   card: {
     position: "absolute",
     paddingVertical: 4,

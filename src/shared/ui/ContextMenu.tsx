@@ -113,7 +113,11 @@ export function ContextMenu({ visible, anchor, title, actions, onClose }: Props)
 }
 
 const styles = StyleSheet.create({
-  backdrop: { flex: 1 },
+  // Matches ActionSheet's dimming — without it the card had no visual
+  // separation from whatever it happened to land on top of (e.g. the next
+  // line of a post's text), which read as a layout glitch rather than an
+  // intentional popup, especially on narrower phone screens.
+  backdrop: { flex: 1, backgroundColor: "rgba(15, 23, 42, 0.4)" },
   card: {
     position: "absolute",
     paddingVertical: 4,

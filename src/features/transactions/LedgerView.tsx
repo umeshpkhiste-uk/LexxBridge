@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CaseDetail, getCase, listCases } from "@/features/cases/api";
 import { Client, getClient } from "@/features/clients/api";
 import { getMyProfile } from "@/features/profile/api";
+import { alertMessage, confirmAlert } from "@/shared/lib/alert";
 import { formatINR } from "@/shared/lib/format";
 import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { SheetAction } from "@/shared/ui/ActionSheet";
@@ -238,7 +239,7 @@ export function LedgerView({ clientId, caseId, variant = "screen" }: Props) {
    * balance can span several cases with no one case to attach the entry to. */
   const markAsPaid = (kind: "fee" | "expense", amount: number) => {
     if (!caseDetail) return;
-    Alert.alert(
+    confirmAlert(
       kind === "fee" ? "Mark fees as paid?" : "Mark expenses as reimbursed?",
       `Adds a completed entry of ${formatINR(amount)} to the ledger for ${caseDetail.title} and reduces the pending balance.`,
       [
@@ -260,7 +261,7 @@ export function LedgerView({ clientId, caseId, variant = "screen" }: Props) {
               });
               setTransactions((await (caseId ? listTransactionsForCase(caseId) : listTransactionsForClient(clientId))) as ClientTransaction[]);
             } catch (err) {
-              Alert.alert("Couldn't record payment", friendlyErrorMessage(err));
+              alertMessage("Couldn't record payment", friendlyErrorMessage(err));
             } finally {
               setMarkingPaid(null);
             }

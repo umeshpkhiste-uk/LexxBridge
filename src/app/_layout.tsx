@@ -20,7 +20,7 @@ import { WebAlertHost } from "@/shared/ui/WebAlertHost";
 type LockState = "checking" | "locked" | "login" | "unlocked";
 
 function RootNavigator() {
-  const { session, isLoading, isPasswordRecovery } = useAuth();
+  const { session, isLoading, isPasswordRecovery, deepLinkError } = useAuth();
   const { colors } = useTheme();
   const [lockState, setLockState] = useState<LockState>("checking");
   const [savedUserId, setSavedUserId] = useState<string | null>(null);
@@ -131,8 +131,12 @@ function RootNavigator() {
   // — send them to the reset screen explicitly instead.
   const navigatorReady = !isLoading && lockState === "unlocked";
   useEffect(() => {
-    if (isPasswordRecovery && navigatorReady) router.replace("/reset-password");
-  }, [isPasswordRecovery, navigatorReady]);
+    if (!navigatorReady) return;
+    if (isPasswordRecovery) router.replace("/reset-password");
+    // A failed link leaves /reset-password locked; show the sign-in screen
+    // (which explains the error) rather than a fallback public page.
+    else if (deepLinkError && !session) router.replace("/");
+  }, [isPasswordRecovery, navigatorReady, deepLinkError, session]);
 
   if (isLoading || lockState === "checking") {
     return (

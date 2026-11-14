@@ -22,6 +22,30 @@ export async function consumeAuthDeepLink(url: string | null): Promise<string | 
   if (!url) return null;
 
   const { queryParams } = Linking.parse(url);
+
+  // Supabase redirects here with ?error_code=otp_expired (etc.) when the
+  // token was already used or expired — say so instead of showing nothing.
+  if (typeof queryParams?.error_code === "string" || typeof queryParams?.error === "string") {
+    return "That link has expired or already been used. Please request a new one.";
+  }
+
+  // Password-reset email links point straight at the app with
+  // ?token_hash=...&type=recovery (see the "Reset Password" email template).
+  // Unlike a PKCE `code`, this verifies in any browser or device — not only
+  // the one that requested the reset — and nothing on the way (Gmail's link
+  // redirect, a mail scanner prefetching supabase.co) can burn the token,
+  // because it is only consumed by this call.
+  const tokenHash = queryParams?.token_hash;
+  const type = queryParams?.type;
+  if (typeof tokenHash === "string" && (type === "recovery" || type === "email" || type === "signup")) {
+    const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type });
+    if (error) {
+      console.warn("Failed to verify auth deep link token:", error.message);
+      return "That link has expired or already been used. Please request a new one.";
+    }
+    return null;
+  }
+
   const code = queryParams?.code;
   if (typeof code !== "string") return null;
 

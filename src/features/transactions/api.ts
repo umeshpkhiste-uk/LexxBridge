@@ -242,6 +242,15 @@ export async function getPendingByCase(): Promise<Record<string, number>> {
   );
 }
 
+/** Outstanding (unreimbursed) expenses per case, keyed by case id — the
+ * counterpart to `getPendingByCase`'s fee-only figure, so the two can be
+ * shown and paid separately (e.g. in a payment reminder). */
+export async function getExpensePendingByCase(): Promise<Record<string, number>> {
+  const { data, error } = await supabase.from("case_financial_summary").select("case_id, total_expenses").gt("total_expenses", 0);
+  if (error) throw new Error(error.message);
+  return Object.fromEntries((data as { case_id: string; total_expenses: number }[]).map((r) => [r.case_id, Number(r.total_expenses)]));
+}
+
 export type ClientDue = { client_id: string; full_name: string; outstanding: number; received: number };
 
 /** Clients who owe money, largest balance first. */

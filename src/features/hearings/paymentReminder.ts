@@ -2,17 +2,35 @@ import { getCase } from "@/features/cases/api";
 import { getClient } from "@/features/clients/api";
 import { Notifications } from "@/features/notifications/notificationsModule";
 import { getMyProfile } from "@/features/profile/api";
-import { getPendingByCase } from "@/features/transactions/api";
+import { getExpensePendingByCase, getPendingByCase } from "@/features/transactions/api";
 import { buildUpiPayLink, shareViaWhatsApp } from "@/features/transactions/shareStatement";
 import { confirmAlert } from "@/shared/lib/alert";
 import { formatINR } from "@/shared/lib/format";
 import { listUpcomingHearings } from "./api";
 
+/** Builds the "Pending <kind>: ₹X" + UPI link lines for one amount — fee
+ * and expense are kept as separate pay-now links (not one combined link)
+ * so the client can pay either one on its own. */
+function payLines(kind: "fees" | "expenses", amount: number, opts: { caseTitle: string; advocateName: string | null; advocateUpiId: string | null }): string[] {
+  if (amount <= 0) return [];
+  const upiLink = opts.advocateUpiId
+    ? buildUpiPayLink({
+        upiId: opts.advocateUpiId,
+        payeeName: opts.advocateName ?? "Advocate",
+        note: `${kind === "fees" ? "Fee payment" : "Expense reimbursement"} for ${opts.caseTitle}`,
+      })
+    : null;
+  const lines = [`Pending ${kind}: ${formatINR(amount)}`];
+  if (upiLink) lines.push(`Pay now via UPI: ${upiLink}`);
+  return lines;
+}
+
 function buildReminderMessage(opts: {
   clientName: string;
   caseTitle: string;
   caseNumber: string | null;
-  pending: number;
+  feePending: number;
+  expensePending: number;
   hearingAt: Date | null;
   advocateName: string | null;
   advocateUpiId: string | null;
@@ -20,20 +38,14 @@ function buildReminderMessage(opts: {
   const hearingLine = opts.hearingAt
     ? ` The next date of your mentioned case appears on ${opts.hearingAt.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}.`
     : "";
-  const upiLink = opts.advocateUpiId
-    ? buildUpiPayLink({
-        upiId: opts.advocateUpiId,
-        payeeName: opts.advocateName ?? opts.clientName,
-        note: `Payment for ${opts.caseTitle}`,
-      })
-    : null;
   const lines = [
     `Hi ${opts.clientName},`,
     "",
     `This is a reminder regarding your case ${opts.caseTitle}${opts.caseNumber ? ` (${opts.caseNumber})` : ""}.${hearingLine}`,
-    `Please pay your pending fees: ${formatINR(opts.pending)} on or before the mentioned date.`,
+    "Please pay the pending amount(s) below on or before the mentioned date.",
+    ...payLines("fees", opts.feePending, opts),
+    ...payLines("expenses", opts.expensePending, opts),
   ];
-  if (upiLink) lines.push(`Pay now via UPI: ${upiLink}`);
   if (opts.advocateName) lines.push("", "Regards,", opts.advocateName);
   return lines.join("\n");
 }
@@ -44,9 +56,14 @@ function buildReminderMessage(opts: {
  * sent automatically, and never blocks the hearing save on failure. */
 export async function offerPaymentReminder(params: { caseId: string; hearingAt?: Date | null }): Promise<void> {
   try {
-    const [caseDetail, pendingByCase] = await Promise.all([getCase(params.caseId), getPendingByCase()]);
-    const pending = pendingByCase[params.caseId] ?? 0;
-    if (pending <= 0) return;
+    const [caseDetail, pendingByCase, expensePendingByCase] = await Promise.all([
+      getCase(params.caseId),
+      getPendingByCase(),
+      getExpensePendingByCase(),
+    ]);
+    const feePending = pendingByCase[params.caseId] ?? 0;
+    const expensePending = expensePendingByCase[params.caseId] ?? 0;
+    if (feePending <= 0 && expensePending <= 0) return;
 
     const client = await getClient(caseDetail.client_id);
     if (!client.phone) return;
@@ -56,7 +73,8 @@ export async function offerPaymentReminder(params: { caseId: string; hearingAt?:
       clientName: client.full_name,
       caseTitle: caseDetail.title,
       caseNumber: caseDetail.case_number,
-      pending,
+      feePending,
+      expensePending,
       hearingAt: params.hearingAt ?? null,
       advocateName: profile?.full_name ?? null,
       advocateUpiId: profile?.upi_id ?? null,
@@ -64,7 +82,7 @@ export async function offerPaymentReminder(params: { caseId: string; hearingAt?:
 
     confirmAlert(
       "Send payment reminder?",
-      `${client.full_name} has ${formatINR(pending)} pending for ${caseDetail.title}. Send a WhatsApp reminder now?`,
+      `${client.full_name} has ${formatINR(feePending + expensePending)} pending for ${caseDetail.title}. Send a WhatsApp reminder now?`,
       [
         { text: "Not now", style: "cancel" },
         { text: "Send", onPress: () => shareViaWhatsApp(message, client.phone) },
@@ -81,25 +99,20 @@ function buildHearingDayMessage(opts: {
   caseTitle: string;
   caseNumber: string | null;
   court: string | null;
-  pending: number;
+  feePending: number;
+  expensePending: number;
   advocateName: string | null;
   advocateUpiId: string | null;
 }): string {
-  const upiLink = opts.advocateUpiId
-    ? buildUpiPayLink({
-        upiId: opts.advocateUpiId,
-        payeeName: opts.advocateName ?? opts.clientName,
-        note: `Payment for ${opts.caseTitle}`,
-      })
-    : null;
   const lines = [
     `Hi ${opts.clientName},`,
     "",
     `This is a reminder regarding ${opts.caseTitle}${opts.caseNumber ? ` (${opts.caseNumber})` : ""}.`,
     `Today is the hearing day — please come to ${opts.court ? `the ${opts.court} court` : "court"}.`,
-    `Please pay your pending fees before the hearing if not already paid: ${formatINR(opts.pending)}.`,
+    "Please pay the pending amount(s) below before the hearing if not already paid.",
+    ...payLines("fees", opts.feePending, opts),
+    ...payLines("expenses", opts.expensePending, opts),
   ];
-  if (upiLink) lines.push(`Pay now via UPI: ${upiLink}`);
   if (opts.advocateName) lines.push("", "Regards,", opts.advocateName);
   return lines.join("\n");
 }
@@ -138,16 +151,17 @@ export async function syncPaymentReminders(enabled: boolean): Promise<void> {
     }
 
     const now = new Date();
-    const [hearings, pendingByCase, scheduled] = await Promise.all([
+    const [hearings, pendingByCase, expensePendingByCase, scheduled] = await Promise.all([
       listUpcomingHearings({ from: now, to: new Date(now.getTime() + 2 * 86_400_000) }),
       getPendingByCase(),
+      getExpensePendingByCase(),
       Notifications.getAllScheduledNotificationsAsync(),
     ]);
     const scheduledIds = new Set(scheduled.map((n) => n.identifier));
 
     for (const hearing of hearings) {
       if (!hearing.cases) continue;
-      const pending = pendingByCase[hearing.case_id] ?? 0;
+      const pending = (pendingByCase[hearing.case_id] ?? 0) + (expensePendingByCase[hearing.case_id] ?? 0);
       const hearingAt = new Date(hearing.hearing_at);
       const occurrences = [
         { suffix: "evening" as const, at: eveningBeforeTrigger(hearingAt), title: "Payment reminder — hearing tomorrow" },
@@ -188,9 +202,14 @@ export async function syncPaymentReminders(enabled: boolean): Promise<void> {
 export async function handlePaymentReminderReceived(data: Record<string, unknown>): Promise<void> {
   if (typeof data.caseId !== "string") return;
   try {
-    const [caseDetail, pendingByCase] = await Promise.all([getCase(data.caseId), getPendingByCase()]);
-    const pending = pendingByCase[data.caseId] ?? 0;
-    if (pending <= 0) return;
+    const [caseDetail, pendingByCase, expensePendingByCase] = await Promise.all([
+      getCase(data.caseId),
+      getPendingByCase(),
+      getExpensePendingByCase(),
+    ]);
+    const feePending = pendingByCase[data.caseId] ?? 0;
+    const expensePending = expensePendingByCase[data.caseId] ?? 0;
+    if (feePending <= 0 && expensePending <= 0) return;
 
     const client = await getClient(caseDetail.client_id);
     if (!client.phone) return;
@@ -203,7 +222,8 @@ export async function handlePaymentReminderReceived(data: Record<string, unknown
           caseTitle: caseDetail.title,
           caseNumber: caseDetail.case_number,
           court: caseDetail.court,
-          pending,
+          feePending,
+          expensePending,
           advocateName: profile?.full_name ?? null,
           advocateUpiId: profile?.upi_id ?? null,
         })
@@ -211,7 +231,8 @@ export async function handlePaymentReminderReceived(data: Record<string, unknown
           clientName: client.full_name,
           caseTitle: caseDetail.title,
           caseNumber: caseDetail.case_number,
-          pending,
+          feePending,
+          expensePending,
           hearingAt: caseDetail.next_hearing_at ? new Date(caseDetail.next_hearing_at) : null,
           advocateName: profile?.full_name ?? null,
           advocateUpiId: profile?.upi_id ?? null,
@@ -219,7 +240,7 @@ export async function handlePaymentReminderReceived(data: Record<string, unknown
 
     confirmAlert(
       isDayOf ? "Today is the hearing day" : "Hearing tomorrow",
-      `${client.full_name} has ${formatINR(pending)} pending for ${caseDetail.title}. Send a WhatsApp reminder now?`,
+      `${client.full_name} has ${formatINR(feePending + expensePending)} pending for ${caseDetail.title}. Send a WhatsApp reminder now?`,
       [
         { text: "Not now", style: "cancel" },
         { text: "Send", onPress: () => shareViaWhatsApp(message, client.phone) },

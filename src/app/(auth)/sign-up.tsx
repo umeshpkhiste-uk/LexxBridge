@@ -16,9 +16,9 @@ export default function SignUpScreen() {
   const { colors, spacing, typography } = useTheme();
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  // Pre-checked, matching the design — most people don't object to the
-  // terms, and unchecking is still one tap away before submitting.
-  const [agreedToTerms, setAgreedToTerms] = useState(true);
+  // Must start unticked: DPDP Act §6(1) requires consent by "a clear
+  // affirmative action", which a pre-ticked box isn't.
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   const {
     control,
@@ -124,9 +124,9 @@ export default function SignUpScreen() {
           style={{ marginRight: spacing.sm }}
         />
         <Text style={[typography.caption, { color: colors.textSecondary, flex: 1 }]}>
-          Agree with{" "}
+          I am 18 or older and agree to the{" "}
           <Link href="/legal/terms">
-            <Text style={{ color: colors.accent, fontWeight: "600" }}>Terms & Condition</Text>
+            <Text style={{ color: colors.accent, fontWeight: "600" }}>Terms & Conditions</Text>
           </Link>{" "}
           and{" "}
           <Link href="/legal/privacy">

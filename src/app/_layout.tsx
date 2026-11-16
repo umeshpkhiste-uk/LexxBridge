@@ -6,6 +6,7 @@ import { AuthProvider, useAuth } from "@/features/auth/AuthProvider";
 import { getSavedLoginUser, isBiometricEnabledFor, loginWithSavedSession } from "@/features/biometric/biometric";
 import { getAppLockMethod, rememberLockedAccount } from "@/features/applock/appLock";
 import { AppLockScreen } from "@/features/applock/AppLockScreen";
+import { ConsentScreen } from "@/features/legal/ConsentScreen";
 import { ensureKeyPair, fetchKeyBackup, hasLocalKey, KeyBackupRow } from "@/features/messaging/encryption";
 import { MessageRestoreScreen } from "@/features/messaging/MessageRestoreScreen";
 import { PresenceProvider } from "@/features/presence/PresenceProvider";
@@ -20,7 +21,11 @@ import { WebAlertHost } from "@/shared/ui/WebAlertHost";
 type LockState = "checking" | "locked" | "login" | "unlocked";
 
 function RootNavigator() {
-  const { session, isLoading, isPasswordRecovery, deepLinkError } = useAuth();
+  const { session, isLoading, isPasswordRecovery, deepLinkError, consentStatus } = useAuth();
+  // A signed-in user who hasn't accepted the current Terms/Privacy Policy
+  // version is held on /consent until they accept or sign out (DPDP Act §6).
+  const needsConsent = !isPasswordRecovery && !!session && consentStatus === "needed";
+  const consentOk = !!session && consentStatus === "ok";
   const { colors } = useTheme();
   const [lockState, setLockState] = useState<LockState>("checking");
   const [savedUserId, setSavedUserId] = useState<string | null>(null);
@@ -138,7 +143,8 @@ function RootNavigator() {
     else if (deepLinkError && !session) router.replace("/");
   }, [isPasswordRecovery, navigatorReady, deepLinkError, session]);
 
-  if (isLoading || lockState === "checking") {
+  const checkingConsent = !!session && !isPasswordRecovery && consentStatus === "checking";
+  if (isLoading || lockState === "checking" || (checkingConsent && lockState === "unlocked")) {
     return (
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.background }}>
         <ActivityIndicator color={colors.brand} />
@@ -167,6 +173,8 @@ function RootNavigator() {
     );
   }
 
+  if (needsConsent) return <ConsentScreen />;
+
   if (pendingRestore && session) {
     return (
       <MessageRestoreScreen
@@ -189,7 +197,7 @@ function RootNavigator() {
       <Stack.Protected guard={!isPasswordRecovery && !session}>
         <Stack.Screen name="(auth)" />
       </Stack.Protected>
-      <Stack.Protected guard={!isPasswordRecovery && !!session}>
+      <Stack.Protected guard={!isPasswordRecovery && consentOk}>
         <Stack.Screen name="(app)" />
       </Stack.Protected>
       {/* Social sign-in redirect target; just forwards into the app. */}

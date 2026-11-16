@@ -1,4 +1,5 @@
 import { onPasswordSignIn } from "@/features/biometric/biometric";
+import { CURRENT_POLICY_VERSION, SIGNUP_CONSENT_METADATA_KEY } from "@/features/legal/consent";
 import { Platform } from "react-native";
 import { supabase } from "@/shared/lib/supabase";
 
@@ -25,7 +26,10 @@ export async function signUpWithEmail(params: {
     email: email.trim().toLowerCase(),
     password,
     options: {
-      data: { full_name: fullName.trim() },
+      // The sign-up form's consent box is required to submit, so this
+      // records which policy version was agreed to; it's copied into
+      // user_consents on first sign-in (no session exists before that).
+      data: { full_name: fullName.trim(), [SIGNUP_CONSENT_METADATA_KEY]: CURRENT_POLICY_VERSION },
       // Without this, Supabase falls back to the project's Site URL, which
       // has nothing to do with this app (see docs/BACKEND_SETUP.md).
       emailRedirectTo: authRedirect("verify-email"),

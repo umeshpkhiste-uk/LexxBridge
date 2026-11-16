@@ -1,6 +1,7 @@
 import type { Session } from "@supabase/supabase-js";
 import * as Linking from "expo-linking";
 import { createContext, PropsWithChildren, useContext, useEffect, useState } from "react";
+import { ensureConsentRecorded } from "@/features/legal/consent";
 import { consumeAuthDeepLink } from "@/shared/lib/authDeepLink";
 import { supabase } from "@/shared/lib/supabase";
 
@@ -19,6 +20,11 @@ type AuthContextValue = {
    * browser) — shown on the sign-in screen so the tap isn't silent. */
   deepLinkError: string | null;
   clearDeepLinkError: () => void;
+  /** Whether the signed-in user has accepted the current Terms + Privacy
+   * Policy version (DPDP Act §6). "needed" keeps them on the consent screen
+   * until they accept or sign out; "checking" while it's being looked up. */
+  consentStatus: "checking" | "ok" | "needed";
+  markConsented: () => void;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -28,6 +34,24 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const [isLoading, setIsLoading] = useState(true);
   const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
   const [deepLinkError, setDeepLinkError] = useState<string | null>(null);
+  const [consent, setConsent] = useState<{ userId: string; ok: boolean } | null>(null);
+
+  // Re-checked whenever a different user signs in. Tied to the user id so a
+  // stale answer for a previous account is never applied to the next one.
+  const userId = session?.user.id ?? null;
+  useEffect(() => {
+    if (!session) return;
+    let active = true;
+    ensureConsentRecorded(session.user).then((ok) => {
+      if (active) setConsent({ userId: session.user.id, ok });
+    });
+    return () => {
+      active = false;
+    };
+    // Only re-run for a different user, not every token refresh.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
+  const consentStatus = !userId || consent?.userId !== userId ? "checking" : consent.ok ? "ok" : "needed";
 
   useEffect(() => {
     let active = true;
@@ -71,6 +95,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
         clearPasswordRecovery: () => setIsPasswordRecovery(false),
         deepLinkError,
         clearDeepLinkError: () => setDeepLinkError(null),
+        consentStatus,
+        markConsented: () => userId && setConsent({ userId, ok: true }),
       }}
     >
       {children}

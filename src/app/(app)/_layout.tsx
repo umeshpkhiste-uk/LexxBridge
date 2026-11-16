@@ -70,6 +70,8 @@ export default function AppLayout() {
         <Stack.Screen name="about" options={{ headerShown: true, title: "About LexxBridge" }} />
         <Stack.Screen name="faq" options={{ headerShown: true, title: "FAQ" }} />
         <Stack.Screen name="help-support" options={{ headerShown: true, title: "Help & support" }} />
+        <Stack.Screen name="nominee" options={{ headerShown: true, title: "Nominee" }} />
+        <Stack.Screen name="privacy-grievance" options={{ headerShown: true, title: "Privacy grievance" }} />
         {/* Draws its own header (client + case summary) with a back arrow. */}
         <Stack.Screen name="ledger" />
       </Stack>

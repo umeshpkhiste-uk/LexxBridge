@@ -9,6 +9,8 @@ import { LockMethod } from "@/features/applock/rules";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { authenticateBiometric, disableBiometric, enableBiometric, getBiometricSupport, isBiometricEnabledFor } from "@/features/biometric/biometric";
 import { signOutOtherSessions } from "@/features/auth/api";
+import { confirmDeleteAccount } from "@/features/account/confirmDeleteAccount";
+import { getMyLatestConsent } from "@/features/legal/dpdpApi";
 import { alertMessage, confirmAlert } from "@/shared/lib/alert";
 import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { SettingsGroup, SettingsRow } from "@/shared/ui/SettingsGroup";
@@ -33,10 +35,28 @@ export default function SettingsScreen() {
   const [lockMethod, setLockMethod] = useState<LockMethod | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
 
+  const [consent, setConsent] = useState<{ accepted_at: string } | null>(null);
+  const [isWithdrawing, setIsWithdrawing] = useState(false);
+
   useEffect(() => {
     getThemePreference().then(setThemePref).catch(() => {});
     isCurrentUserAdmin().then(setIsAdmin).catch(() => {});
+    getMyLatestConsent().then(setConsent).catch(() => {});
   }, []);
+
+  // DPDP Act §6(4): withdrawing consent must be as easy as giving it.
+  // LexxBridge can't provide any part of the service without processing the
+  // user's data, so withdrawal = stop processing = erase the account (§6(6)).
+  // Said plainly here, then the same two-step deletion as "Delete account".
+  const handleWithdrawConsent = () =>
+    confirmAlert(
+      "Withdraw consent?",
+      "LexxBridge can't work without processing your data, so withdrawing consent closes your account and permanently erases your profile, clients, cases, documents, payments, chats and files. Export your data first if you want a copy.",
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Withdraw and delete account", style: "destructive", onPress: () => confirmDeleteAccount(setIsWithdrawing) },
+      ],
+    );
 
   // Security state can change on the App lock screen, so refresh on return.
   useFocusEffect(
@@ -188,6 +208,34 @@ export default function SettingsScreen() {
           label="Backup & Restore"
           subtitle="Save a full backup, or restore from one"
           onPress={comingSoon("Backup and restore")}
+        />
+      </SettingsGroup>
+
+      <SettingsGroup title="Privacy & your rights">
+        <SettingsRow
+          icon="people-outline"
+          label="Nominee"
+          subtitle="Who can exercise your data rights if you can't"
+          onPress={() => router.push("/(app)/nominee")}
+        />
+        <SettingsRow
+          icon="chatbox-ellipses-outline"
+          label="Privacy grievance"
+          subtitle="Raise a concern about how your data is handled"
+          onPress={() => router.push("/(app)/privacy-grievance")}
+        />
+        <SettingsRow
+          icon="hand-left-outline"
+          label="Withdraw consent"
+          subtitle={
+            isWithdrawing
+              ? "Deleting your account…"
+              : consent
+                ? `Given on ${new Date(consent.accepted_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}`
+                : "Stop all processing of your data"
+          }
+          onPress={handleWithdrawConsent}
+          destructive
         />
       </SettingsGroup>
 

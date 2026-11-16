@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**Last updated: 11 October 2026**
+**Last updated: 16 November 2026**
 
 This Privacy Policy explains how LexxBridge ("LexxBridge", "we", "us") collects,
 uses and protects information when you use the LexxBridge app and website
@@ -137,6 +137,19 @@ under GDPR or the CCPA) to access, correct, port or restrict processing of
 your personal data. Contact us at **deepomeshcreation@gmail.com** to
 exercise any of these rights.
 
+**Withdrawing consent:** you can withdraw your consent at any time from
+**Settings → Privacy & your rights → Withdraw consent**, as easily as you
+gave it. Because LexxBridge cannot provide any part of the Service without
+processing your personal data, withdrawing consent closes your account and
+permanently erases your data, as described above. Withdrawal does not affect
+processing that happened before it.
+
+**Nominating someone:** you can nominate a person to exercise these rights on
+your behalf if you die or become incapacitated, from **Settings → Privacy &
+your rights → Nominee**. Your nominee makes a request by writing to the
+Grievance Officer with supporting proof, which we verify against the details
+you saved.
+
 ## 8. Data retention
 
 We keep your data for as long as your account is active. If you delete your
@@ -168,8 +181,15 @@ please write to:
 LexxBridge
 Email: **deepomeshcreation@gmail.com**
 
-We will acknowledge your complaint and aim to resolve it within the
-timelines required by applicable Indian law.
+You can also raise a grievance in the app from **Settings → Privacy & your
+rights → Privacy grievance**, which gives you a reference number and lets you
+track its status.
+
+We will respond to every grievance within **90 days** of receiving it.
+
+If you are not satisfied with our response, you may file a complaint with
+the **Data Protection Board of India** under the Digital Personal Data
+Protection Act, 2023, after first raising it with us as described above.
 
 ## 12. Changes to this policy
 

@@ -3,7 +3,7 @@
  * actually ships in the app and on the web, which is what Google Play's
  * reviewer and users will read. */
 
-export const LEGAL_UPDATED = "11 October 2026";
+export const LEGAL_UPDATED = "16 November 2026";
 export const SUPPORT_EMAIL = "deepomeshcreation@gmail.com";
 export const COMPANY_NAME = "LexxBridge";
 
@@ -68,6 +68,8 @@ export const PRIVACY_SECTIONS: LegalSection[] = [
       "From Profile → Settings in the app you can, at any time, export a full copy of your data, delete your account permanently (profile, clients, cases, hearings, documents, payments, posts, chats, connections, notifications and every uploaded file), change your profile visibility, or turn off notifications.",
       "If you can't access the app, see our account-deletion page for how to request deletion by email instead.",
       "As a Data Principal under India's Digital Personal Data Protection Act, 2023, you have the right to obtain a summary of the personal data we hold about you, to have inaccurate or incomplete data corrected and updated, to have your personal data erased, and to a readily-available means of grievance redressal (see \"Grievance Officer\" below).",
+      "Withdrawing consent: you can withdraw your consent at any time from Settings → Privacy & your rights → Withdraw consent, as easily as you gave it. Because LexxBridge cannot provide any part of the Service without processing your personal data, withdrawing consent closes your account and permanently erases your data, as described above. Withdrawal does not affect processing that happened before it.",
+      "Nominating someone: you can nominate a person to exercise these rights on your behalf if you die or become incapacitated, from Settings → Privacy & your rights → Nominee. Your nominee makes a request by writing to the Grievance Officer with supporting proof, which we verify against the details you saved.",
       `Depending on where you live, you may have additional rights under laws like GDPR or the CCPA to access, correct, port or restrict your data — contact ${SUPPORT_EMAIL} to exercise them.`,
     ],
   },
@@ -94,7 +96,9 @@ export const PRIVACY_SECTIONS: LegalSection[] = [
     paragraphs: [
       "In accordance with the Information Technology Act, 2000 and the rules made thereunder, and India's Digital Personal Data Protection Act, 2023, the contact details of the Grievance Officer are provided below. If you have any complaint or grievance regarding the processing of your personal data, please write to:",
       `Grievance Officer\n${COMPANY_NAME}\nEmail: ${SUPPORT_EMAIL}`,
-      "We will acknowledge your complaint and aim to resolve it within the timelines required by applicable Indian law.",
+      "You can also raise a grievance in the app from Settings → Privacy & your rights → Privacy grievance, which gives you a reference number and lets you track its status.",
+      "We will respond to every grievance within 90 days of receiving it.",
+      "If you are not satisfied with our response, you may file a complaint with the Data Protection Board of India under the Digital Personal Data Protection Act, 2023, after first raising it with us as described above.",
     ],
   },
   {

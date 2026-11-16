@@ -1,6 +1,6 @@
 # Terms of Service
 
-**Last updated: 11 October 2026**
+**Last updated: 16 November 2026**
 
 These Terms of Service ("Terms") govern your use of the LexxBridge app and
 website (the "Service"), operated by **LexxBridge** ("LexxBridge", "we",

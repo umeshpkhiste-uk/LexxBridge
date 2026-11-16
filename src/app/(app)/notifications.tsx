@@ -18,6 +18,9 @@ const ICON_BY_TYPE: Record<string, keyof typeof Ionicons.glyphMap> = {
   new_follower: "person-outline",
   post_liked: "heart-outline",
   post_commented: "chatbox-outline",
+  // Personal data breach notice (DPDP Act §8(6)) — sent from the SQL editor
+  // per docs/BREACH_RESPONSE.md.
+  security_notice: "shield-outline",
 };
 
 function timeAgo(iso: string): string {
@@ -35,6 +38,8 @@ function handleNotificationPress(notification: NotificationRow) {
   if (data.conversation_id) router.push(`/(app)/messages/${data.conversation_id}`);
   else if (data.post_id) router.push(`/(app)/posts/${data.post_id}`);
   else if (data.actor_id) router.push(`/(app)/network/${data.actor_id}`);
+  // A breach notice leads to where the user can raise a question about it.
+  else if (notification.type === "security_notice") router.push("/(app)/privacy-grievance");
 }
 
 export default function NotificationsScreen() {

@@ -54,6 +54,8 @@ Supabase project ref: `ujrosfflqevkytburevc` (used throughout migrations/Edge Fu
 - `SECURITY.md`, `DATA_SECURITY.md`, `THREAT_MODEL.md`, `SECURITY_CHECKLIST.md` — the security
   documentation set, cross-linked with each other. Start at `SECURITY_CHECKLIST.md` for current
   open items.
+- `BREACH_RESPONSE.md` — the personal-data-breach runbook (DPDP Act §8(6)): deadlines, containment
+  steps, notice templates, and the SQL for the incident register and notifying affected users.
 - `docs/RULES.md` — hard rules, not lessons: git hygiene, architecture invariants (admin
   separation, practice/network isolation, E2E encryption), migration constraints, secrets, and doc
   placement. If something below reads like a lesson learned, it's probably promoted to a rule

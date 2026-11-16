@@ -40,6 +40,18 @@ is true and accurate.
   Content solely to provide and improve the Service.
 - You are responsible for having the necessary rights and consents to enter
   any client or third-party information into the Service.
+- **Data protection roles:** for personal data of your clients and other
+  third parties that you enter into the Service, you are the Data Fiduciary
+  and LexxBridge is your Data Processor under the Digital Personal Data
+  Protection Act, 2023. We process that data only on your instructions — to
+  store it and show it to you — and for no other purpose. You are
+  responsible for having a lawful basis to process it (such as your client's
+  consent or a legitimate use permitted by the Act, including processing
+  necessary to enforce a legal right or claim), for giving your clients any
+  notice the law requires, and for responding to their requests about their
+  data. We will help you meet those obligations where we reasonably can,
+  keep the data secure, tell you without undue delay if a personal data
+  breach affects it, and erase it when you delete it or close your account.
 - Chat messages sent to other advocates are end-to-end encrypted; we cannot
   read their content and cannot recover them if you lose access to the
   device holding your encryption key.

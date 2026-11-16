@@ -71,17 +71,39 @@ profile or show you targeted ads.
 
 ## 4. Who we share information with
 
-- **Supabase** (our backend provider) hosts our database, authentication and
-  file storage. Supabase processes data on our behalf under its own data
-  processing terms.
+We use the following service providers (Data Processors) to run LexxBridge.
+Each processes personal data only on our behalf and only for the purpose
+listed:
+
+- **Supabase** — database, sign-in and file storage. Holds all account and
+  practice data you store in LexxBridge.
+- **Vercel** — hosts the LexxBridge website (`lexxbridge.app`). Receives
+  standard web request data such as IP address and browser type.
+- **Resend** — sends our emails (sign-up confirmation, password reset,
+  account notices, replies to your feedback and grievances). Receives your
+  email address and the email's content.
+- **Expo** — delivers push notifications to your phone, through Apple Push
+  Notification service and Google Firebase Cloud Messaging. Receives your
+  device's push token and the notification's title and short text — never
+  your message content, which is end-to-end encrypted.
+- **Google and Apple** — only if you choose "Continue with Google" or
+  "Continue with Apple": they confirm your identity and share your name and
+  email address with us.
 - **Other advocates you connect with**: only the profile fields you choose
   to make visible, and messages you choose to send them.
-- **Service providers** that keep the app running (e.g. Vercel for web
-  hosting, push-notification delivery services).
 - We do not share your client, case or financial data with any other third
   party, and we do not sell personal information to anyone.
 - We may disclose information if required by law, or to protect the rights,
   property or safety of LexxBridge, our users, or the public.
+
+**Information about your clients:** when you enter personal data about your
+clients or other people (for example a client's name, phone number or case
+details), you decide why and how that data is processed, so you are the
+Data Fiduciary for it under the Digital Personal Data Protection Act, 2023.
+LexxBridge processes it only on your behalf, as your Data Processor, to
+provide the Service to you — we never use it for any other purpose, never
+contact your clients, and erase it when you delete it or your account.
+Requests from your clients about their data should be made to you.
 
 ## 5. Cookies and similar technologies
 
@@ -149,6 +171,12 @@ your behalf if you die or become incapacitated, from **Settings → Privacy &
 your rights → Nominee**. Your nominee makes a request by writing to the
 Grievance Officer with supporting proof, which we verify against the details
 you saved.
+
+**Complaining to the Data Protection Board of India:** if you are not
+satisfied with how we handle a grievance, you may file a complaint with the
+Data Protection Board of India, which accepts complaints online through its
+digital platform. The Act requires you to first raise the grievance with us
+(see "Grievance Officer" below) and give us the chance to respond.
 
 ## 8. Data retention
 

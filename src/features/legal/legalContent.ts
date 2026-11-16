@@ -42,10 +42,15 @@ export const PRIVACY_SECTIONS: LegalSection[] = [
   {
     heading: "4. Who we share information with",
     paragraphs: [
-      "• Supabase, our backend provider, hosts our database, authentication and file storage under its own data-processing terms.",
+      "We use the following service providers (Data Processors) to run LexxBridge. Each processes personal data only on our behalf and only for the purpose listed:",
+      "• Supabase — database, sign-in and file storage. Holds all account and practice data you store in LexxBridge.",
+      "• Vercel — hosts the LexxBridge website (lexxbridge.app). Receives standard web request data such as IP address and browser type.",
+      "• Resend — sends our emails (sign-up confirmation, password reset, account notices, replies to your feedback and grievances). Receives your email address and the email's content.",
+      "• Expo — delivers push notifications to your phone, through Apple Push Notification service and Google Firebase Cloud Messaging. Receives your device's push token and the notification's title and short text — never your message content, which is end-to-end encrypted.",
+      "• Google and Apple — only if you choose \"Continue with Google\" or \"Continue with Apple\": they confirm your identity and share your name and email address with us.",
       "• Other advocates you connect with see only the profile fields you make visible, and messages you choose to send them.",
-      "• Service providers that keep the app running (e.g. Vercel web hosting, push-notification delivery).",
       "We don't share your client, case or financial data with anyone else, and never sell personal information. We may disclose information if required by law.",
+      "Information about your clients: when you enter personal data about your clients or other people (for example a client's name, phone number or case details), you decide why and how that data is processed, so you are the Data Fiduciary for it under the Digital Personal Data Protection Act, 2023. LexxBridge processes it only on your behalf, as your Data Processor, to provide the Service to you — we never use it for any other purpose, never contact your clients, and erase it when you delete it or your account. Requests from your clients about their data should be made to you.",
     ],
   },
   {
@@ -70,6 +75,7 @@ export const PRIVACY_SECTIONS: LegalSection[] = [
       "As a Data Principal under India's Digital Personal Data Protection Act, 2023, you have the right to obtain a summary of the personal data we hold about you, to have inaccurate or incomplete data corrected and updated, to have your personal data erased, and to a readily-available means of grievance redressal (see \"Grievance Officer\" below).",
       "Withdrawing consent: you can withdraw your consent at any time from Settings → Privacy & your rights → Withdraw consent, as easily as you gave it. Because LexxBridge cannot provide any part of the Service without processing your personal data, withdrawing consent closes your account and permanently erases your data, as described above. Withdrawal does not affect processing that happened before it.",
       "Nominating someone: you can nominate a person to exercise these rights on your behalf if you die or become incapacitated, from Settings → Privacy & your rights → Nominee. Your nominee makes a request by writing to the Grievance Officer with supporting proof, which we verify against the details you saved.",
+      "Complaining to the Data Protection Board of India: if you are not satisfied with how we handle a grievance, you may file a complaint with the Data Protection Board of India, which accepts complaints online through its digital platform. The Act requires you to first raise the grievance with us (see \"Grievance Officer\" below) and give us the chance to respond.",
       `Depending on where you live, you may have additional rights under laws like GDPR or the CCPA to access, correct, port or restrict your data — contact ${SUPPORT_EMAIL} to exercise them.`,
     ],
   },
@@ -132,6 +138,7 @@ export const TERMS_SECTIONS: LegalSection[] = [
     paragraphs: [
       "You retain ownership of the client, case, hearing, task, payment and document data you enter (\"Your Content\"). You're solely responsible for its accuracy, legality, and any confidentiality obligations you owe your clients under applicable professional-conduct rules.",
       "You grant us a limited license to host, store, back up and process Your Content solely to provide and improve the Service, and confirm you have the rights and consents needed to enter any client or third-party information.",
+      "Data protection roles: for personal data of your clients and other third parties that you enter into the Service, you are the Data Fiduciary and LexxBridge is your Data Processor under the Digital Personal Data Protection Act, 2023. We process that data only on your instructions — to store it and show it to you — and for no other purpose. You are responsible for having a lawful basis to process it (such as your client's consent or a legitimate use permitted by the Act, including processing necessary to enforce a legal right or claim), for giving your clients any notice the law requires, and for responding to their requests about their data. We will help you meet those obligations where we reasonably can, keep the data secure, tell you without undue delay if a personal data breach affects it, and erase it when you delete it or close your account.",
       "Chat messages are end-to-end encrypted; we cannot read them and cannot recover them if you lose access to the device holding your encryption key.",
     ],
   },

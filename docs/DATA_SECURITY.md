@@ -96,6 +96,11 @@ holds a service-role key.
 | Supabase | Everything (it's the infrastructure provider) | — |
 | Resend | Email subject/body for transactional emails (feedback, account-change notices, auth emails) | Never sees message content, documents, or financial records |
 | Expo (push) | Push token + notification title/body (e.g. "New message from...") | Never the message content itself |
+| Vercel | Web hosting for `lexxbridge.app` — standard request data (IP, user agent) | No database access; never sees practice data at rest |
+| Google / Apple | Identity confirmation, only for users who pick social sign-in | Nothing beyond the sign-in itself |
+
+This list must stay in sync with Privacy Policy §4 (DPDP Act §11(1)(b) — users have the right to
+know every processor their data is shared with).
 
 No analytics SDKs, no advertising ID, no third-party trackers, and no data is sold or shared for
 any purpose beyond operating the app.

@@ -1,7 +1,11 @@
 /** Structured copy for the public /legal/* pages. Keep this in sync with the
  * canonical markdown in the repo's legal/ folder — this is the version that
  * actually ships in the app and on the web, which is what Google Play's
- * reviewer and users will read. */
+ * reviewer and users will read.
+ *
+ * Hindi and Marathi translations live in ./translations/ (DPDP Act §5(3)).
+ * Any change here must be made there too — translations.test.ts fails if
+ * their structure drifts from this file, but it can't check the wording. */
 
 export const LEGAL_UPDATED = "16 November 2026";
 export const SUPPORT_EMAIL = "deepomeshcreation@gmail.com";

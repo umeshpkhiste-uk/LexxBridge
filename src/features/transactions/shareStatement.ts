@@ -73,6 +73,15 @@ export function buildUpiPayLink(opts: { upiId: string; payeeName: string; amount
   return `upi://pay?${params.map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join("&")}`;
 }
 
+/** The UPI ID in plain text, next to every pay-now link. Some UPI apps
+ * (notably Google Pay) decline a tapped pay link to a personal UPI ID "for
+ * security reasons" and ask the payer to use the UPI ID, number or QR
+ * instead — this line gives the client that route without a phone call.
+ * A business/merchant UPI ID avoids the decline altogether. */
+export function upiIdFallbackLine(upiId: string): string {
+  return `Or pay to UPI ID: ${upiId}`;
+}
+
 /** "YYYY-MM-DD" for today, matching the app's date-only convention. */
 function todayDateOnly(): string {
   const d = new Date();
@@ -195,6 +204,7 @@ export function buildStatement({
     `Received so far: ${formatINR(overallReceived)}`,
     `Balance due: ${formatINR(overallPending)}`,
     upiLink ? `Pay now via UPI: ${upiLink}` : null,
+    upiLink && advocateUpiId ? upiIdFallbackLine(advocateUpiId) : null,
     asOf ? `As of last transaction (${formatDay(asOf)})` : null,
     ...(range ? ["", `Received in this period: ${formatINR(periodReceived)}`] : []),
     "",
@@ -491,6 +501,7 @@ export function buildStatementHtml({
   </tr></table>
   ${asOf ? `<p class="as-of">Position as of the last transaction, ${escapeHtml(formatDay(asOf))}.</p>` : ""}
   ${upiLink ? `<p class="as-of"><a href="${escapeHtml(upiLink)}">Pay now via UPI</a></p>` : ""}
+  ${upiLink && advocateUpiId ? `<p class="as-of">${escapeHtml(upiIdFallbackLine(advocateUpiId))}</p>` : ""}
 
   <p class="entries-count">No. of entries: ${ledgerRows.length}${periodLabel ? ` (${escapeHtml(periodLabel)})` : ""}</p>
   ${ledgerTable}

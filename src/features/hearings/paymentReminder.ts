@@ -3,7 +3,7 @@ import { getClient } from "@/features/clients/api";
 import { Notifications } from "@/features/notifications/notificationsModule";
 import { getMyProfile } from "@/features/profile/api";
 import { getExpensePendingByCase, getPendingByCase } from "@/features/transactions/api";
-import { buildUpiPayLink, shareViaWhatsApp } from "@/features/transactions/shareStatement";
+import { buildUpiPayLink, shareViaWhatsApp, upiIdFallbackLine } from "@/features/transactions/shareStatement";
 import { confirmAlert } from "@/shared/lib/alert";
 import { formatINR } from "@/shared/lib/format";
 import { listUpcomingHearings } from "./api";
@@ -45,6 +45,7 @@ function buildReminderMessage(opts: {
     "Please pay the pending amount(s) below on or before the mentioned date.",
     ...payLines("fees", opts.feePending, opts),
     ...payLines("expenses", opts.expensePending, opts),
+    ...(opts.advocateUpiId ? [upiIdFallbackLine(opts.advocateUpiId)] : []),
   ];
   if (opts.advocateName) lines.push("", "Regards,", opts.advocateName);
   return lines.join("\n");
@@ -112,6 +113,7 @@ function buildHearingDayMessage(opts: {
     "Please pay the pending amount(s) below before the hearing if not already paid.",
     ...payLines("fees", opts.feePending, opts),
     ...payLines("expenses", opts.expensePending, opts),
+    ...(opts.advocateUpiId ? [upiIdFallbackLine(opts.advocateUpiId)] : []),
   ];
   if (opts.advocateName) lines.push("", "Regards,", opts.advocateName);
   return lines.join("\n");

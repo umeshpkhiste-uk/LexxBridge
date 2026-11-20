@@ -42,7 +42,7 @@ import { AdvocateProfile, getMyProfile } from "@/features/profile/api";
 import { alertMessage, confirmAlert } from "@/shared/lib/alert";
 import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { AppModal } from "@/shared/ui/AppModal";
-import { anchorFromEvent, ContextMenu, MenuAnchor } from "@/shared/ui/ContextMenu";
+import { ContextMenu, MenuAnchor } from "@/shared/ui/ContextMenu";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { useSwipeTabs } from "@/shared/hooks/useSwipeTabs";
 import { HomeButton } from "@/shared/ui/HomeButton";
@@ -587,7 +587,7 @@ export default function NetworkScreen() {
                   conversation={c}
                   myId={me?.id ?? null}
                   onPress={() => router.push(`/(app)/messages/${c.id}`)}
-                  onLongPress={(e) => setChatMenu({ anchor: anchorFromEvent(e), conversation: c })}
+                  onLongPress={(anchor) => setChatMenu({ anchor, conversation: c })}
                 />
               ))}
 

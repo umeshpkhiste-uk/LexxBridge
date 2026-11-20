@@ -1,6 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
-import { GestureResponderEvent, Linking, Pressable, StyleSheet, Text, View } from "react-native";
+import { useRef } from "react";
+import { Linking, Pressable, StyleSheet, Text, View, type ViewInstance } from "react-native";
 import { Avatar, withAdvPrefix } from "@/features/network/NetworkCards";
+import type { MenuAnchor } from "@/shared/ui/ContextMenu";
 import { useTheme } from "@/shared/ui/theme";
 import { ConversationSummary } from "./api";
 import { listTime, messagePreview } from "./chatFormat";
@@ -16,19 +18,30 @@ export function ConversationRow({
   conversation: ConversationSummary;
   myId: string | null;
   onPress: () => void;
-  /** Press-and-hold for half a second (touch or mouse) — opens the row's options. */
-  onLongPress?: (event: GestureResponderEvent) => void;
+  /** Press-and-hold for half a second (touch or mouse) — opens the row's
+   * options. The anchor is the card's top-right corner, so the menu sits
+   * neatly inside that corner wherever on the row the press landed. */
+  onLongPress?: (anchor: MenuAnchor) => void;
 }) {
   const { colors, spacing, radius, typography } = useTheme();
   const last = conversation.lastMessage;
   const unread = conversation.unreadCount;
   const isMine = !!last && last.sender_id === myId;
   const { phone } = conversation.otherParty;
+  const rowRef = useRef<ViewInstance>(null);
 
   return (
     <Pressable
+      ref={rowRef}
       onPress={onPress}
-      onLongPress={onLongPress}
+      onLongPress={
+        onLongPress
+          ? () =>
+              rowRef.current?.measureInWindow((x: number, y: number, width: number) =>
+                onLongPress({ x: x + width - spacing.sm, y, width: 0, height: 0 }),
+              )
+          : undefined
+      }
       delayLongPress={500}
       style={({ pressed }) => [styles.row, { backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.md, opacity: pressed ? 0.85 : 1 }]}
       accessibilityLabel={`Chat with ${conversation.otherParty.full_name}${unread ? `, ${unread} unread` : ""}`}

@@ -21,7 +21,7 @@ import {
   sortPinnedFirst,
   ConversationSummary,
   getOrCreateConversation,
-  listConversations,
+  listConversationsWithHidden,
   subscribeToMyMessages,
 } from "@/features/messaging/api";
 import { ConversationRow } from "@/features/messaging/ConversationRow";
@@ -72,6 +72,19 @@ export default function NetworkScreen() {
   const [suggested, setSuggested] = useState<PublicProfile[]>([]);
   const [connections, setConnections] = useState<ConnectionRow[]>([]);
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
+  // People whose chat this user deleted (nothing new since) — kept out of
+  // "Start a conversation" as well, so a deleted chat is simply gone.
+  const [hiddenChatPartners, setHiddenChatPartners] = useState<string[]>([]);
+  const reloadConversations = useCallback(
+    () =>
+      listConversationsWithHidden()
+        .then(({ conversations: list, hiddenPartnerIds }) => {
+          setConversations(list);
+          setHiddenChatPartners(hiddenPartnerIds);
+        })
+        .catch(() => {}),
+    [],
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -89,8 +102,8 @@ export default function NetworkScreen() {
         listFeed(),
         listSuggestedAdvocates(),
         listMyConnections(),
-        listConversations(),
-      ]).then(([profile, posts, people, conns, convos]) => {
+        reloadConversations(),
+      ]).then(([profile, posts, people, conns]) => {
         if (profile.status === "fulfilled") setMe(profile.value);
         if (posts.status === "fulfilled") setFeed(posts.value);
         if (people.status === "fulfilled") {
@@ -104,9 +117,8 @@ export default function NetworkScreen() {
             .catch(() => {});
         }
         if (conns.status === "fulfilled") setConnections(conns.value);
-        if (convos.status === "fulfilled") setConversations(convos.value);
       }),
-    []
+    [reloadConversations]
   );
 
   useFocusEffect(
@@ -122,14 +134,14 @@ export default function NetworkScreen() {
       const unsubscribe = subscribeToMyMessages(() => {
         if (timer) clearTimeout(timer);
         timer = setTimeout(() => {
-          listConversations().then(setConversations).catch(() => {});
+          reloadConversations();
         }, 400);
       });
       return () => {
         if (timer) clearTimeout(timer);
         unsubscribe();
       };
-    }, [])
+    }, [reloadConversations])
   );
 
   const onRefresh = () => {
@@ -210,7 +222,7 @@ export default function NetworkScreen() {
   const visibleAccepted = accepted.filter(matchesName);
   const visibleIncoming = incoming.filter(matchesName);
   const unreadMessages = conversations.reduce((sum, c) => sum + c.unreadCount, 0);
-  const chattingWith = new Set(conversations.map((c) => c.otherParty.id));
+  const chattingWith = new Set([...conversations.map((c) => c.otherParty.id), ...hiddenChatPartners]);
   const connectionsWithoutChat = accepted.filter((c) => !chattingWith.has(c.otherParty.id));
 
   // Filter chips come from real data: your own courts/practice areas first,
@@ -301,7 +313,7 @@ export default function NetworkScreen() {
     } catch (err) {
       alertMessage(pin ? "Couldn't pin chat" : "Couldn't unpin chat", friendlyErrorMessage(err));
     }
-    listConversations().then(setConversations).catch(() => {});
+    reloadConversations();
   };
   const confirmDeleteChat = (conversation: ConversationSummary) => {
     const name = withAdvPrefix(conversation.otherParty.full_name);
@@ -316,12 +328,13 @@ export default function NetworkScreen() {
           style: "destructive",
           onPress: async () => {
             setConversations((prev) => prev.filter((c) => c.id !== conversation.id));
+            setHiddenChatPartners((prev) => [...prev, conversation.otherParty.id]);
             try {
               await clearConversationForMe(conversation.id);
             } catch (err) {
               alertMessage("Couldn't delete chat", friendlyErrorMessage(err));
             }
-            listConversations().then(setConversations).catch(() => {});
+            reloadConversations();
           },
         },
       ],

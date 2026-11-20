@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
 import { Avatar, withAdvPrefix } from "@/features/network/NetworkCards";
+import { PinIcon } from "@/shared/ui/PinIcon";
 import { useTheme } from "@/shared/ui/theme";
 import { ConversationSummary } from "./api";
 import { listTime, messagePreview } from "./chatFormat";
@@ -61,7 +62,7 @@ export function ConversationRow({
           {selected ? (
             <View style={{ flexDirection: "row", gap: 6 }}>
               <RowIconButton
-                icon={pinned ? "pin" : "pin-outline"}
+                icon={<PinIcon size={16} color={colors.brand} off={pinned} cutoutColor={colors.surfaceAlt} />}
                 accessibilityLabel={pinned ? "Unpin chat" : "Pin chat"}
                 onPress={() => onPin?.()}
               />
@@ -99,7 +100,7 @@ export function ConversationRow({
           ) : null}
         </View>
         <View style={styles.line}>
-          {pinned ? <Ionicons name="pin" size={12} color={colors.textSecondary} /> : null}
+          {pinned ? <PinIcon size={13} color={colors.textSecondary} filled /> : null}
           <Text style={[typography.caption, { fontSize: 12, color: unread ? colors.success : colors.textSecondary, fontWeight: unread ? "700" : "400" }]}>
             {listTime(last?.created_at ?? conversation.last_message_at)}
           </Text>
@@ -123,7 +124,8 @@ function RowIconButton({
   onPress,
   color,
 }: {
-  icon: keyof typeof Ionicons.glyphMap;
+  /** An Ionicons name, or a ready-made icon element (e.g. PinIcon). */
+  icon: keyof typeof Ionicons.glyphMap | React.ReactElement;
   accessibilityLabel: string;
   onPress: () => void;
   color?: string;
@@ -139,7 +141,7 @@ function RowIconButton({
         { borderRadius: radius.sm, backgroundColor: colors.surfaceAlt, opacity: pressed ? 0.85 : 1 },
       ]}
     >
-      <Ionicons name={icon} size={16} color={color ?? colors.brand} />
+      {typeof icon === "string" ? <Ionicons name={icon} size={16} color={color ?? colors.brand} /> : icon}
     </Pressable>
   );
 }

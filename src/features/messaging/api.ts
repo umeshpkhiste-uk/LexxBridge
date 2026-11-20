@@ -61,6 +61,14 @@ export type ConversationSummary = {
 };
 
 export async function listConversations(): Promise<ConversationSummary[]> {
+  return (await listConversationsWithHidden()).conversations;
+}
+
+/** The chat list, plus the people whose chat the user deleted with nothing
+ * new since. The Messages tab leaves those people out of "Start a
+ * conversation" too — a deleted chat is simply gone from the list, and can
+ * be restarted from Connections or the person's profile. */
+export async function listConversationsWithHidden(): Promise<{ conversations: ConversationSummary[]; hiddenPartnerIds: string[] }> {
   const me = await currentUserId();
 
   const { data: rows, error } = await supabase
@@ -70,7 +78,7 @@ export async function listConversations(): Promise<ConversationSummary[]> {
     .order("last_message_at", { ascending: false })
     .limit(100);
   if (error) throw new Error(error.message);
-  if (!rows.length) return [];
+  if (!rows.length) return { conversations: [], hiddenPartnerIds: [] };
 
   const otherIds = rows.map((r) => (r.participant_one_id === me ? r.participant_two_id : r.participant_one_id));
   const conversationIds = rows.map((r) => r.id);
@@ -119,14 +127,18 @@ export async function listConversations(): Promise<ConversationSummary[]> {
   // per-partner round trip needed.
   const publicKeyByOtherId = new Map(profilesResult.data.map((p) => [p.id, p.messaging_public_key ?? null]));
 
-  return Promise.all(
+  const hiddenPartnerIds: string[] = [];
+  const conversations = await Promise.all(
     rows.map(async (r) => {
       const otherId = r.participant_one_id === me ? r.participant_two_id : r.participant_one_id;
       const profile = profileById.get(otherId);
       if (!profile) return null;
       // Deleted from my list and nothing new since → stays hidden. The
       // person shows under "Start a conversation" instead, for a fresh start.
-      if (clearedAtById.has(r.id) && !lastMessageByConversation.has(r.id)) return null;
+      if (clearedAtById.has(r.id) && !lastMessageByConversation.has(r.id)) {
+        hiddenPartnerIds.push(otherId);
+        return null;
+      }
       const { messaging_public_key: _messagingPublicKey, ...otherPartyBase } = profile;
       const otherParty = { ...otherPartyBase, phone: phoneById.get(otherId) ?? null };
       const lastMessage = lastMessageByConversation.get(r.id) ?? null;
@@ -153,6 +165,7 @@ export async function listConversations(): Promise<ConversationSummary[]> {
       };
     })
   ).then((list) => sortPinnedFirst(list.filter((c): c is ConversationSummary => c !== null)));
+  return { conversations, hiddenPartnerIds };
 }
 
 /** Finds or creates the 1-to-1 conversation with a connected advocate. */

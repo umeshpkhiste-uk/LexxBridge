@@ -259,11 +259,20 @@ export async function setConversationPinned(conversationId: string, pinned: bool
   if (error) throw new Error(error.message);
 }
 
-/** Pinned chats first (most recently pinned on top), then the rest in
- * their existing most-recent-message order. */
+/** When the chat last had activity: its newest visible message, falling
+ * back to the conversation's own last_message_at. */
+function lastActivityTime(c: ConversationSummary): number {
+  return new Date(c.lastMessage?.created_at ?? c.last_message_at).getTime();
+}
+
+/** Pinned chats first (most recently pinned on top), then everyone else by
+ * their latest message, newest first — so whoever just messaged (or was
+ * just messaged) moves to the top. Sorted here from the messages
+ * themselves rather than trusting the server's last_message_at alone. */
 export function sortPinnedFirst(conversations: ConversationSummary[]): ConversationSummary[] {
   const pinned = conversations.filter((c) => c.pinned_at).sort((a, b) => new Date(b.pinned_at!).getTime() - new Date(a.pinned_at!).getTime());
-  return [...pinned, ...conversations.filter((c) => !c.pinned_at)];
+  const rest = conversations.filter((c) => !c.pinned_at).sort((a, b) => lastActivityTime(b) - lastActivityTime(a));
+  return [...pinned, ...rest];
 }
 
 /** "Delete chat" from the chat list: hides this conversation and all its

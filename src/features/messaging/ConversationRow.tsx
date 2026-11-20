@@ -1,56 +1,74 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useRef } from "react";
-import { Linking, Pressable, StyleSheet, Text, View, type ViewInstance } from "react-native";
+import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
 import { Avatar, withAdvPrefix } from "@/features/network/NetworkCards";
-import type { MenuAnchor } from "@/shared/ui/ContextMenu";
 import { useTheme } from "@/shared/ui/theme";
 import { ConversationSummary } from "./api";
 import { listTime, messagePreview } from "./chatFormat";
 
 /** WhatsApp-style chat-list row: avatar with online dot, name, last message,
- * time, and a green unread badge. */
+ * time, and a green unread badge. Press and hold for half a second to
+ * select it — the row gets a brand-coloured border and Pin / Delete appear on the name line,
+ * in place of the call and message buttons. */
 export function ConversationRow({
   conversation,
   myId,
   onPress,
   onLongPress,
+  selected = false,
+  onPin,
+  onDelete,
 }: {
   conversation: ConversationSummary;
   myId: string | null;
   onPress: () => void;
-  /** Press-and-hold for half a second (touch or mouse) — opens the row's
-   * options. The anchor is the card's top-right corner, so the menu sits
-   * neatly inside that corner wherever on the row the press landed. */
-  onLongPress?: (anchor: MenuAnchor) => void;
+  /** Press-and-hold for half a second (touch or mouse) — selects the row. */
+  onLongPress?: () => void;
+  selected?: boolean;
+  onPin?: () => void;
+  onDelete?: () => void;
 }) {
   const { colors, spacing, radius, typography } = useTheme();
   const last = conversation.lastMessage;
   const unread = conversation.unreadCount;
   const isMine = !!last && last.sender_id === myId;
   const { phone } = conversation.otherParty;
-  const rowRef = useRef<ViewInstance>(null);
+  const pinned = !!conversation.pinned_at;
 
   return (
     <Pressable
-      ref={rowRef}
       onPress={onPress}
-      onLongPress={
-        onLongPress
-          ? () =>
-              rowRef.current?.measureInWindow((x: number, y: number, width: number) =>
-                onLongPress({ x: x + width - spacing.sm, y, width: 0, height: 0 }),
-              )
-          : undefined
-      }
+      onLongPress={onLongPress}
       delayLongPress={500}
-      style={({ pressed }) => [styles.row, { backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.md, opacity: pressed ? 0.85 : 1 }]}
-      accessibilityLabel={`Chat with ${conversation.otherParty.full_name}${unread ? `, ${unread} unread` : ""}`}
+      style={({ pressed }) => [
+        styles.row,
+        {
+          backgroundColor: colors.surface,
+          borderColor: selected ? colors.brand : "transparent",
+          borderRadius: radius.md,
+          padding: spacing.md,
+          opacity: pressed && !selected ? 0.85 : 1,
+        },
+      ]}
+      accessibilityState={{ selected }}
+      accessibilityLabel={`Chat with ${conversation.otherParty.full_name}${pinned ? ", pinned" : ""}${unread ? `, ${unread} unread` : ""}`}
     >
       <Avatar name={conversation.otherParty.full_name} photoUrl={conversation.otherParty.profile_photo_url} size={50} userId={conversation.otherParty.id} />
       <View style={{ flex: 1, gap: 2 }}>
-        <Text style={[typography.bodyStrong, { color: colors.textPrimary }]} numberOfLines={1}>
-          {withAdvPrefix(conversation.otherParty.full_name)}
-        </Text>
+        <View style={styles.line}>
+          <Text style={[typography.bodyStrong, { flex: 1, color: colors.textPrimary }]} numberOfLines={1}>
+            {withAdvPrefix(conversation.otherParty.full_name)}
+          </Text>
+          {selected ? (
+            <View style={{ flexDirection: "row", gap: 6 }}>
+              <RowIconButton
+                icon={pinned ? "pin" : "pin-outline"}
+                accessibilityLabel={pinned ? "Unpin chat" : "Pin chat"}
+                onPress={() => onPin?.()}
+              />
+              <RowIconButton icon="trash-outline" accessibilityLabel="Delete chat" color={colors.danger} onPress={() => onDelete?.()} />
+            </View>
+          ) : null}
+        </View>
         <View style={styles.line}>
           {isMine && last && !last.is_deleted ? (
             <Ionicons name={last.read_at ? "checkmark-done" : "checkmark"} size={16} color={last.read_at ? "#53BDEB" : colors.textSecondary} />
@@ -80,16 +98,21 @@ export function ConversationRow({
             </View>
           ) : null}
         </View>
-        <Text style={[typography.caption, { fontSize: 12, color: unread ? colors.success : colors.textSecondary, fontWeight: unread ? "700" : "400" }]}>
-          {listTime(last?.created_at ?? conversation.last_message_at)}
-        </Text>
+        <View style={styles.line}>
+          {pinned ? <Ionicons name="pin" size={12} color={colors.textSecondary} /> : null}
+          <Text style={[typography.caption, { fontSize: 12, color: unread ? colors.success : colors.textSecondary, fontWeight: unread ? "700" : "400" }]}>
+            {listTime(last?.created_at ?? conversation.last_message_at)}
+          </Text>
+        </View>
       </View>
-      <View style={{ flexDirection: "row", gap: 6 }}>
-        {phone ? (
-          <RowIconButton icon="call-outline" accessibilityLabel="Call" onPress={() => Linking.openURL(`tel:${phone}`)} />
-        ) : null}
-        <RowIconButton icon="chatbubble-ellipses-outline" accessibilityLabel="Message" onPress={onPress} />
-      </View>
+      {selected ? null : (
+        <View style={{ flexDirection: "row", gap: 6 }}>
+          {phone ? (
+            <RowIconButton icon="call-outline" accessibilityLabel="Call" onPress={() => Linking.openURL(`tel:${phone}`)} />
+          ) : null}
+          <RowIconButton icon="chatbubble-ellipses-outline" accessibilityLabel="Message" onPress={onPress} />
+        </View>
+      )}
     </Pressable>
   );
 }
@@ -98,10 +121,12 @@ function RowIconButton({
   icon,
   accessibilityLabel,
   onPress,
+  color,
 }: {
   icon: keyof typeof Ionicons.glyphMap;
   accessibilityLabel: string;
   onPress: () => void;
+  color?: string;
 }) {
   const { colors, radius } = useTheme();
   return (
@@ -114,13 +139,13 @@ function RowIconButton({
         { borderRadius: radius.sm, backgroundColor: colors.surfaceAlt, opacity: pressed ? 0.85 : 1 },
       ]}
     >
-      <Ionicons name={icon} size={16} color={colors.brand} />
+      <Ionicons name={icon} size={16} color={color ?? colors.brand} />
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: "row", alignItems: "center", gap: 12 },
+  row: { flexDirection: "row", alignItems: "center", gap: 12, borderWidth: 1 },
   line: { flexDirection: "row", alignItems: "center", gap: 4 },
   badge: { minWidth: 20, height: 20, borderRadius: 10, paddingHorizontal: 6, alignItems: "center", justifyContent: "center" },
   badgeText: { color: "#FFFFFF", fontSize: 11, fontWeight: "700" },

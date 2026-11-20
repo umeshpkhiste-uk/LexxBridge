@@ -17,6 +17,8 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   clearConversationForMe,
+  setConversationPinned,
+  sortPinnedFirst,
   ConversationSummary,
   getOrCreateConversation,
   listConversations,
@@ -42,7 +44,6 @@ import { AdvocateProfile, getMyProfile } from "@/features/profile/api";
 import { alertMessage, confirmAlert } from "@/shared/lib/alert";
 import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { AppModal } from "@/shared/ui/AppModal";
-import { ContextMenu, MenuAnchor } from "@/shared/ui/ContextMenu";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { useSwipeTabs } from "@/shared/hooks/useSwipeTabs";
 import { HomeButton } from "@/shared/ui/HomeButton";
@@ -284,12 +285,27 @@ export default function NetworkScreen() {
   const dropComments = (postId: string) =>
     setFeed((prev) => prev.map((p) => (p.id === postId ? { ...p, comments_count: Math.max(0, p.comments_count - 1) } : p)));
 
-  // Long-press on a chat in the Messages tab → "Delete chat". Clears it from
-  // this user's list only; the other person keeps their copy, and a new
-  // message from either side starts the chat afresh.
-  const [chatMenu, setChatMenu] = useState<{ anchor: MenuAnchor; conversation: ConversationSummary } | null>(null);
+  // Long-press on a chat in the Messages tab selects it, showing Pin and
+  // Delete on its name line. Delete clears it from this user's list only;
+  // the other person keeps their copy, and a new message from either side
+  // starts the chat afresh. Pin keeps it at the top of this user's list.
+  const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
+  const togglePinChat = async (conversation: ConversationSummary) => {
+    const pin = !conversation.pinned_at;
+    setSelectedChatId(null);
+    setConversations((prev) =>
+      sortPinnedFirst(prev.map((c) => (c.id === conversation.id ? { ...c, pinned_at: pin ? new Date().toISOString() : null } : c))),
+    );
+    try {
+      await setConversationPinned(conversation.id, pin);
+    } catch (err) {
+      alertMessage(pin ? "Couldn't pin chat" : "Couldn't unpin chat", friendlyErrorMessage(err));
+    }
+    listConversations().then(setConversations).catch(() => {});
+  };
   const confirmDeleteChat = (conversation: ConversationSummary) => {
     const name = withAdvPrefix(conversation.otherParty.full_name);
+    setSelectedChatId(null);
     confirmAlert(
       `Delete chat with ${name}?`,
       `The chat and its messages will be removed from your list. ${name} will still see the chat. If either of you sends a new message, it starts afresh.`,
@@ -586,8 +602,13 @@ export default function NetworkScreen() {
                   key={c.id}
                   conversation={c}
                   myId={me?.id ?? null}
-                  onPress={() => router.push(`/(app)/messages/${c.id}`)}
-                  onLongPress={(anchor) => setChatMenu({ anchor, conversation: c })}
+                  // While a chat is selected, a tap anywhere on the list just
+                  // clears the selection instead of opening a chat.
+                  onPress={() => (selectedChatId ? setSelectedChatId(null) : router.push(`/(app)/messages/${c.id}`))}
+                  onLongPress={() => setSelectedChatId(c.id)}
+                  selected={selectedChatId === c.id}
+                  onPin={() => togglePinChat(c)}
+                  onDelete={() => confirmDeleteChat(c)}
                 />
               ))}
 
@@ -613,17 +634,6 @@ export default function NetworkScreen() {
         </View>
       </ScrollView>
       </View>
-
-      <ContextMenu
-        visible={!!chatMenu}
-        anchor={chatMenu?.anchor ?? null}
-        actions={
-          chatMenu
-            ? [{ label: "Delete chat", icon: "trash-outline", destructive: true, onPress: () => confirmDeleteChat(chatMenu.conversation) }]
-            : []
-        }
-        onClose={() => setChatMenu(null)}
-      />
 
       {segment === "feed" ? (
         <Pressable

@@ -56,6 +56,8 @@ export type ConversationSummary = {
     attachment_kind: AttachmentKind | null;
   } | null;
   unreadCount: number;
+  /** When the signed-in user pinned this chat to the top of their list. */
+  pinned_at: string | null;
 };
 
 export async function listConversations(): Promise<ConversationSummary[]> {
@@ -73,7 +75,7 @@ export async function listConversations(): Promise<ConversationSummary[]> {
   const otherIds = rows.map((r) => (r.participant_one_id === me ? r.participant_two_id : r.participant_one_id));
   const conversationIds = rows.map((r) => r.id);
 
-  const [profilesResult, phonesResult, lastMessagesResult, unreadResult, clearedAtById] = await Promise.all([
+  const [profilesResult, phonesResult, lastMessagesResult, unreadResult, clearedAtById, pinnedAtById] = await Promise.all([
     supabase.from("public_advocate_profiles").select("id, full_name, profile_photo_url, messaging_public_key").in("id", otherIds),
     supabase.rpc("connection_phone_numbers", { p_ids: otherIds }),
     supabase
@@ -88,6 +90,7 @@ export async function listConversations(): Promise<ConversationSummary[]> {
       .is("read_at", null)
       .neq("sender_id", me),
     getMyClearedAt(conversationIds),
+    getMyPinnedAt(conversationIds),
   ]);
   if (profilesResult.error) throw new Error(profilesResult.error.message);
   if (phonesResult.error) throw new Error(phonesResult.error.message);
@@ -133,6 +136,7 @@ export async function listConversations(): Promise<ConversationSummary[]> {
       return {
         id: r.id,
         last_message_at: r.last_message_at,
+        pinned_at: pinnedAtById.get(r.id) ?? null,
         otherParty,
         lastMessage: lastMessage && decrypted
           ? {
@@ -148,7 +152,7 @@ export async function listConversations(): Promise<ConversationSummary[]> {
         unreadCount: unreadCountByConversation.get(r.id) ?? 0,
       };
     })
-  ).then((list) => list.filter((c): c is ConversationSummary => c !== null));
+  ).then((list) => sortPinnedFirst(list.filter((c): c is ConversationSummary => c !== null)));
 }
 
 /** Finds or creates the 1-to-1 conversation with a connected advocate. */
@@ -222,6 +226,31 @@ export async function getMyClearedAt(conversationIds: string[]): Promise<Map<str
   // chat as before rather than hiding it.
   if (error) return new Map();
   return new Map(data.map((row) => [row.conversation_id, row.cleared_at]));
+}
+
+/** When the signed-in user pinned each of these conversations. */
+export async function getMyPinnedAt(conversationIds: string[]): Promise<Map<string, string>> {
+  if (!conversationIds.length) return new Map();
+  const { data, error } = await supabase.from("conversation_pins").select("conversation_id, pinned_at").in("conversation_id", conversationIds);
+  // Fail open: no pins rather than no chat list.
+  if (error) return new Map();
+  return new Map(data.map((row) => [row.conversation_id, row.pinned_at]));
+}
+
+/** Pin a chat to the top of the signed-in user's own list, or unpin it. */
+export async function setConversationPinned(conversationId: string, pinned: boolean): Promise<void> {
+  const me = await currentUserId();
+  const { error } = pinned
+    ? await supabase.from("conversation_pins").upsert({ user_id: me, conversation_id: conversationId }, { onConflict: "user_id,conversation_id" })
+    : await supabase.from("conversation_pins").delete().eq("user_id", me).eq("conversation_id", conversationId);
+  if (error) throw new Error(error.message);
+}
+
+/** Pinned chats first (most recently pinned on top), then the rest in
+ * their existing most-recent-message order. */
+export function sortPinnedFirst(conversations: ConversationSummary[]): ConversationSummary[] {
+  const pinned = conversations.filter((c) => c.pinned_at).sort((a, b) => new Date(b.pinned_at!).getTime() - new Date(a.pinned_at!).getTime());
+  return [...pinned, ...conversations.filter((c) => !c.pinned_at)];
 }
 
 /** "Delete chat" from the chat list: hides this conversation and all its

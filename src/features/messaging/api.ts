@@ -73,7 +73,7 @@ export async function listConversations(): Promise<ConversationSummary[]> {
   const otherIds = rows.map((r) => (r.participant_one_id === me ? r.participant_two_id : r.participant_one_id));
   const conversationIds = rows.map((r) => r.id);
 
-  const [profilesResult, phonesResult, lastMessagesResult, unreadResult] = await Promise.all([
+  const [profilesResult, phonesResult, lastMessagesResult, unreadResult, clearedAtById] = await Promise.all([
     supabase.from("public_advocate_profiles").select("id, full_name, profile_photo_url, messaging_public_key").in("id", otherIds),
     supabase.rpc("connection_phone_numbers", { p_ids: otherIds }),
     supabase
@@ -83,10 +83,11 @@ export async function listConversations(): Promise<ConversationSummary[]> {
       .order("created_at", { ascending: false }),
     supabase
       .from("messages")
-      .select("conversation_id")
+      .select("conversation_id, created_at")
       .in("conversation_id", conversationIds)
       .is("read_at", null)
       .neq("sender_id", me),
+    getMyClearedAt(conversationIds),
   ]);
   if (profilesResult.error) throw new Error(profilesResult.error.message);
   if (phonesResult.error) throw new Error(phonesResult.error.message);
@@ -96,12 +97,19 @@ export async function listConversations(): Promise<ConversationSummary[]> {
   const phoneById = new Map((phonesResult.data as { id: string; phone: string }[]).map((p) => [p.id, p.phone]));
 
   const profileById = new Map(profilesResult.data.map((p) => [p.id, p]));
+  // Messages at or before the user's "Delete chat" time don't count for
+  // anything in their list: not the preview, not the unread badge.
+  const isVisible = (m: { conversation_id: string; created_at: string }) => {
+    const clearedAt = clearedAtById.get(m.conversation_id);
+    return !clearedAt || new Date(m.created_at).getTime() > new Date(clearedAt).getTime();
+  };
   const lastMessageByConversation = new Map<string, (typeof lastMessagesResult.data)[number]>();
   for (const m of lastMessagesResult.data) {
-    if (!lastMessageByConversation.has(m.conversation_id)) lastMessageByConversation.set(m.conversation_id, m);
+    if (!lastMessageByConversation.has(m.conversation_id) && isVisible(m)) lastMessageByConversation.set(m.conversation_id, m);
   }
   const unreadCountByConversation = new Map<string, number>();
   for (const m of unreadResult.data) {
+    if (!isVisible(m)) continue;
     unreadCountByConversation.set(m.conversation_id, (unreadCountByConversation.get(m.conversation_id) ?? 0) + 1);
   }
   // Public keys came back in the same batched profile query above — no
@@ -113,6 +121,9 @@ export async function listConversations(): Promise<ConversationSummary[]> {
       const otherId = r.participant_one_id === me ? r.participant_two_id : r.participant_one_id;
       const profile = profileById.get(otherId);
       if (!profile) return null;
+      // Deleted from my list and nothing new since → stays hidden. The
+      // person shows under "Start a conversation" instead, for a fresh start.
+      if (clearedAtById.has(r.id) && !lastMessageByConversation.has(r.id)) return null;
       const { messaging_public_key: _messagingPublicKey, ...otherPartyBase } = profile;
       const otherParty = { ...otherPartyBase, phone: phoneById.get(otherId) ?? null };
       const lastMessage = lastMessageByConversation.get(r.id) ?? null;
@@ -201,13 +212,34 @@ export type Message = {
 const MESSAGE_COLUMNS =
   "id, conversation_id, sender_id, content, nonce, is_deleted, read_at, created_at, edited_at, reply_to_id, attachment_path, attachment_kind, attachment_name, attachment_size, attachment_mime";
 
+/** When the signed-in user last used "Delete chat" on each of these
+ * conversations. Anything sent at or before that time is hidden from them
+ * (only them — the other person's chat is untouched). */
+export async function getMyClearedAt(conversationIds: string[]): Promise<Map<string, string>> {
+  if (!conversationIds.length) return new Map();
+  const { data, error } = await supabase.from("conversation_clears").select("conversation_id, cleared_at").in("conversation_id", conversationIds);
+  // Fail open: if the lookup fails (or the table isn't there yet), show the
+  // chat as before rather than hiding it.
+  if (error) return new Map();
+  return new Map(data.map((row) => [row.conversation_id, row.cleared_at]));
+}
+
+/** "Delete chat" from the chat list: hides this conversation and all its
+ * messages so far, for the signed-in user only. The server stamps the time
+ * (see migration 0083). A later message from either side starts it afresh. */
+export async function clearConversationForMe(conversationId: string): Promise<void> {
+  const me = await currentUserId();
+  const { error } = await supabase
+    .from("conversation_clears")
+    .upsert({ user_id: me, conversation_id: conversationId }, { onConflict: "user_id,conversation_id" });
+  if (error) throw new Error(error.message);
+}
+
 export async function listMessages(conversationId: string): Promise<Message[]> {
-  const { data, error } = await supabase
-    .from("messages")
-    .select(MESSAGE_COLUMNS)
-    .eq("conversation_id", conversationId)
-    .order("created_at", { ascending: true })
-    .limit(500);
+  const clearedAt = (await getMyClearedAt([conversationId])).get(conversationId);
+  let query = supabase.from("messages").select(MESSAGE_COLUMNS).eq("conversation_id", conversationId);
+  if (clearedAt) query = query.gt("created_at", clearedAt);
+  const { data, error } = await query.order("created_at", { ascending: true }).limit(500);
   if (error) throw new Error(error.message);
   const rows = data as EncryptedMessageRow[];
   if (!rows.length) return [];
@@ -315,6 +347,9 @@ export function subscribeToConversation(
 ) {
   // Resolved once and reused for every incoming row on this channel.
   const otherPartyPublicKey = getConversationOtherParty(conversationId).then(getPublicKey);
+  // An edit, read receipt or "delete for everyone" on a message from before
+  // this user's "Delete chat" must not bring that message back on screen.
+  const clearedAt = getMyClearedAt([conversationId]).then((m) => m.get(conversationId) ?? null);
 
   const channel = supabase
     .channel(`chat:${conversationId}`)
@@ -323,7 +358,11 @@ export function subscribeToConversation(
       { event: "*", schema: "public", table: "messages", filter: `conversation_id=eq.${conversationId}` },
       async (payload) => {
         if (payload.new && "id" in payload.new) {
-          const decrypted = await decryptRow(payload.new as EncryptedMessageRow, await otherPartyPublicKey);
+          const row = payload.new as EncryptedMessageRow;
+          const cutoff = await clearedAt;
+          // Compare as instants: realtime and REST can format timestamps differently.
+          if (cutoff && new Date(row.created_at).getTime() <= new Date(cutoff).getTime()) return;
+          const decrypted = await decryptRow(row, await otherPartyPublicKey);
           handlers.onUpsert(decrypted);
         }
       }

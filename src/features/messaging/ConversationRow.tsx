@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
+import { GestureResponderEvent, Linking, Pressable, StyleSheet, Text, View } from "react-native";
 import { Avatar, withAdvPrefix } from "@/features/network/NetworkCards";
 import { useTheme } from "@/shared/ui/theme";
 import { ConversationSummary } from "./api";
@@ -7,7 +7,18 @@ import { listTime, messagePreview } from "./chatFormat";
 
 /** WhatsApp-style chat-list row: avatar with online dot, name, last message,
  * time, and a green unread badge. */
-export function ConversationRow({ conversation, myId, onPress }: { conversation: ConversationSummary; myId: string | null; onPress: () => void }) {
+export function ConversationRow({
+  conversation,
+  myId,
+  onPress,
+  onLongPress,
+}: {
+  conversation: ConversationSummary;
+  myId: string | null;
+  onPress: () => void;
+  /** Press-and-hold for half a second (touch or mouse) — opens the row's options. */
+  onLongPress?: (event: GestureResponderEvent) => void;
+}) {
   const { colors, spacing, radius, typography } = useTheme();
   const last = conversation.lastMessage;
   const unread = conversation.unreadCount;
@@ -17,6 +28,8 @@ export function ConversationRow({ conversation, myId, onPress }: { conversation:
   return (
     <Pressable
       onPress={onPress}
+      onLongPress={onLongPress}
+      delayLongPress={500}
       style={({ pressed }) => [styles.row, { backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.md, opacity: pressed ? 0.85 : 1 }]}
       accessibilityLabel={`Chat with ${conversation.otherParty.full_name}${unread ? `, ${unread} unread` : ""}`}
     >

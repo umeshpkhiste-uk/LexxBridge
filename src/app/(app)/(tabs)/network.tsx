@@ -15,7 +15,13 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ConversationSummary, getOrCreateConversation, listConversations, subscribeToMyMessages } from "@/features/messaging/api";
+import {
+  clearConversationForMe,
+  ConversationSummary,
+  getOrCreateConversation,
+  listConversations,
+  subscribeToMyMessages,
+} from "@/features/messaging/api";
 import { ConversationRow } from "@/features/messaging/ConversationRow";
 import {
   ConnectionRow,
@@ -33,8 +39,10 @@ import { SmallButton } from "@/features/network/SmallButton";
 import { CommunityTab } from "@/features/community/CommunityTab";
 import { FeedPost, listFeed, toggleReaction } from "@/features/posts/api";
 import { AdvocateProfile, getMyProfile } from "@/features/profile/api";
+import { alertMessage, confirmAlert } from "@/shared/lib/alert";
 import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { AppModal } from "@/shared/ui/AppModal";
+import { anchorFromEvent, ContextMenu, MenuAnchor } from "@/shared/ui/ContextMenu";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { useSwipeTabs } from "@/shared/hooks/useSwipeTabs";
 import { HomeButton } from "@/shared/ui/HomeButton";
@@ -275,6 +283,34 @@ export default function NetworkScreen() {
 
   const dropComments = (postId: string) =>
     setFeed((prev) => prev.map((p) => (p.id === postId ? { ...p, comments_count: Math.max(0, p.comments_count - 1) } : p)));
+
+  // Long-press on a chat in the Messages tab → "Delete chat". Clears it from
+  // this user's list only; the other person keeps their copy, and a new
+  // message from either side starts the chat afresh.
+  const [chatMenu, setChatMenu] = useState<{ anchor: MenuAnchor; conversation: ConversationSummary } | null>(null);
+  const confirmDeleteChat = (conversation: ConversationSummary) => {
+    const name = withAdvPrefix(conversation.otherParty.full_name);
+    confirmAlert(
+      `Delete chat with ${name}?`,
+      `The chat and its messages will be removed from your list. ${name} will still see the chat. If either of you sends a new message, it starts afresh.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete chat",
+          style: "destructive",
+          onPress: async () => {
+            setConversations((prev) => prev.filter((c) => c.id !== conversation.id));
+            try {
+              await clearConversationForMe(conversation.id);
+            } catch (err) {
+              alertMessage("Couldn't delete chat", friendlyErrorMessage(err));
+            }
+            listConversations().then(setConversations).catch(() => {});
+          },
+        },
+      ],
+    );
+  };
 
   const handleConnect = async (profile: PublicProfile) => {
     setConnections((prev) => [
@@ -546,7 +582,13 @@ export default function NetworkScreen() {
           ) : (
             <>
               {conversations.map((c) => (
-                <ConversationRow key={c.id} conversation={c} myId={me?.id ?? null} onPress={() => router.push(`/(app)/messages/${c.id}`)} />
+                <ConversationRow
+                  key={c.id}
+                  conversation={c}
+                  myId={me?.id ?? null}
+                  onPress={() => router.push(`/(app)/messages/${c.id}`)}
+                  onLongPress={(e) => setChatMenu({ anchor: anchorFromEvent(e), conversation: c })}
+                />
               ))}
 
               {/* Accepted connections you haven't chatted with yet */}
@@ -571,6 +613,17 @@ export default function NetworkScreen() {
         </View>
       </ScrollView>
       </View>
+
+      <ContextMenu
+        visible={!!chatMenu}
+        anchor={chatMenu?.anchor ?? null}
+        actions={
+          chatMenu
+            ? [{ label: "Delete chat", icon: "trash-outline", destructive: true, onPress: () => confirmDeleteChat(chatMenu.conversation) }]
+            : []
+        }
+        onClose={() => setChatMenu(null)}
+      />
 
       {segment === "feed" ? (
         <Pressable

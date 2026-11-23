@@ -1,6 +1,8 @@
 import { disableBiometric, forgetSavedLogin } from "@/features/biometric/biometric";
 import { clearAppLock } from "@/features/applock/appLock";
 import { clearDeviceNotifications } from "@/features/notifications/device";
+import { cancelSubscription, getMyPlan } from "@/features/subscription/api";
+import { UserFacingError } from "@/shared/lib/errors";
 import { supabase } from "@/shared/lib/supabase";
 
 async function currentUserId(): Promise<string> {
@@ -113,6 +115,15 @@ async function deleteMyStorageFiles(): Promise<void> {
 
 export async function deleteMyAccount(): Promise<void> {
   const me = await currentUserId();
+  // Stop Razorpay charging first: once the account is gone there's no way
+  // left to cancel from the app. If cancelling fails, don't delete — a
+  // deleted account that keeps being billed is the worse outcome.
+  const plan = await getMyPlan().catch(() => null);
+  if (plan?.plan === "paid" && plan.status !== "cancelled") {
+    await cancelSubscription().catch(() => {
+      throw new UserFacingError("Couldn't cancel your subscription, so your account wasn't deleted. Please try again.");
+    });
+  }
   await deleteMyStorageFiles();
   const { error } = await supabase.rpc("delete_my_account");
   if (error) throw new Error(error.message);

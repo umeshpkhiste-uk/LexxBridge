@@ -11,7 +11,7 @@ import { deleteMyAccount } from "./api";
 export function confirmDeleteAccount(setBusy: (busy: boolean) => void) {
   confirmAlert(
     "Delete your account?",
-    "This permanently deletes your profile, clients, cases, hearings, documents, payments, posts, chats and connections, plus every file you've uploaded. It cannot be undone.",
+    "This permanently deletes your profile, clients, cases, hearings, documents, payments, posts, chats and connections, plus every file you've uploaded. Any monthly subscription is cancelled too, with no refund for the rest of the month. It cannot be undone.",
     [
       { text: "Cancel", style: "cancel" },
       {

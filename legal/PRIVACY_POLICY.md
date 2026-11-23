@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**Last updated: 16 November 2026**
+**Last updated: 24 November 2026**
 
 This Privacy Policy explains how LexxBridge ("LexxBridge", "we", "us") collects,
 uses and protects information when you use the LexxBridge app and website
@@ -89,6 +89,10 @@ listed:
 - **Google and Apple** — only if you choose "Continue with Google" or
   "Continue with Apple": they confirm your identity and share your name and
   email address with us.
+- **Razorpay** — processes subscription payments on `lexxbridge.app`.
+  Receives your email address and the payment details you enter at checkout
+  (card, UPI or bank). We receive only your subscription's status and
+  renewal date — never your full card or UPI details.
 - **Other advocates you connect with**: only the profile fields you choose
   to make visible, and messages you choose to send them.
 - We do not share your client, case or financial data with any other third

@@ -13,6 +13,14 @@ The network (feed, connections, messages) is free on every plan.
 A cancelled subscription keeps everything unlocked until the end of the month already paid for, then
 drops to Free. Nothing is ever deleted when a plan ends.
 
+Deleting an account cancels its subscription first (and refuses to delete if that cancellation
+fails), so a deleted account is never billed again.
+
+The customer-facing rules — trial, billing, cancelling, refunds, failed payments, price changes —
+are in the **Refund & Cancellation Policy** (`legal/REFUND_POLICY.md`, shown in the app and at
+`https://lexxbridge.app/legal/refund` in English, Hindi and Marathi) and Terms of Service §7. Keep
+them in step with any change to how plans work here.
+
 ## How it works
 
 - **`public.my_plan()`** (migration 0086) answers `trial` / `free` / `paid` for the signed-in user. It's
@@ -38,7 +46,8 @@ drops to Free. Nothing is ever deleted when a plan ends.
 
 1. **Razorpay account** — sign up at razorpay.com and complete KYC (business details, bank account,
    website). Razorpay checks the website for a pricing page, Terms, Privacy Policy, a Refund &
-   Cancellation policy, and contact details.
+   Cancellation policy, and contact details. Give them: `https://lexxbridge.app/legal/terms`,
+   `/legal/privacy` and `/legal/refund`.
 2. **Enable Subscriptions** — Dashboard → Subscriptions (ask Razorpay support to enable it if it isn't).
 3. **Create the plan** — Subscriptions → Plans → Create plan: billing frequency **Monthly**, every **1**
    month, the price in ₹. Copy its **Plan ID** (`plan_…`). Change the price later by creating a new plan

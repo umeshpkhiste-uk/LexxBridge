@@ -7,7 +7,7 @@
  * Any change here must be made there too — translations.test.ts fails if
  * their structure drifts from this file, but it can't check the wording. */
 
-export const LEGAL_UPDATED = "16 November 2026";
+export const LEGAL_UPDATED = "24 November 2026";
 export const SUPPORT_EMAIL = "deepomeshcreation@gmail.com";
 export const COMPANY_NAME = "LexxBridge";
 
@@ -52,6 +52,7 @@ export const PRIVACY_SECTIONS: LegalSection[] = [
       "• Resend — sends our emails (sign-up confirmation, password reset, account notices, replies to your feedback and grievances). Receives your email address and the email's content.",
       "• Expo — delivers push notifications to your phone, through Apple Push Notification service and Google Firebase Cloud Messaging. Receives your device's push token and the notification's title and short text — never your message content, which is end-to-end encrypted.",
       "• Google and Apple — only if you choose \"Continue with Google\" or \"Continue with Apple\": they confirm your identity and share your name and email address with us.",
+      "• Razorpay — processes subscription payments on lexxbridge.app. Receives your email address and the payment details you enter at checkout (card, UPI or bank). We receive only your subscription's status and renewal date — never your full card or UPI details.",
       "• Other advocates you connect with see only the profile fields you make visible, and messages you choose to send them.",
       "We don't share your client, case or financial data with anyone else, and never sell personal information. We may disclose information if required by law.",
       "Information about your clients: when you enter personal data about your clients or other people (for example a client's name, phone number or case details), you decide why and how that data is processed, so you are the Data Fiduciary for it under the Digital Personal Data Protection Act, 2023. LexxBridge processes it only on your behalf, as your Data Processor, to provide the Service to you — we never use it for any other purpose, never contact your clients, and erase it when you delete it or your account. Requests from your clients about their data should be made to you.",
@@ -162,11 +163,20 @@ export const TERMS_SECTIONS: LegalSection[] = [
   {
     heading: "6. Payments and fee records",
     paragraphs: [
-      "Payment/fee-ledger features are record-keeping tools for amounts you and your clients agree upon and receive. LexxBridge does not process, hold or transmit any actual money, and is not a payment processor, escrow agent, or party to any fee arrangement between you and your clients.",
+      "Payment/fee-ledger features are record-keeping tools for amounts you and your clients agree upon and receive. LexxBridge does not process, hold or transmit any actual money, and is not a payment processor, escrow agent, or party to any fee arrangement between you and your clients. This section doesn't cover the LexxBridge subscription you may buy for your own account, which is described in section 7.",
     ],
   },
   {
-    heading: "7. Security, data loss and unauthorized access",
+    heading: "7. Subscription plans and billing",
+    paragraphs: [
+      "New accounts get a 7-day free trial with every feature unlocked. No payment details are needed, and nothing is charged automatically when the trial ends. After the trial, the free plan allows up to 5 clients (archived clients included) and doesn't include payment reminders or fee statements; your existing records stay available. The monthly plan removes these limits. The current price is shown on the Plan & Subscription page before you pay.",
+      "The monthly plan is billed in advance each month and renews automatically until you cancel. Payments are collected by our payment partner, Razorpay, through the UPI Autopay mandate or card you authorise. Prices are in Indian Rupees and include applicable taxes unless stated otherwise. LexxBridge never sees or stores your full card or UPI details.",
+      "You can cancel at any time from Profile → Plan & Subscription. Cancelling stops future charges; you keep full access until the end of the month already paid for, and your account then moves to the free plan. Payments are not refundable except as set out in our Refund & Cancellation Policy.",
+      "If a renewal payment fails, Razorpay may retry it; if it still fails, your account moves to the free plan and no data is deleted. We may change the price or what a plan includes with at least 30 days' notice. A price change applies to you only from your next billing month after that notice, and you may cancel before it takes effect.",
+    ],
+  },
+  {
+    heading: "8. Security, data loss and unauthorized access",
     paragraphs: [
       "We implement reasonable technical and organizational safeguards to protect the Service and Your Content — including encryption in transit and at rest, end-to-end encryption for chat messages, and row-level access controls (see our Privacy Policy, §6). However, no method of transmission or storage is completely secure, and we cannot and do not guarantee that unauthorized access, hacking, malware, device loss or theft, or other security incidents will never occur.",
       "By using the Service, you acknowledge and accept this inherent risk. To the maximum extent permitted by applicable law, LexxBridge and its developers are not liable for any loss of, unauthorized access to, or disclosure of Your Content or personal data resulting from circumstances beyond our reasonable control — including cyberattacks, hacking, phishing, compromised or shared login credentials, a lost or stolen device, or a vulnerability in a third-party service we rely on (e.g. our cloud infrastructure provider) — except where such loss results from our own gross negligence or willful misconduct, or where liability cannot be excluded under applicable law.",
@@ -174,19 +184,19 @@ export const TERMS_SECTIONS: LegalSection[] = [
     ],
   },
   {
-    heading: "8. Availability and changes",
+    heading: "9. Availability and changes",
     paragraphs: [
       "We aim to keep the Service available and reliable but don't guarantee uninterrupted access. We may modify, suspend or discontinue any part of it, and may update these Terms from time to time; continued use after an update means you accept the revised Terms.",
     ],
   },
   {
-    heading: "9. Termination",
+    heading: "10. Termination",
     paragraphs: [
-      "You may stop using the Service and delete your account at any time from Profile → Settings → Delete account, which permanently erases your data as described in our Privacy Policy. We may suspend or terminate accounts that violate these Terms.",
+      "You may stop using the Service and delete your account at any time from Profile → Settings → Delete account, which permanently erases your data as described in our Privacy Policy. We may suspend or terminate accounts that violate these Terms. Deleting your account also cancels any active subscription, with no refund for the rest of the month already paid for.",
     ],
   },
   {
-    heading: "10. Disclaimers",
+    heading: "11. Disclaimers",
     paragraphs: [
       "The Service is provided \"as is\" and \"as available,\" without warranties of any kind, express or implied. LexxBridge is a practice-management tool, not a source of legal advice, and doesn't review, verify or take responsibility for the legal accuracy of anything you record in it. We do not warrant that the Service will be error-free, uninterrupted, or free from viruses or other harmful components, or that any security breach, unauthorized access or data loss will never occur.",
       "LexxBridge is a record-keeping and organizational tool only. You are solely responsible for independently tracking, verifying and complying with all hearing dates, filing deadlines, limitation periods and procedural timelines applicable to your matters, including by maintaining your own independent records and calendars outside the Service. We do not guarantee that any reminder, notification or push alert will be delivered, delivered on time, or delivered at all — for reasons including network issues, device or OS settings, or app or server downtime — and LexxBridge is not liable for any missed hearing, deadline, limitation period, or other consequence resulting from a failure, delay, or absence of any in-app reminder or notification.",
@@ -194,20 +204,20 @@ export const TERMS_SECTIONS: LegalSection[] = [
     ],
   },
   {
-    heading: "11. Limitation of liability",
+    heading: "12. Limitation of liability",
     paragraphs: [
       "To the maximum extent permitted by applicable law, LexxBridge and its developers will not be liable for any indirect, incidental, special, consequential or exemplary damages, or for loss of data, profits, business or goodwill, or for any unauthorized access to, alteration of, or disclosure of Your Content — whether arising from breach of contract, tort, negligence or otherwise — arising from your use of the Service, even if we have been advised of the possibility of such damages. This limitation does not apply to damages caused by our own gross negligence or willful misconduct, or to any liability that cannot be limited or excluded under applicable law.",
       "Without limiting the foregoing, and to the maximum extent permitted by applicable law, LexxBridge's total aggregate liability to you for all claims arising out of or relating to these Terms or the Service — whether in contract, tort or otherwise — shall not exceed the greater of (a) the total amount, if any, you paid us for the Service in the twelve (12) months immediately preceding the event giving rise to the claim, or (b) ₹5,000 (Indian Rupees five thousand).",
     ],
   },
   {
-    heading: "12. Indemnification",
+    heading: "13. Indemnification",
     paragraphs: [
       "You agree to indemnify and hold harmless LexxBridge, its developers and affiliates from any claim, demand, loss or damage (including reasonable legal fees) arising out of: (a) Your Content or your use of the Service; (b) your violation of these Terms or any applicable law or professional-conduct rule; (c) your violation of any confidentiality obligation you owe a client or other third party; or (d) unauthorized access to your account resulting from your failure to safeguard your credentials or device.",
     ],
   },
   {
-    heading: "13. Dispute resolution",
+    heading: "14. Dispute resolution",
     paragraphs: [
       "Before initiating any legal proceeding against LexxBridge, you agree to first contact us at " +
         SUPPORT_EMAIL +
@@ -216,18 +226,18 @@ export const TERMS_SECTIONS: LegalSection[] = [
     ],
   },
   {
-    heading: "14. Severability and entire agreement",
+    heading: "15. Severability and entire agreement",
     paragraphs: [
       "If any provision of these Terms is held invalid, illegal or unenforceable, that provision will be limited or eliminated to the minimum extent necessary so that the remaining provisions remain in full force and effect. Our failure to enforce any right or provision of these Terms is not a waiver of that right or provision.",
-      "These Terms, together with our Privacy Policy, constitute the entire agreement between you and LexxBridge regarding the Service, and supersede any prior or contemporaneous agreements, representations or understandings, written or oral, regarding the Service.",
+      "These Terms, together with our Privacy Policy and Refund & Cancellation Policy, constitute the entire agreement between you and LexxBridge regarding the Service, and supersede any prior or contemporaneous agreements, representations or understandings, written or oral, regarding the Service.",
     ],
   },
   {
-    heading: "15. Governing law",
+    heading: "16. Governing law",
     paragraphs: ["These Terms are governed by the laws of India, without regard to conflict-of-law principles."],
   },
   {
-    heading: "16. Contact us",
+    heading: "17. Contact us",
     paragraphs: [`${COMPANY_NAME}\nEmail: ${SUPPORT_EMAIL}`],
   },
 ];
@@ -258,6 +268,60 @@ export const DELETE_ACCOUNT_SECTIONS: LegalSection[] = [
     heading: "Partial deletion",
     paragraphs: [
       `If you'd like specific data deleted (e.g. a single client or case) without deleting your whole account, remove it directly in the app, or email us at ${SUPPORT_EMAIL} with what you'd like removed.`,
+    ],
+  },
+];
+
+export const REFUND_SECTIONS: LegalSection[] = [
+  {
+    heading: "1. Free trial",
+    paragraphs: [
+      "New accounts get 7 days with every feature unlocked. No card or UPI details are needed, and nothing is charged when the trial ends — unless you choose to subscribe, your account simply moves to the free plan (up to 5 clients).",
+    ],
+  },
+  {
+    heading: "2. The monthly plan",
+    paragraphs: [
+      "The monthly plan is billed in advance, once a month from the day you subscribe, and renews automatically until you cancel. Payments are processed by Razorpay using the UPI Autopay mandate or card you authorise. The price is shown on the Plan & Subscription page before you pay, in Indian Rupees and including applicable taxes unless stated otherwise.",
+    ],
+  },
+  {
+    heading: "3. Cancelling",
+    paragraphs: [
+      "You can cancel at any time from Profile → Plan & Subscription, on lexxbridge.app or in the app. Cancelling takes effect immediately: you won't be charged again, and everything stays unlocked until the end of the month you've already paid for. After that your account moves to the free plan. Nothing is deleted.",
+      "Revoking the Autopay mandate from your UPI or bank app also stops future charges; your account then moves to the free plan at the end of the paid month.",
+    ],
+  },
+  {
+    heading: "4. Refunds",
+    paragraphs: [
+      "Because you can cancel at any time and keep access until the end of the paid month, payments for a month that has already started are not refunded, including for days you didn't use.",
+      "We will refund a payment in full if you were charged more than once for the same month; you were charged after your cancellation took effect; you were charged because of a technical error on our side; or the paid features were unavailable for most of the month because of a fault on our side.",
+      `To request a refund, email ${SUPPORT_EMAIL} within 30 days of the charge, from your account's email address, with the date and amount (and the Razorpay payment ID from your receipt, if you have it). We'll reply within 7 working days. Approved refunds go back to the original payment method; your bank or card issuer usually takes 5–7 working days to show it.`,
+    ],
+  },
+  {
+    heading: "5. Failed payments",
+    paragraphs: [
+      "If a monthly payment fails, Razorpay may retry it over the next few days. If it still can't be collected, your account moves to the free plan. Your data stays, and you can subscribe again at any time.",
+    ],
+  },
+  {
+    heading: "6. Deleting your account",
+    paragraphs: [
+      "Deleting your account cancels your subscription automatically, so you won't be charged again. The rest of the month already paid for is not refunded.",
+    ],
+  },
+  {
+    heading: "7. Price changes",
+    paragraphs: [
+      "We'll email you at least 30 days before changing the price of your plan. The new price applies only from your next billing month after that notice, and you can cancel before then.",
+    ],
+  },
+  {
+    heading: "8. Contact us",
+    paragraphs: [
+      `${COMPANY_NAME}\nEmail: ${SUPPORT_EMAIL}`,
     ],
   },
 ];

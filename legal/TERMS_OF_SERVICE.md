@@ -1,6 +1,6 @@
 # Terms of Service
 
-**Last updated: 16 November 2026**
+**Last updated: 24 November 2026**
 
 These Terms of Service ("Terms") govern your use of the LexxBridge app and
 website (the "Service"), operated by **LexxBridge** ("LexxBridge", "we",
@@ -98,7 +98,36 @@ does not process, hold or transmit any actual money — it does not act as a
 payment processor, escrow agent, or party to any fee arrangement between
 you and your clients.
 
-## 7. Security, data loss and unauthorized access
+This section doesn't cover the LexxBridge subscription you may buy for your
+own account, which is described in section 7.
+
+## 7. Subscription plans and billing
+
+- **Free trial and free plan.** New accounts get a 7-day free trial with
+  every feature unlocked. No payment details are needed, and nothing is
+  charged automatically when the trial ends. After the trial, the free plan
+  allows up to 5 clients (archived clients included) and doesn't include
+  payment reminders or fee statements; your existing records stay available.
+  The monthly plan removes these limits. The current price is shown on the
+  Plan & Subscription page before you pay.
+- **Billing.** The monthly plan is billed in advance each month and renews
+  automatically until you cancel. Payments are collected by our payment
+  partner, Razorpay, through the UPI Autopay mandate or card you authorise.
+  Prices are in Indian Rupees and include applicable taxes unless stated
+  otherwise. LexxBridge never sees or stores your full card or UPI details.
+- **Cancellation and refunds.** You can cancel at any time from Profile →
+  Plan & Subscription. Cancelling stops future charges; you keep full access
+  until the end of the month already paid for, and your account then moves
+  to the free plan. Payments are not refundable except as set out in our
+  [Refund & Cancellation Policy](./REFUND_POLICY.md).
+- **Failed payments and changes.** If a renewal payment fails, Razorpay may
+  retry it; if it still fails, your account moves to the free plan and no
+  data is deleted. We may change the price or what a plan includes with at
+  least 30 days' notice. A price change applies to you only from your next
+  billing month after that notice, and you may cancel before it takes
+  effect.
+
+## 8. Security, data loss and unauthorized access
 
 We implement reasonable technical and organizational safeguards to protect
 the Service and Your Content — including encryption in transit and at
@@ -123,21 +152,23 @@ You are solely responsible for keeping your account credentials, device,
 and any biometric, PIN or pattern unlock secure, and for promptly
 notifying us if you suspect unauthorized access to your account.
 
-## 8. Availability and changes
+## 9. Availability and changes
 
 We aim to keep the Service available and reliable but do not guarantee
 uninterrupted access. We may modify, suspend or discontinue any part of the
 Service, and may update these Terms from time to time; continued use after
 an update means you accept the revised Terms.
 
-## 9. Termination
+## 10. Termination
 
 You may stop using the Service and delete your account at any time from
 Profile → Settings → Delete account, which permanently erases your data as
 described in our [Privacy Policy](./PRIVACY_POLICY.md). We may suspend or
-terminate accounts that violate these Terms.
+terminate accounts that violate these Terms. Deleting your account also
+cancels any active subscription, with no refund for the rest of the month
+already paid for.
 
-## 10. Disclaimers
+## 11. Disclaimers
 
 The Service is provided "as is" and "as available," without warranties of
 any kind, express or implied. LexxBridge is a practice-management tool,
@@ -166,7 +197,7 @@ their accuracy for billing, accounting, tax or any other purpose, and you
 remain solely responsible for independently verifying all amounts before
 relying on them or sharing them with a client.
 
-## 11. Limitation of liability
+## 12. Limitation of liability
 
 To the maximum extent permitted by applicable law, LexxBridge and its
 developers will not be liable for any indirect, incidental, special,
@@ -187,7 +218,7 @@ total amount, if any, you paid us for the Service in the twelve (12)
 months immediately preceding the event giving rise to the claim, or (b)
 **₹5,000 (Indian Rupees five thousand)**.
 
-## 12. Indemnification
+## 13. Indemnification
 
 You agree to indemnify and hold harmless LexxBridge, its developers and
 affiliates from any claim, demand, loss or damage (including reasonable
@@ -198,7 +229,7 @@ obligation you owe a client or other third party; or (d) unauthorized
 access to your account resulting from your failure to safeguard your
 credentials or device.
 
-## 13. Dispute resolution
+## 14. Dispute resolution
 
 Before initiating any legal proceeding against LexxBridge, you agree to
 first contact us at **deepomeshcreation@gmail.com** and give us a
@@ -215,7 +246,7 @@ award shall be final and binding on both parties. Nothing in this clause
 prevents either party from seeking urgent interim or injunctive relief
 from a court of competent jurisdiction.
 
-## 14. Severability and entire agreement
+## 15. Severability and entire agreement
 
 If any provision of these Terms is held invalid, illegal or unenforceable,
 that provision will be limited or eliminated to the minimum extent
@@ -223,17 +254,18 @@ necessary so that the remaining provisions remain in full force and
 effect. Our failure to enforce any right or provision of these Terms is
 not a waiver of that right or provision.
 
-These Terms, together with our Privacy Policy, constitute the entire
+These Terms, together with our Privacy Policy and Refund & Cancellation
+Policy, constitute the entire
 agreement between you and LexxBridge regarding the Service, and supersede
 any prior or contemporaneous agreements, representations or
 understandings, written or oral, regarding the Service.
 
-## 15. Governing law
+## 16. Governing law
 
 These Terms are governed by the laws of **India**, without regard to
 conflict-of-law principles.
 
-## 16. Contact us
+## 17. Contact us
 
 **LexxBridge**
 Email: **deepomeshcreation@gmail.com**

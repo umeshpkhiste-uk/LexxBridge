@@ -1,4 +1,4 @@
-import { useFocusEffect } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import { ActivityIndicator, Platform, Text, View } from "react-native";
 import { cancelSubscription, countMyClients, FREE_CLIENT_LIMIT, getMyPlan, getPlanPrice, MyPlan } from "@/features/subscription/api";
@@ -178,12 +178,23 @@ export default function SubscriptionScreen() {
             )}
           </View>
           <Text style={[typography.caption, { color: colors.textSecondary }]}>
-            Renews every month by UPI Autopay or card. Cancel anytime from this page.
+            Renews every month by UPI Autopay or card. Cancel anytime from this page.{" "}
+            <Text style={{ color: colors.brand, fontWeight: "600" }} onPress={() => router.push("/legal/refund")}>
+              Refund & Cancellation Policy
+            </Text>
           </Text>
         </View>
       ) : null}
 
       {plan.plan === "paid" && !cancelled ? <Button label="Cancel subscription" variant="secondary" onPress={cancel} loading={busy} /> : null}
+      {plan.plan === "paid" ? (
+        <Text
+          style={[typography.caption, { color: colors.brand, fontWeight: "600", textAlign: "center", marginTop: spacing.md }]}
+          onPress={() => router.push("/legal/refund")}
+        >
+          Refund & Cancellation Policy
+        </Text>
+      ) : null}
     </ScreenContainer>
   );
 }

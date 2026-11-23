@@ -5,7 +5,7 @@ import { supabase } from "@/shared/lib/supabase";
  * "Last updated" date. Bump this whenever either document changes
  * materially: every signed-in user is then asked to accept again (DPDP Act
  * §5(2)), and the acceptance is recorded in `user_consents` (§6(10)). */
-export const CURRENT_POLICY_VERSION = "2026-11-16";
+export const CURRENT_POLICY_VERSION = "2026-11-24";
 
 /** Stored in the sign-up request's user metadata, since there's no session
  * to write `user_consents` with until the email is confirmed — copied into

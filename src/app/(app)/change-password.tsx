@@ -4,8 +4,10 @@ import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Pressable, Text } from "react-native";
 import { z } from "zod";
-import { requestPasswordReset, updatePassword, verifyCurrentPassword } from "@/features/auth/api";
+import { requestPasswordReset, signOut, updatePassword, verifyCurrentPassword } from "@/features/auth/api";
 import { useAuth } from "@/features/auth/AuthProvider";
+import { forgetSavedLogin } from "@/features/biometric/biometric";
+import { clearDeviceNotifications, unregisterPushToken } from "@/features/notifications/device";
 import { alertMessage, confirmAlert } from "@/shared/lib/alert";
 import { Button } from "@/shared/ui/Button";
 import { ScreenContainer } from "@/shared/ui/ScreenContainer";
@@ -67,15 +69,18 @@ export default function ChangePasswordScreen() {
       return;
     }
 
-    // alertMessage has no way to run code once the user dismisses it — it
-    // always resolves to a single bare "OK" button — so confirmAlert is
-    // used directly here to navigate only once they've actually acknowledged
-    // the change, not the moment the alert is shown.
-    confirmAlert(
-      "Password updated",
-      "Use your new password next time you sign in. Any other device signed in to your account has been signed out.",
-      [{ text: "OK", onPress: () => router.replace("/(app)/(tabs)") }],
-    );
+    // Sign this device out too, so the next sign-in proves the new
+    // password. Done straight away rather than when the alert is dismissed,
+    // so closing the app on the alert can't leave the old session behind.
+    // Push is unregistered first (it needs the session), and any saved
+    // Face ID / PIN login is dropped — it would otherwise skip the new
+    // password. signOut() revokes every session, this one included.
+    await unregisterPushToken().catch(() => {});
+    await clearDeviceNotifications().catch(() => {});
+    await forgetSavedLogin().catch(() => {});
+    await signOut();
+    router.replace("/(auth)");
+    alertMessage("Password updated", "Sign in with your new password. Every device, including this one, has been signed out.");
   };
 
   const handleForgotPassword = () => {

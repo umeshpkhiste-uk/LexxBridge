@@ -202,7 +202,9 @@ also use.
   app currently calls `supabase.auth.updateUser({ email })`.
 - **No active-sessions list, device tracking, or new-device/suspicious-login detection.** A
   password change and Settings → Security's "Log out of all other devices" both revoke every
-  other session's refresh token (`signOutOtherSessions()` in `src/features/auth/api.ts`); each
+  other session's refresh token (`signOutOtherSessions()` in `src/features/auth/api.ts`) — an
+  in-app password change then signs the device it was made on out too, so the next sign-in
+  uses the new password (it also drops any saved Face ID / PIN login); each
   signed-in device re-checks its session every minute and whenever the app or tab comes back into
   view (`AuthProvider.tsx`), so a revoked device drops to sign-in within about a minute. But
   there's no UI listing what those sessions were, and nothing alerts on a new device signing in.

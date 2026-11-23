@@ -25,6 +25,7 @@ import { TagInput } from "@/shared/ui/TagInput";
 import { TextField } from "@/shared/ui/TextField";
 import { useTheme } from "@/shared/ui/theme";
 import { AdvocateProfile, EducationEntry, Gender, updateMyProfile, uploadProfilePhoto } from "./api";
+import { IMAGE_MAX_SIDE, shrinkImage } from "@/shared/lib/shrinkImage";
 
 const PRACTICE_AREA_IDEAS = [
   "Civil Litigation",
@@ -155,7 +156,8 @@ export function ProfileEditForm({ profile, email, submitLabel, secondaryLabel, o
     if (result.canceled || !result.assets?.[0]) return;
     setIsUploading(true);
     try {
-      setPhotoUrl(await uploadProfilePhoto(result.assets[0].uri, result.assets[0].mimeType));
+      const photo = await shrinkImage(result.assets[0], IMAGE_MAX_SIDE.avatar);
+      setPhotoUrl(await uploadProfilePhoto(photo.uri, photo.mimeType));
     } catch (err) {
       alertMessage("Couldn't upload photo", friendlyErrorMessage(err));
     } finally {

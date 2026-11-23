@@ -3,6 +3,7 @@ import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import { useTheme } from "@/shared/ui/theme";
+import { IMAGE_MAX_SIDE, shrinkImage } from "../lib/shrinkImage";
 
 export type PickedReceipt = { uri: string; mimeType: string };
 
@@ -58,7 +59,8 @@ export function ReceiptPicker({
       Alert.alert("Unsupported format", "Please upload a PNG or JPEG/JPG image, or take a new photo.");
       return;
     }
-    onChange({ uri: asset.uri, mimeType });
+    const photo = await shrinkImage({ ...asset, mimeType }, IMAGE_MAX_SIDE.receipt);
+    onChange({ uri: photo.uri, mimeType: photo.mimeType });
   };
 
   return (

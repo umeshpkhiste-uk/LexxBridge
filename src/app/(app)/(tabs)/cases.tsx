@@ -20,6 +20,7 @@ import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { TextField } from "@/shared/ui/TextField";
 import { HomeButton } from "@/shared/ui/HomeButton";
 import { useTheme } from "@/shared/ui/theme";
+import { IMAGE_MAX_SIDE, shrinkImage } from "@/shared/lib/shrinkImage";
 
 type ClientSection = { title: string; kind: "present" | "old"; data: ClientListItem[] };
 
@@ -101,7 +102,8 @@ export default function CasesScreen() {
     const asset = result.canceled ? null : result.assets[0];
     if (!asset) return;
     try {
-      await uploadClientPhoto(client, asset.uri, asset.mimeType ?? "image/jpeg");
+      const photo = await shrinkImage(asset, IMAGE_MAX_SIDE.avatar);
+      await uploadClientPhoto(client, photo.uri, photo.mimeType);
       load();
     } catch (err) {
       Alert.alert("Couldn't save photo", friendlyErrorMessage(err));

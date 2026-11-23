@@ -49,6 +49,7 @@ import { AppModal } from "@/shared/ui/AppModal";
 import { anchorFromEvent, ContextMenu, measureAnchor, MenuAnchor } from "@/shared/ui/ContextMenu";
 import { ErrorNotice } from "@/shared/ui/ErrorNotice";
 import { useTheme } from "@/shared/ui/theme";
+import { IMAGE_MAX_SIDE, shrinkImage } from "@/shared/lib/shrinkImage";
 
 const EDIT_WINDOW_MS = 15 * 60 * 1000;
 const DELETE_FOR_EVERYONE_WINDOW_MS = 24 * 60 * 60 * 1000;
@@ -276,11 +277,14 @@ export default function ChatScreen() {
     const result = source === "camera" ? await ImagePicker.launchCameraAsync(options) : await ImagePicker.launchImageLibraryAsync(options);
     const asset = result.canceled ? null : result.assets[0];
     if (!asset) return;
+    const photo = await shrinkImage(asset, IMAGE_MAX_SIDE.photo);
+    const shrunk = photo.uri !== asset.uri;
     setAttachment({
-      uri: asset.uri,
-      name: asset.fileName ?? `photo-${Date.now()}.jpg`,
-      mimeType: asset.mimeType ?? "image/jpeg",
-      size: asset.fileSize,
+      uri: photo.uri,
+      // Re-encoded photos are JPEG now, so the name follows suit.
+      name: shrunk ? `${(asset.fileName ?? `photo-${Date.now()}`).replace(/\.[^.]+$/, "")}.jpg` : (asset.fileName ?? `photo-${Date.now()}.jpg`),
+      mimeType: photo.mimeType,
+      size: shrunk ? undefined : asset.fileSize,
       kind: "image",
     });
     inputRef.current?.focus();

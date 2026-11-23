@@ -13,6 +13,7 @@ import { ScreenContainer } from "@/shared/ui/ScreenContainer";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { TextField } from "@/shared/ui/TextField";
 import { useTheme } from "@/shared/ui/theme";
+import { IMAGE_MAX_SIDE, shrinkImage } from "@/shared/lib/shrinkImage";
 
 /** New client, or — with ?id= — edit an existing client's details and photo. */
 export default function NewClientScreen() {
@@ -120,7 +121,7 @@ export default function NewClientScreen() {
     if (!permission.granted) return Alert.alert("Permission needed", "Allow photo access in Settings to add a client photo.");
     const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], allowsEditing: true, aspect: [1, 1], quality: 0.7 });
     const asset = result.canceled ? null : result.assets[0];
-    if (asset) setPhoto({ uri: asset.uri, mimeType: asset.mimeType ?? "image/jpeg" });
+    if (asset) setPhoto(await shrinkImage(asset, IMAGE_MAX_SIDE.avatar));
   };
 
   if (isEdit && !existing) {

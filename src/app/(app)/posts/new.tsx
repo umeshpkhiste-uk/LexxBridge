@@ -13,6 +13,7 @@ import { ErrorNotice } from "@/shared/ui/ErrorNotice";
 import { ScreenContainer } from "@/shared/ui/ScreenContainer";
 import { TextField } from "@/shared/ui/TextField";
 import { useTheme } from "@/shared/ui/theme";
+import { IMAGE_MAX_SIDE, shrinkImage } from "@/shared/lib/shrinkImage";
 
 export default function NewPostScreen() {
   const { colors, spacing, radius, typography } = useTheme();
@@ -60,7 +61,8 @@ export default function NewPostScreen() {
     const result = source === "camera" ? await ImagePicker.launchCameraAsync(options) : await ImagePicker.launchImageLibraryAsync(options);
     const asset = result.canceled ? null : result.assets?.[0];
     if (asset) {
-      setImage({ uri: asset.uri, mimeType: asset.mimeType });
+      const photo = await shrinkImage(asset, IMAGE_MAX_SIDE.photo);
+      setImage({ uri: photo.uri, mimeType: photo.mimeType });
       setVideo(null);
       setError(null);
     }

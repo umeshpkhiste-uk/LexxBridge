@@ -54,6 +54,7 @@ export default function AppLayout() {
         <Stack.Screen name="community/new" options={{ presentation: "modal", headerShown: true, title: "New community" }} />
         <Stack.Screen name="community/[id]" options={{ headerShown: true, title: "" }} />
         <Stack.Screen name="community/[id]/members" options={{ headerShown: true, title: "Members" }} />
+        <Stack.Screen name="subscription" options={{ headerShown: true, title: "Plan & Subscription" }} />
         <Stack.Screen name="posts/new" options={{ presentation: "modal", headerShown: true, title: "New post" }} />
         <Stack.Screen name="posts/[id]" options={{ headerShown: true, title: "" }} />
         <Stack.Screen name="messages/[id]" options={{ headerShown: true, title: "Chat" }} />

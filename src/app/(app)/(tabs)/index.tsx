@@ -25,6 +25,7 @@ import { ConversationSummary, listConversations } from "@/features/messaging/api
 import { OnlineDot } from "@/features/presence/OnlineDot";
 import { getMyProfile } from "@/features/profile/api";
 import { getPendingByCase } from "@/features/transactions/api";
+import { canUseMoneyTools } from "@/features/subscription/paywall";
 import { downloadCaseStatementPdf } from "@/features/transactions/shareStatement";
 import { alertMessage, confirmAlert } from "@/shared/lib/alert";
 import { friendlyErrorMessage } from "@/shared/lib/errors";
@@ -157,6 +158,7 @@ export default function HomeScreen() {
     router.push(dateIso ? `/(app)/(tabs)/calendar?date=${toDateParam(dateIso)}` : "/(app)/(tabs)/calendar");
 
   const downloadCaseStatement = async (c: CaseSummary) => {
+    if (!(await canUseMoneyTools())) return;
     try {
       await downloadCaseStatementPdf(c.id);
     } catch (err) {

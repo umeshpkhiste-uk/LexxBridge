@@ -107,7 +107,8 @@ test call — not an assumption. Re-run this before any production release.
 - [x] `.env` never committed — confirmed across full git history, not just the current tree
 - [x] No service-role key, Resend key, or other secret ever appears in any commit (full-history
       grep for JWT/AWS/Stripe/Slack/private-key patterns, clean)
-- [x] Service-role access confined to 3 narrowly-scoped Edge Functions, never shipped to a client
+- [x] Service-role access confined to 4 narrowly-scoped Edge Functions, never shipped to a client
+      (`razorpay-webhook` added for subscriptions: signature-verified, writes only `subscriptions`)
 - [x] `RESEND_API_KEY` and `INTERNAL_FUNCTION_SECRET` both live only as Edge Function
       secrets/Vault entries, set via the dashboard, never in source
 

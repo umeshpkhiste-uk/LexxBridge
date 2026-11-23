@@ -8,6 +8,7 @@ import { Client, getClient } from "@/features/clients/api";
 import { getMyProfile } from "@/features/profile/api";
 import { formatINR } from "@/shared/lib/format";
 import { friendlyErrorMessage } from "@/shared/lib/errors";
+import { canUseMoneyTools } from "@/features/subscription/paywall";
 import { SheetAction } from "@/shared/ui/ActionSheet";
 import { AppModal } from "@/shared/ui/AppModal";
 import { ContextMenu, measureAnchor, MenuAnchor } from "@/shared/ui/ContextMenu";
@@ -350,12 +351,13 @@ export function LedgerView({ clientId, caseId, variant = "screen" }: Props) {
                 </Pressable>
                 <Pressable
                   ref={heroShareButtonRef}
-                  onPress={() =>
+                  onPress={async () => {
+                    if (!(await canUseMoneyTools())) return;
                     measureAnchor(heroShareButtonRef, (anchor) => {
                       setSheetAnchor(anchor);
                       setSheet("sharePeriod");
-                    })
-                  }
+                    });
+                  }}
                   hitSlop={10}
                   accessibilityLabel="Share statement with client"
                 >
@@ -495,12 +497,13 @@ export function LedgerView({ clientId, caseId, variant = "screen" }: Props) {
                 </Pressable>
                 <Pressable
                   ref={cardShareButtonRef}
-                  onPress={() =>
+                  onPress={async () => {
+                    if (!(await canUseMoneyTools())) return;
                     measureAnchor(cardShareButtonRef, (anchor) => {
                       setSheetAnchor(anchor);
                       setSheet("sharePeriod");
-                    })
-                  }
+                    });
+                  }}
                   accessibilityLabel="Share statement with client"
                   style={({ pressed }) => [
                     styles.cardAction,

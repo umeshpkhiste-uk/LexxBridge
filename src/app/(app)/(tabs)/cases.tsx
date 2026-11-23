@@ -18,6 +18,7 @@ import { anchorFromEvent, ContextMenu, MenuAnchor } from "@/shared/ui/ContextMen
 import { ErrorNotice } from "@/shared/ui/ErrorNotice";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { TextField } from "@/shared/ui/TextField";
+import { canAddClient } from "@/features/subscription/paywall";
 import { HomeButton } from "@/shared/ui/HomeButton";
 import { useTheme } from "@/shared/ui/theme";
 import { IMAGE_MAX_SIDE, shrinkImage } from "@/shared/lib/shrinkImage";
@@ -117,7 +118,10 @@ export default function CasesScreen() {
           <Text style={[typography.title, { color: colors.textPrimary }]}>Cases</Text>
           <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.md }}>
             <Pressable
-              onPress={() => router.push(segment === "cases" ? "/(app)/cases/new" : "/(app)/clients/new")}
+              onPress={async () => {
+                if (segment === "cases") router.push("/(app)/cases/new");
+                else if (await canAddClient()) router.push("/(app)/clients/new");
+              }}
               hitSlop={10}
               accessibilityRole="button"
               accessibilityLabel={segment === "cases" ? "New case" : "New client"}

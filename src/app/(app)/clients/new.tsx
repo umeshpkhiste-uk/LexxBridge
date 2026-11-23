@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, Alert, Pressable, Text, View } from "react-native";
 import { Client, ClientType, createClientRecord, getClient, updateClient, uploadClientPhoto } from "@/features/clients/api";
 import { ClientAvatar } from "@/features/clients/ClientAvatar";
+import { isClientLimitError } from "@/features/subscription/api";
+import { showClientLimitPopup } from "@/features/subscription/paywall";
 import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { mobileError, normalizeIndianMobile } from "@/shared/lib/validation";
 import { Button } from "@/shared/ui/Button";
@@ -110,7 +112,8 @@ export default function NewClientScreen() {
       }
       router.replace(`/(app)/cases/new?clientId=${client.id}`);
     } catch (err) {
-      setError(friendlyErrorMessage(err));
+      if (isClientLimitError(err)) showClientLimitPopup();
+      else setError(friendlyErrorMessage(err));
     } finally {
       setIsSubmitting(false);
     }

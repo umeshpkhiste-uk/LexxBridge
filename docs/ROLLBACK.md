@@ -54,6 +54,13 @@ only by restoring a backup, so take a manual backup first (§6).
 Undo SQL for the recent migrations:
 
 ```sql
+-- 0086 subscriptions (also removes the free plan's client limit; payment records are lost —
+-- export the subscriptions table first)
+drop trigger if exists clients_free_plan_limit on public.clients;
+drop function if exists public.enforce_free_plan_client_limit();
+drop function if exists public.my_plan();
+drop table if exists public.subscriptions;
+
 -- 0085 rate limits (removes only the new limits; 0055/0056 stay)
 drop trigger if exists posts_rate_limit on public.posts;
 drop trigger if exists comments_rate_limit on public.comments;

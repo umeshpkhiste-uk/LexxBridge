@@ -2,6 +2,7 @@ import { getCase } from "@/features/cases/api";
 import { getClient } from "@/features/clients/api";
 import { Notifications } from "@/features/notifications/notificationsModule";
 import { getMyProfile } from "@/features/profile/api";
+import { canUseMoneyTools } from "@/features/subscription/paywall";
 import { getExpensePendingByCase, getPendingByCase } from "@/features/transactions/api";
 import { buildUpiPayLink, shareViaWhatsApp, upiIdFallbackLine } from "@/features/transactions/shareStatement";
 import { confirmAlert } from "@/shared/lib/alert";
@@ -57,6 +58,10 @@ function buildReminderMessage(opts: {
  * sent automatically, and never blocks the hearing save on failure. */
 export async function offerPaymentReminder(params: { caseId: string; hearingAt?: Date | null }): Promise<void> {
   try {
+    // Free plan: no offer (payment reminders are part of the monthly plan).
+    // Silent here — this piggybacks on every hearing save, so a "subscribe"
+    // popup each time would nag; the popup shows when they tap a statement.
+    if (!(await canUseMoneyTools({ silent: true }))) return;
     const [caseDetail, pendingByCase, expensePendingByCase] = await Promise.all([
       getCase(params.caseId),
       getPendingByCase(),
@@ -142,6 +147,8 @@ function dayOfTrigger(hearingAt: Date): Date {
 export async function syncPaymentReminders(enabled: boolean): Promise<void> {
   if (!Notifications) return;
   try {
+    // Free plan: treated as switched off, which also cancels any already scheduled.
+    if (enabled && !(await canUseMoneyTools({ silent: true }))) enabled = false;
     if (!enabled) {
       const scheduled = await Notifications.getAllScheduledNotificationsAsync();
       await Promise.all(

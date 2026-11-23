@@ -6,6 +6,7 @@ import { CaseDetail, getCase } from "@/features/cases/api";
 import { downloadCaseHandoverPdf } from "@/features/cases/caseHandover";
 import { CaseOverview } from "@/features/cases/CaseOverview";
 import { LedgerView } from "@/features/transactions/LedgerView";
+import { canUseMoneyTools } from "@/features/subscription/paywall";
 import { downloadCaseStatementPdf } from "@/features/transactions/shareStatement";
 import { useSwipeTabs } from "@/shared/hooks/useSwipeTabs";
 import { friendlyErrorMessage } from "@/shared/lib/errors";
@@ -58,6 +59,7 @@ export default function CaseDetailScreen() {
 
   const downloadStatement = async () => {
     if (isDownloading) return;
+    if (!(await canUseMoneyTools())) return;
     setIsDownloading(true);
     try {
       await downloadCaseStatementPdf(caseDetail.id);

@@ -55,9 +55,11 @@ what must always hold.
 
 - Never commit `.env`, API keys, or service-role credentials. Secrets live only as Edge Function
   environment variables or Supabase Vault entries, set via the dashboard.
-- Service-role access (which bypasses RLS) is confined to the three narrowly-scoped Edge Functions
-  that already use it (`send-push`, `send-feedback`, `send-account-notice`) — never shipped to a
-  client, never added to a fourth function without the same scrutiny.
+- Service-role access (which bypasses RLS) is confined to the four narrowly-scoped Edge Functions
+  that already use it (`send-push`, `send-feedback`, `send-account-notice`, `razorpay-webhook`) —
+  never shipped to a client, never added to a fifth function without the same scrutiny.
+  `razorpay-webhook` writes only `public.subscriptions`, and only after verifying Razorpay's
+  signature; the user-facing `razorpay-subscription` acts as the caller, never the service role.
 
 ## Documentation placement
 

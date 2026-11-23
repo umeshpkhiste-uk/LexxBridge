@@ -79,7 +79,7 @@ advocate accounts, confirm A cannot read B's private data") is automated and pas
 | Meeting management | ✅ | |
 | Client communication records | ✅ | Manual record system only, as the spec explicitly required (no WhatsApp/SMS scraping). |
 | Transactions & financial tracking | ✅ | Income/expense ledger, partial payments, per-case/per-client summaries, PDF receipts/statements. |
-| Invoices / payment gateway | 🔶 | Payment *tracking* is real; no payment gateway (Razorpay etc.) integrated — explicitly deferred per the original spec ("do not integrate a payment gateway in the first version"). |
+| Invoices / payment gateway | 🔶 | Payment *tracking* between advocate and client is real, with no gateway. LexxBridge's own monthly subscription uses Razorpay on the web — see [`SUBSCRIPTIONS.md`](SUBSCRIPTIONS.md). |
 | Document management | ✅ | Private Storage bucket, signed URLs only, categorized, never a public URL. |
 | Case timeline | ✅ | |
 | Task management | ✅ | |

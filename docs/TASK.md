@@ -39,7 +39,8 @@ a flagged gap in another doc before this file consolidated them.
 These were explicitly declined per the original spec's own instructions, not forgotten:
 
 - Payment gateway integration (Razorpay etc.) — tracking only, by design.
-- Subscription tiers (Free/Pro/Team/Enterprise) — "do not require monetization in v1."
+- Subscription tiers beyond the one monthly plan (Pro/Team/Enterprise). The monthly plan itself
+  is built — see [`SUBSCRIPTIONS.md`](SUBSCRIPTIONS.md); Google Play Billing for Android is next.
 - AI features (summaries, extraction, natural-language search) — "do not make AI the foundation
   of the first release."
 - Malware/virus scanning on uploads — files are never executed server-side, only downloaded/

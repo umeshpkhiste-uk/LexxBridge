@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { router, Tabs } from "expo-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { canAddClient } from "@/features/subscription/paywall";
 import { toDateParam } from "@/shared/lib/format";
 import { ActionSheet } from "@/shared/ui/ActionSheet";
 import { CenterFabTabBar } from "@/shared/ui/CenterFabTabBar";
@@ -30,7 +31,9 @@ export default function TabsLayout() {
               afterRoute: "cases",
               icon: "person-add-outline",
               label: t("tabs.newClient"),
-              onPress: () => router.push("/(app)/clients/new"),
+              onPress: async () => {
+                if (await canAddClient()) router.push("/(app)/clients/new");
+              },
             }}
             fabLabel="Quick actions"
             onFabPress={() => setQuickActionsOpen(true)}

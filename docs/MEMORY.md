@@ -56,6 +56,8 @@ Supabase project ref: `ujrosfflqevkytburevc` (used throughout migrations/Edge Fu
   open items.
 - `BREACH_RESPONSE.md` — the personal-data-breach runbook (DPDP Act §8(6)): deadlines, containment
   steps, notice templates, and the SQL for the incident register and notifying affected users.
+- `SUBSCRIPTIONS.md` — the 7-day trial, the free plan's 5-client limit, the Razorpay monthly
+  plan (web), and how to set up and test it.
 - `ROLLBACK.md` — what to do when a release breaks: Vercel instant rollback, undo SQL for recent
   migrations, Edge Function redeploys, and the `/api/health` endpoint to confirm recovery.
 - `docs/RULES.md` — hard rules, not lessons: git hygiene, architecture invariants (admin

@@ -9,6 +9,7 @@ import { signOutKeepingBiometric } from "@/features/biometric/biometric";
 import { syncCalendarReminders } from "@/features/notifications/device";
 import { OnlineDot } from "@/features/presence/OnlineDot";
 import { AdvocateProfile, getMyProfile, updateMyProfile } from "@/features/profile/api";
+import { getMyPlan, MyPlan } from "@/features/subscription/api";
 import { nameForLanguageCode } from "@/shared/i18n/languages";
 import { SettingsGroup, SettingsRow } from "@/shared/ui/SettingsGroup";
 import { HomeButton } from "@/shared/ui/HomeButton";
@@ -33,7 +34,14 @@ const visibilityLabel: Record<Visibility, string> = {
   private: "Private",
 };
 
-const comingSoon = (what: string) => () => alertMessage("Coming soon", `${what} arrive in a later phase.`);
+const planLabel = (p: MyPlan) =>
+  p.plan === "paid"
+    ? p.status === "cancelled"
+      ? "Monthly plan (cancelled)"
+      : "Monthly plan"
+    : p.plan === "trial"
+      ? `Free trial · ${Math.max(0, Math.ceil((new Date(p.trialEndsAt).getTime() - Date.now()) / 86_400_000))} days left`
+      : "Free plan · up to 5 clients";
 
 export default function ProfileScreen() {
   const { t, i18n } = useTranslation();
@@ -41,6 +49,7 @@ export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const { session } = useAuth();
   const [profile, setProfile] = useState<AdvocateProfile | null>(null);
+  const [plan, setPlan] = useState<MyPlan | null>(null);
   const [notificationsOn, setNotificationsOn] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -61,6 +70,9 @@ export default function ProfileScreen() {
         .finally(() => {
           if (isMounted) setIsLoading(false);
         });
+      getMyPlan()
+        .then((p) => isMounted && setPlan(p))
+        .catch(() => {});
       return () => {
         isMounted = false;
       };
@@ -161,8 +173,8 @@ export default function ProfileScreen() {
           <SettingsRow
             icon="card-outline"
             label="Plan & Subscription"
-            subtitle="Free plan"
-            onPress={comingSoon("Paid plans and subscription management")}
+            subtitle={plan ? planLabel(plan) : undefined}
+            onPress={() => router.push("/(app)/subscription")}
           />
         </SettingsGroup>
 

@@ -38,7 +38,6 @@ import {
 } from "@/features/network/api";
 import { Avatar, ConnectStatus, mutualLabel, PortraitAvatar, PostCard, withAdvPrefix } from "@/features/network/NetworkCards";
 import { SmallButton } from "@/features/network/SmallButton";
-import { CommunityTab } from "@/features/community/CommunityTab";
 import { FeedPost, listFeed, toggleReaction } from "@/features/posts/api";
 import { AdvocateProfile, getMyProfile } from "@/features/profile/api";
 import { alertMessage, confirmAlert } from "@/shared/lib/alert";
@@ -49,8 +48,11 @@ import { useSwipeTabs } from "@/shared/hooks/useSwipeTabs";
 import { HomeButton } from "@/shared/ui/HomeButton";
 import { useTheme } from "@/shared/ui/theme";
 
-type Segment = "feed" | "connections" | "messages" | "community";
-const SEGMENTS: Segment[] = ["feed", "connections", "messages", "community"];
+// Community is switched off until users ask for it — its screens
+// (src/app/(app)/community, src/features/community) and tables are kept,
+// so bringing it back is re-adding it here.
+type Segment = "feed" | "connections" | "messages";
+const SEGMENTS: Segment[] = ["feed", "connections", "messages"];
 
 export default function NetworkScreen() {
   const { colors, spacing, radius, typography } = useTheme();
@@ -445,7 +447,6 @@ export default function NetworkScreen() {
               { key: "feed", label: "Feed" },
               { key: "connections", label: incoming.length ? `Connections (${incoming.length})` : "Connections" },
               { key: "messages", label: unreadMessages ? `Messages (${unreadMessages})` : "Messages" },
-              { key: "community", label: "Community" },
             ]}
             value={segment}
             onChange={(key) => changeSegment(key as Segment)}
@@ -595,8 +596,6 @@ export default function NetworkScreen() {
                 </View>
               )}
             </>
-          ) : segment === "community" ? (
-            <CommunityTab />
           ) : conversations.length === 0 && connectionsWithoutChat.length === 0 ? (
             <View style={{ alignItems: "center", gap: spacing.sm, marginTop: spacing.xl, paddingHorizontal: spacing.lg }}>
               <View style={[styles.emptyIcon, { backgroundColor: colors.surfaceAlt }]}>

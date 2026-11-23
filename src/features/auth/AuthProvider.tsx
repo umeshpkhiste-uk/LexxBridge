@@ -1,6 +1,7 @@
 import type { Session } from "@supabase/supabase-js";
 import * as Linking from "expo-linking";
 import { createContext, PropsWithChildren, useContext, useEffect, useState } from "react";
+import { AppState } from "react-native";
 import { ensureConsentRecorded } from "@/features/legal/consent";
 import { consumeAuthDeepLink } from "@/shared/lib/authDeepLink";
 import { supabase } from "@/shared/lib/supabase";
@@ -27,6 +28,9 @@ type AuthContextValue = {
   markConsented: () => void;
 };
 
+/** How often a signed-in device re-checks that its session is still valid. */
+const SESSION_CHECK_MS = 60_000;
+
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: PropsWithChildren) {
@@ -51,6 +55,29 @@ export function AuthProvider({ children }: PropsWithChildren) {
     // Only re-run for a different user, not every token refresh.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
+  // Sign this device out as soon as its session is revoked elsewhere — a
+  // password change (updatePassword revokes every other session) or
+  // "sign out other devices". Revoking only stops the refresh token; the
+  // access token here would keep working for up to an hour. getUser() asks
+  // the auth server, which answers session_not_found for a revoked session,
+  // and supabase-js then clears it locally and fires SIGNED_OUT — the
+  // listener below sets session to null and the router shows sign-in.
+  // Network errors don't sign anyone out, so being offline is safe.
+  useEffect(() => {
+    if (!userId) return;
+    const verify = () => {
+      supabase.auth.getUser().catch(() => {});
+    };
+    const timer = setInterval(verify, SESSION_CHECK_MS);
+    const appState = AppState.addEventListener("change", (state) => {
+      if (state === "active") verify();
+    });
+    return () => {
+      clearInterval(timer);
+      appState.remove();
+    };
+  }, [userId]);
+
   const consentStatus = !userId || consent?.userId !== userId ? "checking" : consent.ok ? "ok" : "needed";
 
   useEffect(() => {

@@ -58,7 +58,9 @@ export async function signOut(): Promise<AuthResult> {
  * token can no longer renew a session, but an already-issued access token
  * on another device stays valid until it expires on its own (Supabase's
  * default JWT lifetime is 1 hour) — there's no way to invalidate an
- * already-issued access token from the client. */
+ * already-issued access token from the client. The app closes that gap
+ * itself: AuthProvider re-checks the session every minute and on focus, and
+ * a revoked device drops to the sign-in screen. */
 export async function signOutOtherSessions(): Promise<AuthResult> {
   const { error } = await supabase.auth.signOut({ scope: "others" });
   return { error: error?.message ?? null };

@@ -135,17 +135,6 @@ export async function updateClient(
   if (error) throw new Error(error.message);
 }
 
-export async function setClientArchived(id: string, isArchived: boolean): Promise<void> {
-  const { error } = await supabase.from("clients").update({ is_archived: isArchived }).eq("id", id);
-  if (error) throw new Error(error.message);
-
-  await supabase.rpc("log_audit_event", {
-    p_action: isArchived ? "client_archived" : "client_unarchived",
-    p_resource_type: "client",
-    p_resource_id: id,
-  });
-}
-
 /** Uploads a client photo into the advocate's private folder and links it,
  * replacing (and deleting) any previous photo. */
 export async function uploadClientPhoto(client: Pick<Client, "id" | "photo_path">, fileUri: string, mimeType = "image/jpeg"): Promise<string> {

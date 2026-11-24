@@ -24,16 +24,6 @@ export type Meeting = {
 const COLUMNS =
   "id, case_id, client_id, meeting_type, meeting_at, location, participants, discussion_notes, decisions, follow_up_actions";
 
-export async function listMeetingsForCase(caseId: string): Promise<Meeting[]> {
-  const { data, error } = await supabase
-    .from("meetings")
-    .select(COLUMNS)
-    .eq("case_id", caseId)
-    .order("meeting_at", { ascending: false });
-  if (error) throw new Error(error.message);
-  return data as Meeting[];
-}
-
 export async function createMeeting(input: {
   caseId?: string;
   clientId?: string;

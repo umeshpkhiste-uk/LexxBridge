@@ -18,14 +18,3 @@ export function fromDateOnly(value: string | null | undefined): Date | null {
   const match = value ? /^(\d{4})-(\d{2})-(\d{2})/.exec(value) : null;
   return match ? new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3])) : null;
 }
-
-export function formatDateTimeDisplay(iso: string): string {
-  return new Date(iso).toLocaleString("en-IN", {
-    timeZone: "Asia/Kolkata",
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
-}

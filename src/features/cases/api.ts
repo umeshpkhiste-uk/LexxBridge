@@ -149,11 +149,6 @@ export async function updateCase(
   if (error) throw new Error(error.message);
 }
 
-export async function setCaseArchived(id: string, isArchived: boolean): Promise<void> {
-  const { error } = await supabase.from("cases").update({ is_archived: isArchived }).eq("id", id);
-  if (error) throw new Error(error.message);
-}
-
 /** Marks a case as discontinued — the client has ended the engagement or
  * moved to another advocate, not a win/loss outcome. Also archives the case:
  * there's nothing more to do on it, same meaning is_archived already

@@ -661,7 +661,7 @@ export default function NetworkScreen() {
   );
 }
 
-/** Row-view alternative to ColleagueCard: avatar, name, mutual and follower
+/** Colleague row: avatar, name, mutual and follower
  * counts, and a compact connect action — no bio/specialty/tags. */
 function ColleagueRow({
   profile,

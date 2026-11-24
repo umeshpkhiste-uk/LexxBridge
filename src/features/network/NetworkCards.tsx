@@ -938,43 +938,6 @@ export function ConnectButton({ status, onPress, label }: { status: ConnectStatu
   );
 }
 
-/** Colleague card for the Discover carousel / grid. */
-export function ColleagueCard({
-  profile,
-  status,
-  onConnect,
-  mutualCount,
-  width,
-}: {
-  profile: PublicProfile;
-  status: ConnectStatus;
-  onConnect: () => void;
-  mutualCount?: number;
-  width?: number;
-}) {
-  const { colors, spacing, radius, typography } = useTheme();
-  const mutual = mutualLabel(mutualCount);
-
-  return (
-    <Pressable
-      onPress={() => router.push(`/(app)/network/${profile.id}`)}
-      style={[
-        styles.card,
-        styles.colleague,
-        { width, backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.md, paddingTop: spacing.lg },
-      ]}
-    >
-      <AdvocateIdentity profile={profile} />
-      <View style={{ marginTop: spacing.md }}>
-        {mutual ? (
-          <Text style={[typography.label, { color: colors.textSecondary, textAlign: "center", marginBottom: spacing.sm }]}>{mutual}</Text>
-        ) : null}
-        <ConnectButton status={status} onPress={status === "none" ? onConnect : () => router.push(`/(app)/network/${profile.id}`)} />
-      </View>
-    </Pressable>
-  );
-}
-
 const styles = StyleSheet.create({
   card: {
     shadowColor: "#0F172A",
@@ -1017,7 +980,6 @@ const styles = StyleSheet.create({
   avatarStack: { flexDirection: "row" },
   avatarStackItem: { marginLeft: -10, borderWidth: 2 },
   threadSummary: { flexDirection: "row", alignItems: "center", gap: 8 },
-  colleague: { justifyContent: "space-between" },
   tags: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: 4 },
   tag: { paddingHorizontal: 10, paddingVertical: 4, maxWidth: 150 },
   connectButton: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, height: 46 },

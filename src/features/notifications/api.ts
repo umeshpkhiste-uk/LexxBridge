@@ -20,15 +20,6 @@ export async function listNotifications(): Promise<NotificationRow[]> {
   return data as NotificationRow[];
 }
 
-export async function getUnreadCount(): Promise<number> {
-  const { count, error } = await supabase
-    .from("notifications")
-    .select("id", { count: "exact", head: true })
-    .eq("is_read", false);
-  if (error) throw new Error(error.message);
-  return count ?? 0;
-}
-
 export async function markNotificationRead(id: string): Promise<void> {
   const { error } = await supabase.from("notifications").update({ is_read: true }).eq("id", id);
   if (error) throw new Error(error.message);

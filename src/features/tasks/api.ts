@@ -16,16 +16,6 @@ export type Task = {
 
 const COLUMNS = "id, case_id, client_id, title, description, due_at, priority, status";
 
-export async function listTasksForCase(caseId: string): Promise<Task[]> {
-  const { data, error } = await supabase
-    .from("tasks")
-    .select(COLUMNS)
-    .eq("case_id", caseId)
-    .order("due_at", { ascending: true, nullsFirst: false });
-  if (error) throw new Error(error.message);
-  return data as Task[];
-}
-
 export async function listPendingTasks(): Promise<Task[]> {
   const { data, error } = await supabase
     .from("tasks")

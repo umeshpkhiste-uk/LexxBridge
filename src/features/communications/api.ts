@@ -14,16 +14,6 @@ export type Communication = {
 
 const COLUMNS = "id, client_id, case_id, communication_type, occurred_at, summary, follow_up";
 
-export async function listCommunicationsForCase(caseId: string): Promise<Communication[]> {
-  const { data, error } = await supabase
-    .from("communications")
-    .select(COLUMNS)
-    .eq("case_id", caseId)
-    .order("occurred_at", { ascending: false });
-  if (error) throw new Error(error.message);
-  return data as Communication[];
-}
-
 export async function createCommunication(input: {
   clientId: string;
   caseId?: string;

@@ -193,41 +193,6 @@ export async function getReceiptUrl(path: string): Promise<string> {
   return data.signedUrl;
 }
 
-export type CaseFinancialSummary = {
-  case_id: string;
-  total_received: number;
-  total_pending: number;
-  total_expenses: number;
-  net_amount: number;
-};
-
-export async function getCaseFinancialSummary(caseId: string): Promise<CaseFinancialSummary | null> {
-  const { data, error } = await supabase
-    .from("case_financial_summary")
-    .select("case_id, total_received, total_pending, total_expenses, net_amount")
-    .eq("case_id", caseId)
-    .maybeSingle();
-  if (error) throw new Error(error.message);
-  return data as CaseFinancialSummary | null;
-}
-
-export type ClientFinancialSummary = {
-  client_id: string;
-  total_received: number;
-  outstanding_amount: number;
-  total_expenses: number;
-};
-
-export async function getClientFinancialSummary(clientId: string): Promise<ClientFinancialSummary | null> {
-  const { data, error } = await supabase
-    .from("client_financial_summary")
-    .select("client_id, total_received, outstanding_amount, total_expenses")
-    .eq("client_id", clientId)
-    .maybeSingle();
-  if (error) throw new Error(error.message);
-  return data as ClientFinancialSummary | null;
-}
-
 /** Pending (unpaid) income per case, keyed by case id — for showing dues on
  * case cards without opening each case. `case_financial_summary.total_pending`
  * folds in expenses, but the card (and the Ledger tab's "Pending" figure)
@@ -254,60 +219,6 @@ export async function getExpensePendingByCase(): Promise<Record<string, number>>
   const { data, error } = await supabase.from("case_financial_summary").select("case_id, total_expenses").gt("total_expenses", 0);
   if (error) throw new Error(error.message);
   return Object.fromEntries((data as { case_id: string; total_expenses: number }[]).map((r) => [r.case_id, Number(r.total_expenses)]));
-}
-
-export type ClientDue = { client_id: string; full_name: string; outstanding: number; received: number };
-
-/** Clients who owe money, largest balance first. */
-export async function listClientDues(): Promise<ClientDue[]> {
-  const { data, error } = await supabase
-    .from("client_financial_summary")
-    .select("client_id, total_received, outstanding_amount")
-    .gt("outstanding_amount", 0)
-    .order("outstanding_amount", { ascending: false });
-  if (error) throw new Error(error.message);
-  const rows = data as { client_id: string; total_received: number; outstanding_amount: number }[];
-  if (rows.length === 0) return [];
-
-  const { data: clients, error: clientsError } = await supabase
-    .from("clients")
-    .select("id, full_name")
-    .in("id", rows.map((r) => r.client_id));
-  if (clientsError) throw new Error(clientsError.message);
-  const names = new Map((clients as { id: string; full_name: string }[]).map((c) => [c.id, c.full_name]));
-
-  return rows.map((r) => ({
-    client_id: r.client_id,
-    full_name: names.get(r.client_id) ?? "Client",
-    outstanding: Number(r.outstanding_amount),
-    received: Number(r.total_received),
-  }));
-}
-
-export async function getTotalOutstanding(): Promise<number> {
-  const { data, error } = await supabase
-    .from("transactions")
-    .select("amount")
-    .eq("type", "income")
-    .eq("status", "pending");
-  if (error) throw new Error(error.message);
-  return (data as { amount: number }[]).reduce((sum, t) => sum + Number(t.amount), 0);
-}
-
-export type PendingPayment = Transaction & {
-  cases: { title: string } | null;
-  clients: { full_name: string } | null;
-};
-
-export async function listPendingPayments(): Promise<PendingPayment[]> {
-  const { data, error } = await supabase
-    .from("transactions")
-    .select(`${COLUMNS}, cases(title), clients(full_name)`)
-    .eq("type", "income")
-    .eq("status", "pending")
-    .order("transaction_date", { ascending: true });
-  if (error) throw new Error(error.message);
-  return data as unknown as PendingPayment[];
 }
 
 /**

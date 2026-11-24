@@ -77,16 +77,14 @@ Reuse these; don't build a one-off styled component for something this list alre
 | `Button` | Primary/secondary/ghost variants, loading state, optional `pill` shape (auth CTAs only) |
 | `TextField`, `SelectField`, `DateField`, `TagInput` | Form inputs, theme-driven border/background |
 | `ScreenContainer` | Safe-area + keyboard-avoiding screen wrapper; `scroll` prop toggles a `ScrollView`; skips the top inset automatically when a nav header is already shown |
-| `ListRow` | Standard row layout (icon/text/accessory) used across settings, lists, directories |
 | `SettingsGroup` | Grouped-rows card, used for every Settings-style screen |
 | `Badge`, `Chip` | Status/tag pills (verification status, block reason, etc.) |
 | `ActionSheet` | Bottom action sheet (native) / fallback presentation on web |
 | `SegmentedControl` | Tab-style in-screen switch (e.g. Cases/Network sub-tabs) |
 | `DonutChart` | Ledger/financial summary visualization |
-| `Fab`, `CenterFabTabBar` | Floating action button and the center-FAB bottom tab bar |
+| `CenterFabTabBar` | The center-FAB bottom tab bar |
 | `HeaderBackButton`, `HomeButton` | Navigation header accessories |
 | `AppLogo` | The LexxBridge mark, used on auth screens and splash |
-| `ComingSoon` | Placeholder screen for not-yet-built features — never silently blank-screen a route |
 | `WebAlertHost` | Web-only `Alert`/`confirmAlert` replacement, since native `Alert` doesn't exist on web |
 | `appFrame.tsx` | Shared outer frame (width constraint, background) applied on web so the app doesn't stretch edge-to-edge on wide viewports |
 

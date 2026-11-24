@@ -7,6 +7,7 @@ import { AgendaItem, listAgendaItems } from "@/features/calendar/api";
 import { DayAgenda } from "@/features/calendar/DayAgenda";
 import { MonthCalendar, startOfDay } from "@/features/calendar/MonthCalendar";
 import { fromDateParam } from "@/shared/lib/format";
+import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { useTheme } from "@/shared/ui/theme";
 
 
@@ -16,6 +17,7 @@ export default function CalendarScreen() {
   const [visibleMonth, setVisibleMonth] = useState(() => new Date(new Date().getFullYear(), new Date().getMonth(), 1));
   const [monthItems, setMonthItems] = useState<AgendaItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Other screens link here as /calendar?date=YYYY-MM-DD to jump to a day
   // (e.g. a case's next hearing). Sync during render when the param changes.
@@ -32,11 +34,12 @@ export default function CalendarScreen() {
 
   const load = useCallback(() => {
     setIsLoading(true);
+    setError(null);
     const from = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), 1);
     const to = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1, 0, 23, 59, 59, 999);
     listAgendaItems({ from, to })
       .then(setMonthItems)
-      .catch((err) => console.warn("Calendar: failed to load agenda", err))
+      .catch((err) => setError(friendlyErrorMessage(err)))
       .finally(() => setIsLoading(false));
   }, [visibleMonth]);
 
@@ -83,7 +86,7 @@ export default function CalendarScreen() {
           }}
         />
 
-        <DayAgenda selectedDate={selectedDate} items={monthItems} isLoading={isLoading} />
+        <DayAgenda selectedDate={selectedDate} items={monthItems} isLoading={isLoading} error={error} onRetry={load} />
       </ScrollView>
     </SafeAreaView>
   );

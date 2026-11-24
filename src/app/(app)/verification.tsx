@@ -1,6 +1,6 @@
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
-import { ActivityIndicator, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import { getMyProfile } from "@/features/profile/api";
 import { getMyVerification, submitVerificationRequest, VerificationStatus } from "@/features/verification/api";
 import { alertMessage } from "@/shared/lib/alert";
@@ -8,11 +8,11 @@ import { STATE_NAMES } from "@/shared/data/indiaLocations";
 import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { Badge } from "@/shared/ui/Badge";
 import { Button } from "@/shared/ui/Button";
-import { ErrorNotice } from "@/shared/ui/ErrorNotice";
 import { PickedReceipt, ReceiptPicker } from "@/shared/ui/ReceiptPicker";
 import { ScreenContainer } from "@/shared/ui/ScreenContainer";
 import { SelectField } from "@/shared/ui/SelectField";
 import { TextField } from "@/shared/ui/TextField";
+import { LoadState } from "@/shared/ui/LoadState";
 import { useTheme } from "@/shared/ui/theme";
 
 const STATUS_COPY: Record<VerificationStatus, { label: string; tone: "neutral" | "warning" | "success" | "danger" }> = {
@@ -36,6 +36,7 @@ export default function VerificationScreen() {
 
   const load = useCallback(() => {
     setLoading(true);
+    setError(null);
     Promise.all([getMyVerification(), getMyProfile()])
       .then(([v, profile]) => {
         setStatus(v.status);
@@ -74,18 +75,17 @@ export default function VerificationScreen() {
     }
   };
 
-  if (loading) {
+  // Not the form: its blank fields would look like nothing was ever submitted.
+  if (loading || error) {
     return (
       <ScreenContainer style={{ alignItems: "center", justifyContent: "center" }}>
-        <ActivityIndicator color={colors.brand} />
+        <LoadState error={error} onRetry={load} />
       </ScreenContainer>
     );
   }
 
   return (
     <ScreenContainer scroll>
-      {error ? <ErrorNotice message={error} style={{ marginBottom: spacing.md }} /> : null}
-
       {status ? (
         <View style={{ marginBottom: spacing.lg }}>
           <Badge label={STATUS_COPY[status].label} tone={STATUS_COPY[status].tone} />

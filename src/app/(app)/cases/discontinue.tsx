@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Text } from "react-native";
 import { downloadCaseHandoverPdf } from "@/features/cases/caseHandover";
 import { markCaseDiscontinued } from "@/features/cases/api";
-import { confirmAlert } from "@/shared/lib/alert";
+import { alertMessage, confirmAlert } from "@/shared/lib/alert";
 import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { Button } from "@/shared/ui/Button";
 import { ErrorNotice } from "@/shared/ui/ErrorNotice";
@@ -39,7 +39,9 @@ export default function DiscontinueCaseScreen() {
                 {
                   text: "Share summary",
                   onPress: async () => {
-                    await downloadCaseHandoverPdf(caseId).catch(() => {});
+                    await downloadCaseHandoverPdf(caseId).catch((err) =>
+                      alertMessage("Couldn't share case summary", friendlyErrorMessage(err)),
+                    );
                     router.back();
                   },
                 },

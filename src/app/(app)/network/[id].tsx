@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Alert, Linking, Pressable, StyleSheet, Text, View } from "react-native";
+import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
 import { blockAdvocate, isBlocked, unblockAdvocate } from "@/features/blocking/api";
 import { getOrCreateConversation } from "@/features/messaging/api";
 import {
@@ -21,8 +21,10 @@ import {
 } from "@/features/network/api";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { AdvocateIdentity, ConnectButton, mutualLabel } from "@/features/network/NetworkCards";
-import { friendlyErrorMessage } from "@/shared/lib/errors";
+import { friendlyErrorMessage, NETWORK_ERROR_MESSAGE } from "@/shared/lib/errors";
 import { ScreenContainer } from "@/shared/ui/ScreenContainer";
+import { alertMessage, confirmAlert } from "@/shared/lib/alert";
+import { LoadState } from "@/shared/ui/LoadState";
 import { useTheme } from "@/shared/ui/theme";
 
 export default function PublicProfileScreen() {
@@ -38,6 +40,7 @@ export default function PublicProfileScreen() {
   const [blocked, setBlocked] = useState(false);
   const [mutualCount, setMutualCount] = useState<number | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [isActing, setIsActing] = useState(false);
   // `isActing`-driven pointerEvents only takes effect after a re-render, so
   // a fast double-tap can fire an onPress twice before that commits (seen
@@ -54,6 +57,7 @@ export default function PublicProfileScreen() {
   const load = useCallback(() => {
     if (isMe) return;
     setIsLoading(true);
+    setError(null);
     getMutualConnectionCounts([id])
       .then((counts) => setMutualCount(counts[id] ?? 0))
       .catch(() => {});
@@ -66,8 +70,13 @@ export default function PublicProfileScreen() {
         setBlocked(blockedData);
       })
       // Hidden, private or deleted profiles come back empty — show the
-      // "not available" state rather than an unhandled error.
-      .catch(() => setProfile(null))
+      // "not available" state for those, and the error screen only when the
+      // network failed.
+      .catch((err) => {
+        setProfile(null);
+        const message = friendlyErrorMessage(err);
+        if (message === NETWORK_ERROR_MESSAGE) setError(message);
+      })
       .finally(() => setIsLoading(false));
   }, [id, isMe]);
 
@@ -86,6 +95,8 @@ export default function PublicProfileScreen() {
       else await followAdvocate(id);
       setFollowing(!following);
       getNetworkStats(id).then(setStats).catch(() => {});
+    } catch (err) {
+      alertMessage("Couldn't update", friendlyErrorMessage(err));
     } finally {
       isActingRef.current = false;
       setIsActing(false);
@@ -99,6 +110,8 @@ export default function PublicProfileScreen() {
     try {
       await sendConnectionRequest(id);
       load();
+    } catch (err) {
+      alertMessage("Couldn't update", friendlyErrorMessage(err));
     } finally {
       isActingRef.current = false;
       setIsActing(false);
@@ -112,6 +125,8 @@ export default function PublicProfileScreen() {
     try {
       await respondToConnection(connection.connectionId, true);
       load();
+    } catch (err) {
+      alertMessage("Couldn't update", friendlyErrorMessage(err));
     } finally {
       isActingRef.current = false;
       setIsActing(false);
@@ -125,6 +140,8 @@ export default function PublicProfileScreen() {
     try {
       await removeConnection(connection.connectionId);
       load();
+    } catch (err) {
+      alertMessage("Couldn't update", friendlyErrorMessage(err));
     } finally {
       isActingRef.current = false;
       setIsActing(false);
@@ -139,7 +156,7 @@ export default function PublicProfileScreen() {
       const conversationId = await getOrCreateConversation(id);
       router.push(`/(app)/messages/${conversationId}`);
     } catch (err) {
-      Alert.alert("Couldn't start conversation", friendlyErrorMessage(err));
+      alertMessage("Couldn't start conversation", friendlyErrorMessage(err));
     } finally {
       isActingRef.current = false;
       setIsActing(false);
@@ -147,7 +164,7 @@ export default function PublicProfileScreen() {
   };
 
   const handleToggleBlock = () => {
-    Alert.alert(
+    confirmAlert(
       blocked ? "Unblock this advocate" : "Block this advocate",
       blocked ? "They'll be able to follow, connect, and message you again." : "They won't be able to follow, connect, or message you.",
       [
@@ -163,6 +180,8 @@ export default function PublicProfileScreen() {
               if (blocked) await unblockAdvocate(id);
               else await blockAdvocate(id);
               load();
+            } catch (err) {
+              alertMessage("Couldn't update", friendlyErrorMessage(err));
             } finally {
               isActingRef.current = false;
               setIsActing(false);
@@ -177,10 +196,10 @@ export default function PublicProfileScreen() {
     router.push(`/(app)/reports/new?targetType=advocate&targetId=${id}&label=advocate`);
   };
 
-  if (isLoading) {
+  if (isLoading || error) {
     return (
-      <ScreenContainer style={{ alignItems: "center", justifyContent: "center" }}>
-        <ActivityIndicator color={colors.brand} />
+      <ScreenContainer>
+        <LoadState error={error} onRetry={load} />
       </ScreenContainer>
     );
   }
@@ -208,7 +227,7 @@ export default function PublicProfileScreen() {
           : { label: "Connected", onPress: handleRemoveOrCancel, status: "accepted" as const };
 
   const confirmRemove = () =>
-    Alert.alert("Remove connection", `Remove ${profile.full_name} from your connections?`, [
+    confirmAlert("Remove connection", `Remove ${profile.full_name} from your connections?`, [
       { text: "Cancel", style: "cancel" },
       { text: "Remove", style: "destructive", onPress: handleRemoveOrCancel },
     ]);

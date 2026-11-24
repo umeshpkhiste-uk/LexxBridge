@@ -1,6 +1,6 @@
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
-import { ActivityIndicator, Platform, Text, View } from "react-native";
+import { Platform, Text, View } from "react-native";
 import { cancelSubscription, countMyClients, FREE_CLIENT_LIMIT, getMyPlan, getPlanPrice, MyPlan } from "@/features/subscription/api";
 import { openCheckout } from "@/features/subscription/checkout";
 import { alertMessage, confirmAlert } from "@/shared/lib/alert";
@@ -9,6 +9,8 @@ import { Badge } from "@/shared/ui/Badge";
 import { Button } from "@/shared/ui/Button";
 import { ErrorNotice } from "@/shared/ui/ErrorNotice";
 import { ScreenContainer } from "@/shared/ui/ScreenContainer";
+import { friendlyErrorMessage } from "@/shared/lib/errors";
+import { LoadState } from "@/shared/ui/LoadState";
 import { useTheme } from "@/shared/ui/theme";
 
 const formatDay = (iso: string) => new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
@@ -39,8 +41,8 @@ export default function SubscriptionScreen() {
       setClientCount(count);
       setError(null);
       return p;
-    } catch {
-      setError("Couldn't load your plan. Please try again.");
+    } catch (err) {
+      setError(friendlyErrorMessage(err));
       return null;
     }
   }, []);
@@ -72,7 +74,7 @@ export default function SubscriptionScreen() {
       }
       alertMessage("Payment received", "Your subscription is being activated — this can take a minute. Check this page again shortly.");
     } catch (err) {
-      alertMessage("Couldn't subscribe", err instanceof Error ? err.message : "Please try again.");
+      alertMessage("Couldn't subscribe", friendlyErrorMessage(err));
     } finally {
       setBusy(false);
       setActivating(false);
@@ -101,7 +103,7 @@ export default function SubscriptionScreen() {
                 await new Promise((r) => setTimeout(r, 2000));
               }
             } catch (err) {
-              alertMessage("Couldn't cancel", err instanceof Error ? err.message : "Please try again.");
+              alertMessage("Couldn't cancel", friendlyErrorMessage(err));
             } finally {
               setBusy(false);
             }
@@ -114,7 +116,13 @@ export default function SubscriptionScreen() {
   if (!plan) {
     return (
       <ScreenContainer style={{ alignItems: "center", justifyContent: "center" }}>
-        {error ? <ErrorNotice message={error} /> : <ActivityIndicator color={colors.brand} />}
+        <LoadState
+          error={error}
+          onRetry={() => {
+            setError(null);
+            load();
+          }}
+        />
       </ScreenContainer>
     );
   }

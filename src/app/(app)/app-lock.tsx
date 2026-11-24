@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { clearAppLock, getAppLockInfo, setAppLock, verifyAppLock } from "@/features/applock/appLock";
 import { PatternGrid } from "@/features/applock/PatternGrid";
 import { PinPad } from "@/features/applock/PinPad";
@@ -10,6 +10,8 @@ import { useAuth } from "@/features/auth/AuthProvider";
 import { alertMessage } from "@/shared/lib/alert";
 import { Button } from "@/shared/ui/Button";
 import { SettingsGroup, SettingsRow } from "@/shared/ui/SettingsGroup";
+import { friendlyErrorMessage } from "@/shared/lib/errors";
+import { LoadState } from "@/shared/ui/LoadState";
 import { useTheme } from "@/shared/ui/theme";
 
 type Step =
@@ -25,12 +27,22 @@ export default function AppLockScreen() {
   const userId = session?.user.id ?? null;
   const [current, setCurrent] = useState<{ method: LockMethod; pinLength?: number } | null | undefined>(undefined);
   const [step, setStep] = useState<Step>({ kind: "menu" });
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
   const [pin, setPin] = useState("");
   const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    if (userId) getAppLockInfo(userId).then(setCurrent);
-  }, [userId]);
+    if (!userId) return;
+    getAppLockInfo(userId)
+      .then(setCurrent)
+      .catch((err) => setLoadError(friendlyErrorMessage(err)));
+  }, [userId, attempt]);
+
+  const retryLoad = () => {
+    setLoadError(null);
+    setAttempt((n) => n + 1);
+  };
 
   const go = (next: Step) => {
     setStep(next);
@@ -88,7 +100,7 @@ export default function AppLockScreen() {
   if (current === undefined) {
     return (
       <View style={[styles.center, { backgroundColor: colors.background }]}>
-        <ActivityIndicator color={colors.brand} />
+        <LoadState error={loadError} onRetry={retryLoad} />
       </View>
     );
   }

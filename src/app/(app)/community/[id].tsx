@@ -23,6 +23,7 @@ import { supabase } from "@/shared/lib/supabase";
 import { SheetAction } from "@/shared/ui/ActionSheet";
 import { anchorFromEvent, ContextMenu, MenuAnchor } from "@/shared/ui/ContextMenu";
 import { ErrorNotice } from "@/shared/ui/ErrorNotice";
+import { LoadState } from "@/shared/ui/LoadState";
 import { useTheme } from "@/shared/ui/theme";
 
 function timeLabel(iso: string) {
@@ -50,6 +51,7 @@ export default function CommunityChatScreen() {
   const [draft, setDraft] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isLoaded, setIsLoaded] = useState(false);
   const [replyTo, setReplyTo] = useState<CommunityMessage | null>(null);
   const [editing, setEditing] = useState<CommunityMessage | null>(null);
   const [menu, setMenu] = useState<{ anchor: MenuAnchor; title: string; actions: SheetAction[] } | null>(null);
@@ -67,10 +69,12 @@ export default function CommunityChatScreen() {
   const load = useCallback(() => {
     getCommunity(id)
       .then(async (c) => {
+        setError(null);
         setCommunity(c);
         const [memberList, messageList] = await Promise.all([listCommunityMembers(c), listCommunityMessages(c.id)]);
         setMembers(memberList);
         setMessages(messageList);
+        setIsLoaded(true);
       })
       .catch((err) => setError(friendlyErrorMessage(err)));
   }, [id]);
@@ -182,6 +186,21 @@ export default function CommunityChatScreen() {
   };
 
   const canSend = !!draft.trim();
+
+  if (!isLoaded) {
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
+        <Stack.Screen options={{ title: community?.name ?? "Community" }} />
+        <LoadState
+          error={error}
+          onRetry={() => {
+            setError(null);
+            load();
+          }}
+        />
+      </View>
+    );
+  }
 
   return (
     <KeyboardAvoidingView style={{ flex: 1, backgroundColor: colors.background }} behavior={Platform.OS === "ios" ? "padding" : undefined} keyboardVerticalOffset={headerHeight}>

@@ -4,9 +4,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, TextInput, View, type TextInputInstance } from "react-native";
 import { createTask, deleteTask, listPendingTasks, listTasksForDate, renameTask, Task, updateTaskStatus } from "@/features/tasks/api";
 import { TaskMonthCalendar } from "@/features/tasks/TaskMonthCalendar";
-import { confirmAlert } from "@/shared/lib/alert";
+import { alertMessage, confirmAlert } from "@/shared/lib/alert";
 import { fromDateParam, toDateParam } from "@/shared/lib/format";
 import { ScreenContainer } from "@/shared/ui/ScreenContainer";
+import { friendlyErrorMessage } from "@/shared/lib/errors";
+import { LoadState } from "@/shared/ui/LoadState";
 import { useTheme } from "@/shared/ui/theme";
 
 /** A single day's to-do list — the planner-style card from the mockup:
@@ -19,6 +21,7 @@ export default function TodoDayScreen() {
 
   const [items, setItems] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [newTitle, setNewTitle] = useState("");
   const [isAdding, setIsAdding] = useState(false);
   const [pendingTasks, setPendingTasks] = useState<Task[]>([]);
@@ -28,9 +31,10 @@ export default function TodoDayScreen() {
 
   const load = useCallback(() => {
     setIsLoading(true);
+    setError(null);
     listTasksForDate(date)
       .then(setItems)
-      .catch((err) => console.warn("To-Do: failed to load this day's items", err))
+      .catch((err) => setError(friendlyErrorMessage(err)))
       .finally(() => setIsLoading(false));
     // Also for the month calendar's dots, across the whole month, not just this day.
     listPendingTasks()
@@ -69,7 +73,7 @@ export default function TodoDayScreen() {
     try {
       await updateTaskStatus(task.id, nextStatus);
     } catch (err) {
-      console.warn("To-Do: failed to update status", err);
+      alertMessage("Couldn't update to-do", friendlyErrorMessage(err));
       load();
     }
   };
@@ -82,7 +86,7 @@ export default function TodoDayScreen() {
     try {
       await renameTask(task.id, task.title);
     } catch (err) {
-      console.warn("To-Do: failed to save title", err);
+      alertMessage("Couldn't save to-do", friendlyErrorMessage(err));
       load();
     }
   };
@@ -90,7 +94,7 @@ export default function TodoDayScreen() {
   const remove = (id: string) => {
     setItems((prev) => prev.filter((t) => t.id !== id));
     deleteTask(id).catch((err) => {
-      console.warn("To-Do: failed to delete item", err);
+      alertMessage("Couldn't delete to-do", friendlyErrorMessage(err));
       load();
     });
   };
@@ -112,7 +116,7 @@ export default function TodoDayScreen() {
       setNewTitle("");
       newInputRef.current?.focus();
     } catch (err) {
-      console.warn("To-Do: failed to add item", err);
+      alertMessage("Couldn't add to-do", friendlyErrorMessage(err));
     } finally {
       setIsAdding(false);
     }
@@ -138,8 +142,8 @@ export default function TodoDayScreen() {
       </View>
 
       <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radius.lg, padding: spacing.lg }]}>
-        {isLoading ? (
-          <ActivityIndicator color={colors.brand} style={{ marginVertical: spacing.lg }} />
+        {isLoading || error ? (
+          <LoadState error={error} onRetry={load} />
         ) : (
           items.map((task) => {
             const done = task.status === "completed";

@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Pressable, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import { addCommunityMember, createCommunity, MAX_COMMUNITY_MEMBERS } from "@/features/community/api";
 import { ConnectionRow, listMyConnections } from "@/features/network/api";
 import { Avatar } from "@/features/network/NetworkCards";
@@ -10,6 +10,7 @@ import { Button } from "@/shared/ui/Button";
 import { ErrorNotice } from "@/shared/ui/ErrorNotice";
 import { ScreenContainer } from "@/shared/ui/ScreenContainer";
 import { TextField } from "@/shared/ui/TextField";
+import { LoadState } from "@/shared/ui/LoadState";
 import { useTheme } from "@/shared/ui/theme";
 
 /** Create the advocate's one allowed community: a name, then pick members
@@ -21,14 +22,22 @@ export default function NewCommunityScreen() {
   const [name, setName] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     listMyConnections()
       .then((rows) => setConnections(rows.filter((r) => r.status === "accepted")))
-      .catch((err) => setError(friendlyErrorMessage(err)))
+      .catch((err) => setLoadError(friendlyErrorMessage(err)))
       .finally(() => setIsLoading(false));
-  }, []);
+  }, [attempt]);
+
+  const retryLoad = () => {
+    setLoadError(null);
+    setIsLoading(true);
+    setAttempt((n) => n + 1);
+  };
 
   const toggle = (id: string) => {
     setSelected((prev) => {
@@ -66,8 +75,8 @@ export default function NewCommunityScreen() {
         Members ({selected.size}/{MAX_COMMUNITY_MEMBERS}) — from your accepted connections
       </Text>
 
-      {isLoading ? (
-        <ActivityIndicator color={colors.brand} style={{ marginTop: spacing.lg }} />
+      {isLoading || loadError ? (
+        <LoadState error={loadError} onRetry={retryLoad} style={{ marginTop: spacing.md }} />
       ) : connections.length === 0 ? (
         <Text style={[typography.body, { color: colors.textSecondary, marginTop: spacing.sm }]}>
           {"You don't have any accepted connections yet — connect with colleagues first, then come back to add them here."}

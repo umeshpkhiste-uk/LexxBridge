@@ -1,9 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { SmallButton } from "@/features/network/SmallButton";
 import { Badge } from "@/shared/ui/Badge";
+import { friendlyErrorMessage } from "@/shared/lib/errors";
+import { LoadState } from "@/shared/ui/LoadState";
 import { useTheme } from "@/shared/ui/theme";
 import { CommunitySummary, listMyCommunities } from "./api";
 
@@ -13,11 +15,15 @@ export function CommunityTab() {
   const { colors, spacing, radius, typography } = useTheme();
   const [summaries, setSummaries] = useState<CommunitySummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(() => {
     listMyCommunities()
-      .then(setSummaries)
-      .catch((err) => console.warn("Community: failed to load", err))
+      .then((rows) => {
+        setSummaries(rows);
+        setError(null);
+      })
+      .catch((err) => setError(friendlyErrorMessage(err)))
       .finally(() => setIsLoading(false));
   }, []);
 
@@ -29,7 +35,18 @@ export function CommunityTab() {
 
   const ownsOne = summaries.some((s) => s.isCreator);
 
-  if (isLoading) return <ActivityIndicator color={colors.brand} style={{ marginTop: spacing.xl }} />;
+  if (isLoading || (error && summaries.length === 0)) {
+    return (
+      <LoadState
+        error={isLoading ? null : error}
+        onRetry={() => {
+          setIsLoading(true);
+          load();
+        }}
+        style={{ marginTop: spacing.lg }}
+      />
+    );
+  }
 
   return (
     <View style={{ gap: spacing.md }}>

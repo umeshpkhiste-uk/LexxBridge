@@ -2,12 +2,12 @@ import { Ionicons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
 import { router } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { NextHearingSheet } from "@/features/hearings/NextHearingSheet";
 import { CaseDocument, deleteDocument, getDocumentSignedUrl, listDocumentsForCase, uploadDocument } from "@/features/documents/api";
 import { CASE_TYPE_OPTIONS } from "@/shared/data/caseTypes";
 import { COURT_OPTIONS } from "@/shared/data/courts";
-import { confirmAlert } from "@/shared/lib/alert";
+import { alertMessage, confirmAlert } from "@/shared/lib/alert";
 import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { formatHearingDate, formatINR } from "@/shared/lib/format";
 import { caseNumberError, normalizeCaseNumber } from "@/shared/lib/validation";
@@ -15,6 +15,7 @@ import { Button } from "@/shared/ui/Button";
 import { ErrorNotice } from "@/shared/ui/ErrorNotice";
 import { SelectField } from "@/shared/ui/SelectField";
 import { TextField } from "@/shared/ui/TextField";
+import { LoadState } from "@/shared/ui/LoadState";
 import { useTheme } from "@/shared/ui/theme";
 import { CaseDetail, CasePriority, clearCaseDiscontinued, deleteCase, updateCase } from "./api";
 
@@ -56,6 +57,7 @@ export function CaseOverview({
 }) {
   const { colors, spacing, radius, typography } = useTheme();
   const [documents, setDocuments] = useState<CaseDocument[] | null>(null);
+  const [documentsError, setDocumentsError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [hearingSheetOpen, setHearingSheetOpen] = useState(false);
   // isUploading-driven `disabled` only takes effect after a re-render, so a
@@ -66,7 +68,7 @@ export function CaseOverview({
   const loadDocuments = useCallback(() => {
     listDocumentsForCase(caseDetail.id)
       .then(setDocuments)
-      .catch(() => setDocuments([]));
+      .catch((err) => setDocumentsError(friendlyErrorMessage(err)));
   }, [caseDetail.id]);
 
   useEffect(() => {
@@ -91,7 +93,7 @@ export function CaseOverview({
       });
       setDocuments((prev) => (prev ? [doc, ...prev] : [doc]));
     } catch (err) {
-      Alert.alert("Upload failed", friendlyErrorMessage(err));
+      alertMessage("Upload failed", friendlyErrorMessage(err));
     } finally {
       isUploadingRef.current = false;
       setIsUploading(false);
@@ -102,12 +104,12 @@ export function CaseOverview({
     try {
       Linking.openURL(await getDocumentSignedUrl(doc.storage_path));
     } catch (err) {
-      Alert.alert("Couldn't open document", friendlyErrorMessage(err));
+      alertMessage("Couldn't open document", friendlyErrorMessage(err));
     }
   };
 
   const confirmDelete = (doc: CaseDocument) =>
-    Alert.alert("Delete document?", `${doc.file_name} will be permanently removed from this case.`, [
+    confirmAlert("Delete document?", `${doc.file_name} will be permanently removed from this case.`, [
       { text: "Cancel", style: "cancel" },
       {
         text: "Delete",
@@ -117,7 +119,7 @@ export function CaseOverview({
             await deleteDocument(doc.id, doc.storage_path);
             setDocuments((prev) => prev?.filter((d) => d.id !== doc.id) ?? null);
           } catch (err) {
-            Alert.alert("Couldn't delete document", friendlyErrorMessage(err));
+            alertMessage("Couldn't delete document", friendlyErrorMessage(err));
           }
         },
       },
@@ -221,7 +223,13 @@ export function CaseOverview({
           </Pressable>
         </View>
         {documents === null ? (
-          <ActivityIndicator color={colors.brand} style={{ marginTop: spacing.sm }} />
+          <LoadState
+            error={documentsError}
+            onRetry={() => {
+              setDocumentsError(null);
+              loadDocuments();
+            }}
+          />
         ) : documents.length === 0 ? (
           <Text style={[typography.body, { color: colors.textSecondary, marginTop: spacing.xs }]}>
             No documents yet. Upload pleadings, orders or evidence for this case.
@@ -437,7 +445,7 @@ function CaseEditForm({
                       onSaved();
                     } catch (err) {
                       setIsResuming(false);
-                      Alert.alert("Couldn't resume case", friendlyErrorMessage(err));
+                      alertMessage("Couldn't resume case", friendlyErrorMessage(err));
                     }
                   },
                 },
@@ -459,7 +467,7 @@ function CaseEditForm({
         loading={isDeleting}
         pill
         onPress={() =>
-          Alert.alert(
+          confirmAlert(
             "Delete this case permanently?",
             `This will permanently delete "${caseDetail.title}" and everything in it — hearings, documents, and all related transactions. This can't be undone.`,
             [
@@ -474,7 +482,7 @@ function CaseEditForm({
                     onDeleted();
                   } catch (err) {
                     setIsDeleting(false);
-                    Alert.alert("Couldn't delete case", friendlyErrorMessage(err));
+                    alertMessage("Couldn't delete case", friendlyErrorMessage(err));
                   }
                 },
               },

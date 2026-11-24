@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Image } from "expo-image";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, GestureResponderEvent, Pressable, StyleSheet, Text, View } from "react-native";
+import { ImageRetry, RemoteImage } from "@/shared/ui/RemoteImage";
 import { useTheme } from "@/shared/ui/theme";
 import { getAttachmentUrl, Message } from "./api";
 import { bubbleTime, fileSizeLabel, messagePreview } from "./chatFormat";
@@ -173,17 +173,24 @@ function ChatImage({
   onLongPress: (event: GestureResponderEvent) => void;
 }) {
   const [uri, setUri] = useState<string | null>(message.localUri ?? null);
+  const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     if (message.localUri || !message.attachment_path) return;
     let cancelled = false;
     getAttachmentUrl(message.attachment_path)
       .then((url) => !cancelled && setUri(url))
-      .catch(() => {});
+      .catch(() => !cancelled && setFailed(true));
     return () => {
       cancelled = true;
     };
-  }, [message.attachment_path, message.localUri]);
+  }, [message.attachment_path, message.localUri, attempt]);
+
+  const retry = () => {
+    setFailed(false);
+    setAttempt((n) => n + 1);
+  };
 
   return (
     // A nested Pressable with its own onPress claims the touch responder,
@@ -192,7 +199,9 @@ function ChatImage({
     // long-press here, matching the rest of the bubble's 500ms.
     <Pressable onPress={() => uri && onOpen(uri)} onLongPress={onLongPress} delayLongPress={500} style={styles.image}>
       {uri ? (
-        <Image source={{ uri }} style={StyleSheet.absoluteFill} contentFit="cover" transition={150} />
+        <RemoteImage uri={uri} style={StyleSheet.absoluteFill} onLongPress={onLongPress} />
+      ) : failed ? (
+        <ImageRetry onRetry={retry} onLongPress={onLongPress} />
       ) : (
         <ActivityIndicator style={StyleSheet.absoluteFill} color="#FFFFFF" />
       )}

@@ -3,6 +3,7 @@ import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
 import { getAppLockMethod, resetAppLockFailures } from "@/features/applock/appLock";
 import { clearDeviceNotifications, unregisterPushToken } from "@/features/notifications/device";
+import { authErrorMessage, NETWORK_ERROR_MESSAGE } from "@/shared/lib/errors";
 import { supabase } from "@/shared/lib/supabase";
 
 /**
@@ -126,7 +127,7 @@ export async function signOutKeepingBiometric(): Promise<{ error: string | null 
     return { error: null };
   }
   const { error } = await supabase.auth.signOut();
-  return { error: error?.message ?? null };
+  return { error: authErrorMessage(error) };
 }
 
 export async function loginWithBiometric(label: string): Promise<{ error: string | null }> {
@@ -141,6 +142,8 @@ export async function loginWithBiometric(label: string): Promise<{ error: string
   if (!ok) return { error: null };
 
   const { error } = await supabase.auth.refreshSession({ refresh_token: token });
+  // The request never got through, so the saved login is still good: keep it.
+  if (authErrorMessage(error) === NETWORK_ERROR_MESSAGE) return { error: NETWORK_ERROR_MESSAGE };
   // The stored token is single-use: the new session carries its own.
   await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
   if (error) {
@@ -185,6 +188,8 @@ export async function loginWithSavedSession(): Promise<{ error: string | null }>
     return { error: "Your saved login has expired. Please log in with your password." };
   }
   const { error } = await supabase.auth.refreshSession({ refresh_token: token });
+  // The request never got through, so the saved login is still good: keep it.
+  if (authErrorMessage(error) === NETWORK_ERROR_MESSAGE) return { error: NETWORK_ERROR_MESSAGE };
   // Single-use: the new session carries its own refresh token.
   await forgetSavedLogin();
   return { error: error ? "Your saved login has expired. Please log in with your password." : null };

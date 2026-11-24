@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { router, useFocusEffect, useLocalSearchParams, useNavigation } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, Alert, FlatList, GestureResponderEvent, Linking, Pressable, SectionList, Text, View } from "react-native";
+import { FlatList, GestureResponderEvent, Linking, Pressable, SectionList, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CaseSummary, listCases } from "@/features/cases/api";
 import { CaseBriefCard } from "@/features/cases/CaseBriefCard";
@@ -15,11 +15,12 @@ import { SheetAction } from "@/shared/ui/ActionSheet";
 import { ClientAvatar } from "@/features/clients/ClientAvatar";
 import { Badge } from "@/shared/ui/Badge";
 import { anchorFromEvent, ContextMenu, MenuAnchor } from "@/shared/ui/ContextMenu";
-import { ErrorNotice } from "@/shared/ui/ErrorNotice";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { TextField } from "@/shared/ui/TextField";
 import { canAddClient } from "@/features/subscription/paywall";
 import { HomeButton } from "@/shared/ui/HomeButton";
+import { alertMessage } from "@/shared/lib/alert";
+import { ErrorView, LoadingView } from "@/shared/ui/LoadState";
 import { useTheme } from "@/shared/ui/theme";
 import { IMAGE_MAX_SIDE, shrinkImage } from "@/shared/lib/shrinkImage";
 
@@ -98,7 +99,7 @@ export default function CasesScreen() {
 
   const changePhoto = async (client: ClientListItem) => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) return Alert.alert("Permission needed", "Allow photo access in Settings to add a client photo.");
+    if (!permission.granted) return alertMessage("Permission needed", "Allow photo access in Settings to add a client photo.");
     const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], allowsEditing: true, aspect: [1, 1], quality: 0.7 });
     const asset = result.canceled ? null : result.assets[0];
     if (!asset) return;
@@ -107,7 +108,7 @@ export default function CasesScreen() {
       await uploadClientPhoto(client, photo.uri, photo.mimeType);
       load();
     } catch (err) {
-      Alert.alert("Couldn't save photo", friendlyErrorMessage(err));
+      alertMessage("Couldn't save photo", friendlyErrorMessage(err));
     }
   };
 
@@ -152,9 +153,9 @@ export default function CasesScreen() {
           tapping the segmented control above. */}
       <View style={{ flex: 1 }} {...swipeHandlers}>
       {isLoading ? (
-        <ActivityIndicator color={colors.brand} style={{ marginTop: spacing.xl }} />
+        <LoadingView />
       ) : error ? (
-        <ErrorNotice message={error} style={{ padding: spacing.lg }} />
+        <ErrorView message={error} onRetry={load} />
       ) : segment === "cases" ? (
         <FlatList
           data={cases ?? []}

@@ -1,6 +1,6 @@
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Text } from "react-native";
+import { Text } from "react-native";
 import { createMeeting, getMeeting, MeetingType, updateMeeting } from "@/features/meetings/api";
 import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { Button } from "@/shared/ui/Button";
@@ -9,6 +9,7 @@ import { ErrorNotice } from "@/shared/ui/ErrorNotice";
 import { ScreenContainer } from "@/shared/ui/ScreenContainer";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { TextField } from "@/shared/ui/TextField";
+import { LoadState } from "@/shared/ui/LoadState";
 import { useTheme } from "@/shared/ui/theme";
 
 const MEETING_TYPES: { key: MeetingType; label: string }[] = [
@@ -36,6 +37,8 @@ export default function NewMeetingScreen() {
   const [decisions, setDecisions] = useState("");
   const [followUpActions, setFollowUpActions] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -50,9 +53,14 @@ export default function NewMeetingScreen() {
         setDecisions(m.decisions ?? "");
         setFollowUpActions(m.follow_up_actions ?? "");
       })
-      .catch((err) => setError(friendlyErrorMessage(err)))
-      .finally(() => setLoaded(true));
-  }, [id]);
+      .then(() => setLoaded(true))
+      .catch((err) => setLoadError(friendlyErrorMessage(err)));
+  }, [id, attempt]);
+
+  const retryLoad = () => {
+    setLoadError(null);
+    setAttempt((n) => n + 1);
+  };
 
   const handleSave = async () => {
     if (!meetingAt) {
@@ -91,7 +99,7 @@ export default function NewMeetingScreen() {
     return (
       <ScreenContainer style={{ alignItems: "center", justifyContent: "center" }}>
         <Stack.Screen options={{ title: "Edit meeting" }} />
-        <ActivityIndicator color={colors.brand} />
+        <LoadState error={loadError} onRetry={retryLoad} />
       </ScreenContainer>
     );
   }

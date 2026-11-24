@@ -1,14 +1,14 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, ScrollView, Text, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { getNetworkStats } from "@/features/network/api";
 import { AdvocateProfile, completeOnboarding, countMyCases, getMyProfile } from "@/features/profile/api";
 import { ProfileDocket } from "@/features/profile/ProfileDocket";
 import { ProfileEditForm } from "@/features/profile/ProfileEditForm";
 import { friendlyErrorMessage } from "@/shared/lib/errors";
-import { ErrorNotice } from "@/shared/ui/ErrorNotice";
+import { LoadState } from "@/shared/ui/LoadState";
 import { useTheme } from "@/shared/ui/theme";
 
 /**
@@ -60,7 +60,13 @@ export default function BasicInfoScreen() {
     return (
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.background, padding: spacing.lg }}>
         <Stack.Screen options={screenOptions} />
-        {error ? <ErrorNotice message={error} /> : <ActivityIndicator color={colors.brand} />}
+        <LoadState
+          error={error}
+          onRetry={() => {
+            setError(null);
+            load();
+          }}
+        />
       </View>
     );
   }

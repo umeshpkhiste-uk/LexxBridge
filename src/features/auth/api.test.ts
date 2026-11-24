@@ -1,3 +1,4 @@
+import { NETWORK_ERROR_MESSAGE } from "@/shared/lib/errors";
 import { supabase } from "@/shared/lib/supabase";
 import { signOutOtherSessions, updatePassword } from "./api";
 
@@ -29,7 +30,7 @@ describe("updatePassword", () => {
   });
 
   it("does not touch other sessions if the password update itself failed", async () => {
-    mockUpdateUser.mockResolvedValue({ error: { message: "Password too weak" } });
+    mockUpdateUser.mockResolvedValue({ error: { message: "Password too weak", code: "weak_password" } });
 
     const result = await updatePassword("weak");
 
@@ -51,10 +52,10 @@ describe("signOutOtherSessions", () => {
   });
 
   it("surfaces an error from Supabase", async () => {
-    mockSignOut.mockResolvedValue({ error: { message: "Network error" } });
+    mockSignOut.mockResolvedValue({ error: { message: "Network request failed" } });
 
     const result = await signOutOtherSessions();
 
-    expect(result.error).toBe("Network error");
+    expect(result.error).toBe(NETWORK_ERROR_MESSAGE);
   });
 });

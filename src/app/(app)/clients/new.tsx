@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, Pressable, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import { Client, ClientType, createClientRecord, getClient, updateClient, uploadClientPhoto } from "@/features/clients/api";
 import { ClientAvatar } from "@/features/clients/ClientAvatar";
 import { isClientLimitError } from "@/features/subscription/api";
@@ -14,6 +14,8 @@ import { ErrorNotice } from "@/shared/ui/ErrorNotice";
 import { ScreenContainer } from "@/shared/ui/ScreenContainer";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { TextField } from "@/shared/ui/TextField";
+import { alertMessage } from "@/shared/lib/alert";
+import { LoadState } from "@/shared/ui/LoadState";
 import { useTheme } from "@/shared/ui/theme";
 import { IMAGE_MAX_SIDE, shrinkImage } from "@/shared/lib/shrinkImage";
 
@@ -34,6 +36,7 @@ export default function NewClientScreen() {
   const [privateNotes, setPrivateNotes] = useState("");
   const [contactPersonName, setContactPersonName] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [touched, setTouched] = useState<{ fullName?: boolean; phone?: boolean }>({});
 
@@ -56,7 +59,12 @@ export default function NewClientScreen() {
         setContactPersonName(c.contact_person_name ?? "");
       })
       .catch((err) => setLoadError(friendlyErrorMessage(err)));
-  }, [id]);
+  }, [id, attempt]);
+
+  const retryLoad = () => {
+    setLoadError(null);
+    setAttempt((n) => n + 1);
+  };
 
   const handleSave = async () => {
     setTouched({ fullName: true, phone: true });
@@ -85,7 +93,7 @@ export default function NewClientScreen() {
         });
         if (photo) {
           await uploadClientPhoto(existing, photo.uri, photo.mimeType).catch(() =>
-            Alert.alert("Photo not saved", "The details were saved, but the photo couldn't be uploaded. Please try again."),
+            alertMessage("Photo not saved", "The details were saved, but the photo couldn't be uploaded. Please try again."),
           );
         }
         router.back();
@@ -104,7 +112,7 @@ export default function NewClientScreen() {
       if (photo) {
         // The client is saved either way; a failed photo can be added later.
         await uploadClientPhoto(client, photo.uri, photo.mimeType).catch(() =>
-          Alert.alert(
+          alertMessage(
             "Photo not saved",
             "The client was added, but the photo couldn't be uploaded. You can add it from the client's page.",
           ),
@@ -121,7 +129,7 @@ export default function NewClientScreen() {
 
   const pickPhoto = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) return Alert.alert("Permission needed", "Allow photo access in Settings to add a client photo.");
+    if (!permission.granted) return alertMessage("Permission needed", "Allow photo access in Settings to add a client photo.");
     const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], allowsEditing: true, aspect: [1, 1], quality: 0.7 });
     const asset = result.canceled ? null : result.assets[0];
     if (asset) setPhoto(await shrinkImage(asset, IMAGE_MAX_SIDE.avatar));
@@ -131,7 +139,7 @@ export default function NewClientScreen() {
     return (
       <ScreenContainer style={{ alignItems: "center", justifyContent: "center" }}>
         <Stack.Screen options={{ title: "Edit client" }} />
-        {loadError ? <ErrorNotice message={loadError} /> : <ActivityIndicator color={colors.brand} />}
+        <LoadState error={loadError} onRetry={retryLoad} />
       </ScreenContainer>
     );
   }

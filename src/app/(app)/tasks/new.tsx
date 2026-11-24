@@ -1,6 +1,6 @@
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Text } from "react-native";
+import { Text } from "react-native";
 import { createTask, getTask, TaskPriority, updateTask } from "@/features/tasks/api";
 import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { Button } from "@/shared/ui/Button";
@@ -9,6 +9,7 @@ import { ErrorNotice } from "@/shared/ui/ErrorNotice";
 import { ScreenContainer } from "@/shared/ui/ScreenContainer";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { TextField } from "@/shared/ui/TextField";
+import { LoadState } from "@/shared/ui/LoadState";
 import { useTheme } from "@/shared/ui/theme";
 
 const PRIORITIES: TaskPriority[] = ["low", "medium", "high"];
@@ -31,6 +32,8 @@ export default function NewTaskScreen() {
   const [dueDate, setDueDate] = useState<Date | null>(() => (dueDateParam ? new Date(`${dueDateParam}T00:00:00`) : null));
   const [priority, setPriority] = useState<TaskPriority>("medium");
   const [error, setError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [titleTouched, setTitleTouched] = useState(false);
 
@@ -45,9 +48,14 @@ export default function NewTaskScreen() {
         setDueDate(t.due_at ? new Date(t.due_at) : null);
         setPriority(t.priority);
       })
-      .catch((err) => setError(friendlyErrorMessage(err)))
-      .finally(() => setLoaded(true));
-  }, [id]);
+      .then(() => setLoaded(true))
+      .catch((err) => setLoadError(friendlyErrorMessage(err)));
+  }, [id, attempt]);
+
+  const retryLoad = () => {
+    setLoadError(null);
+    setAttempt((n) => n + 1);
+  };
 
   const handleSave = async () => {
     setTitleTouched(true);
@@ -79,7 +87,7 @@ export default function NewTaskScreen() {
     return (
       <ScreenContainer style={{ alignItems: "center", justifyContent: "center" }}>
         <Stack.Screen options={{ title: "Edit task" }} />
-        <ActivityIndicator color={colors.brand} />
+        <LoadState error={loadError} onRetry={retryLoad} />
       </ScreenContainer>
     );
   }

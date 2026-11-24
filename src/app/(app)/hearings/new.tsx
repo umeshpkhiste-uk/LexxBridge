@@ -1,6 +1,5 @@
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator } from "react-native";
 import { createHearing, getHearing, updateHearing } from "@/features/hearings/api";
 import { offerPaymentReminder } from "@/features/hearings/paymentReminder";
 import { friendlyErrorMessage } from "@/shared/lib/errors";
@@ -9,6 +8,7 @@ import { DateField } from "@/shared/ui/DateField";
 import { ErrorNotice } from "@/shared/ui/ErrorNotice";
 import { ScreenContainer } from "@/shared/ui/ScreenContainer";
 import { TextField } from "@/shared/ui/TextField";
+import { LoadState } from "@/shared/ui/LoadState";
 import { useTheme } from "@/shared/ui/theme";
 
 /** Schedule a hearing, or — with ?id= — edit an existing one. */
@@ -16,7 +16,7 @@ export default function NewHearingScreen() {
   const { caseId, id } = useLocalSearchParams<{ caseId?: string; id?: string }>();
   const isEdit = !!id;
   const [loaded, setLoaded] = useState(!isEdit);
-  const { colors, spacing } = useTheme();
+  const { spacing } = useTheme();
   const now = new Date();
 
   const [resolvedCaseId, setResolvedCaseId] = useState(caseId);
@@ -26,6 +26,8 @@ export default function NewHearingScreen() {
   const [hearingType, setHearingType] = useState("");
   const [purpose, setPurpose] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [touched, setTouched] = useState<{ hearingType?: boolean }>({});
 
@@ -42,9 +44,14 @@ export default function NewHearingScreen() {
         setHearingType(h.hearing_type ?? "");
         setPurpose(h.purpose ?? "");
       })
-      .catch((err) => setError(friendlyErrorMessage(err)))
-      .finally(() => setLoaded(true));
-  }, [id]);
+      .then(() => setLoaded(true))
+      .catch((err) => setLoadError(friendlyErrorMessage(err)));
+  }, [id, attempt]);
+
+  const retryLoad = () => {
+    setLoadError(null);
+    setAttempt((n) => n + 1);
+  };
 
   const handleSave = async () => {
     setTouched({ hearingType: true });
@@ -74,7 +81,7 @@ export default function NewHearingScreen() {
     return (
       <ScreenContainer style={{ alignItems: "center", justifyContent: "center" }}>
         <Stack.Screen options={{ title: "Edit hearing" }} />
-        <ActivityIndicator color={colors.brand} />
+        <LoadState error={loadError} onRetry={retryLoad} />
       </ScreenContainer>
     );
   }

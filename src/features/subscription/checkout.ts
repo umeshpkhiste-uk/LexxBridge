@@ -1,4 +1,5 @@
 import { Platform } from "react-native";
+import { UserFacingError } from "@/shared/lib/errors";
 import { createSubscription } from "./api";
 
 const CHECKOUT_SCRIPT = "https://checkout.razorpay.com/v1/checkout.js";
@@ -13,7 +14,7 @@ function loadCheckoutScript(): Promise<RazorpayConstructor> {
     const script = document.createElement("script");
     script.src = CHECKOUT_SCRIPT;
     script.onload = () => (w.Razorpay ? resolve(w.Razorpay) : reject(new Error("Checkout didn't load")));
-    script.onerror = () => reject(new Error("Couldn't load the payment page. Check your connection and try again."));
+    script.onerror = () => reject(new UserFacingError("Couldn't load the payment page. Check your connection and try again."));
     document.body.appendChild(script);
   });
 }
@@ -23,7 +24,7 @@ function loadCheckoutScript(): Promise<RazorpayConstructor> {
  * "closed" if the user closes it. The subscription only shows as active once
  * Razorpay's webhook has reached the server — the caller polls for that. */
 export async function openCheckout(): Promise<"paid" | "closed"> {
-  if (Platform.OS !== "web") throw new Error("Subscribing is available on lexxbridge.app for now.");
+  if (Platform.OS !== "web") throw new UserFacingError("Subscribing is available on lexxbridge.app for now.");
   const [Razorpay, { subscriptionId, keyId, email }] = await Promise.all([loadCheckoutScript(), createSubscription()]);
   return new Promise((resolve) => {
     const checkout = new Razorpay({

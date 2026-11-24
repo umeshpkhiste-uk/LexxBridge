@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
-import { ActivityIndicator, FlatList, Pressable, Text, View } from "react-native";
+import { FlatList, Pressable, Text, View } from "react-native";
 import {
   listNotifications,
   markAllNotificationsRead,
@@ -9,6 +9,8 @@ import {
   NotificationRow,
 } from "@/features/notifications/api";
 import { ScreenContainer } from "@/shared/ui/ScreenContainer";
+import { friendlyErrorMessage } from "@/shared/lib/errors";
+import { LoadState } from "@/shared/ui/LoadState";
 import { useTheme } from "@/shared/ui/theme";
 
 const ICON_BY_TYPE: Record<string, keyof typeof Ionicons.glyphMap> = {
@@ -46,26 +48,31 @@ export default function NotificationsScreen() {
   const { colors, spacing, radius, typography } = useTheme();
   const [notifications, setNotifications] = useState<NotificationRow[] | null>(null);
 
+  const [error, setError] = useState<string | null>(null);
+
   const load = useCallback(() => {
-    listNotifications().then(setNotifications);
+    setError(null);
+    listNotifications()
+      .then(setNotifications)
+      .catch((err) => setError(friendlyErrorMessage(err)));
   }, []);
 
   useFocusEffect(
     useCallback(() => {
       load();
-      markAllNotificationsRead();
+      markAllNotificationsRead().catch(() => {});
     }, [load])
   );
 
   const handlePress = (notification: NotificationRow) => {
-    if (!notification.is_read) markNotificationRead(notification.id);
+    if (!notification.is_read) markNotificationRead(notification.id).catch(() => {});
     handleNotificationPress(notification);
   };
 
   if (notifications === null) {
     return (
       <ScreenContainer style={{ alignItems: "center", justifyContent: "center" }}>
-        <ActivityIndicator color={colors.brand} />
+        <LoadState error={error} onRetry={load} />
       </ScreenContainer>
     );
   }

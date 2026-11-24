@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Pressable, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import { CasePriority, createCase } from "@/features/cases/api";
 import { Client, getClient, listClients } from "@/features/clients/api";
 import { CASE_TYPE_OPTIONS } from "@/shared/data/caseTypes";
@@ -12,6 +12,7 @@ import { ErrorNotice } from "@/shared/ui/ErrorNotice";
 import { ScreenContainer } from "@/shared/ui/ScreenContainer";
 import { SelectField } from "@/shared/ui/SelectField";
 import { TextField } from "@/shared/ui/TextField";
+import { LoadState } from "@/shared/ui/LoadState";
 import { useTheme } from "@/shared/ui/theme";
 
 const PRIORITIES: CasePriority[] = ["low", "medium", "high"];
@@ -38,6 +39,7 @@ export default function NewCaseScreen() {
   const [notes, setNotes] = useState("");
   const [agreedFee, setAgreedFee] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [touched, setTouched] = useState<{ title?: boolean; caseNumber?: boolean; agreedFee?: boolean }>({});
 
@@ -54,7 +56,12 @@ export default function NewCaseScreen() {
     } else {
       listClients().then(setClientOptions).catch((err) => setError(friendlyErrorMessage(err)));
     }
-  }, [preselectedClientId]);
+  }, [preselectedClientId, attempt]);
+
+  const retryLoad = () => {
+    setError(null);
+    setAttempt((n) => n + 1);
+  };
 
   const handleSave = async () => {
     setTouched({ title: true, caseNumber: true, agreedFee: true });
@@ -103,7 +110,7 @@ export default function NewCaseScreen() {
   if (!selectedClient && clientOptions === null) {
     return (
       <ScreenContainer style={{ alignItems: "center", justifyContent: "center" }}>
-        <ActivityIndicator color={colors.brand} />
+        <LoadState error={error} onRetry={retryLoad} />
       </ScreenContainer>
     );
   }

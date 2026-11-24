@@ -8,6 +8,7 @@ import { CURRENT_POLICY_VERSION, recordConsent } from "@/features/legal/consent"
 import { supabase } from "@/shared/lib/supabase";
 import { Button } from "@/shared/ui/Button";
 import { ScreenContainer } from "@/shared/ui/ScreenContainer";
+import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { useTheme } from "@/shared/ui/theme";
 import { LegalLanguagePicker } from "./LegalLanguagePicker";
 import { defaultLegalLanguage, LegalLanguage } from "./legalI18n";
@@ -130,7 +131,7 @@ export function ConsentScreen() {
     const { error: saveError } = await recordConsent(userId, "prompt");
     setIsSaving(false);
     if (saveError) {
-      setError(saveError.message);
+      setError(friendlyErrorMessage(saveError));
       return;
     }
     markConsented();

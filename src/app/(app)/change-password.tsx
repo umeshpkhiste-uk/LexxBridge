@@ -12,6 +12,7 @@ import { alertMessage, confirmAlert } from "@/shared/lib/alert";
 import { Button } from "@/shared/ui/Button";
 import { ScreenContainer } from "@/shared/ui/ScreenContainer";
 import { TextField } from "@/shared/ui/TextField";
+import { NETWORK_ERROR_MESSAGE } from "@/shared/lib/errors";
 import { useTheme } from "@/shared/ui/theme";
 
 const schema = z
@@ -58,7 +59,8 @@ export default function ChangePasswordScreen() {
     const verify = await verifyCurrentPassword(email, values.currentPassword);
     if (verify.error) {
       setIsSubmitting(false);
-      setError("currentPassword", { message: "That's not your current password." });
+      if (verify.error === NETWORK_ERROR_MESSAGE) setSubmitError(verify.error);
+      else setError("currentPassword", { message: "That's not your current password." });
       return;
     }
 

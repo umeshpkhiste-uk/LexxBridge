@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useMemo, useRef, useState, type ReactNode } from "react";
-import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type ViewInstance } from "react-native";
+import { Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type ViewInstance } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CaseDetail, getCase, listCases } from "@/features/cases/api";
 import { Client, getClient } from "@/features/clients/api";
@@ -15,8 +15,9 @@ import { ContextMenu, measureAnchor, MenuAnchor } from "@/shared/ui/ContextMenu"
 import { Button } from "@/shared/ui/Button";
 import { DateField, toDateOnly } from "@/shared/ui/DateField";
 import { DonutChart } from "@/shared/ui/DonutChart";
-import { ErrorNotice } from "@/shared/ui/ErrorNotice";
 import { TextField } from "@/shared/ui/TextField";
+import { alertMessage } from "@/shared/lib/alert";
+import { LoadState } from "@/shared/ui/LoadState";
 import { useTheme } from "@/shared/ui/theme";
 import { ClientTransaction, createTransaction, getReceiptUrl, listTransactionsForCase, listTransactionsForClient } from "./api";
 import { computeFeeTotals } from "./feeTotals";
@@ -67,6 +68,7 @@ export function LedgerView({ clientId, caseId, variant = "screen" }: Props) {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
   const [filter, setFilter] = useState<Filter>("all");
   const [search, setSearch] = useState("");
   const [month, setMonth] = useState<string | null>(null);
@@ -113,8 +115,14 @@ export function LedgerView({ clientId, caseId, variant = "screen" }: Props) {
       return () => {
         isMounted = false;
       };
-    }, [clientId, caseId]),
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- attempt re-runs the load on "Try again"
+    }, [clientId, caseId, attempt]),
   );
+
+  const retryLoad = () => {
+    setIsLoading(true);
+    setAttempt((n) => n + 1);
+  };
 
   const totals = useMemo(() => {
     const sum = (kind: Exclude<Filter, "all">) => transactions.filter((t) => kindOf(t) === kind).reduce((s, t) => s + Number(t.amount), 0);
@@ -152,17 +160,10 @@ export function LedgerView({ clientId, caseId, variant = "screen" }: Props) {
 
   const monthLabel = (key: string) => parseDay(`${key}-01`).toLocaleDateString("en-IN", { month: "short", year: "numeric" });
 
-  if (isLoading) {
-    return (
-      <View style={[styles.center, { backgroundColor: colors.background }]}>
-        <ActivityIndicator color={colors.brand} />
-      </View>
-    );
-  }
-  if (error || !client) {
+  if (isLoading || error || !client) {
     return (
       <View style={[styles.center, { backgroundColor: colors.background, padding: spacing.lg }]}>
-        {error ? <ErrorNotice message={error} /> : <Text style={{ color: colors.danger }}>Client not found</Text>}
+        <LoadState error={isLoading ? null : (error ?? "Client not found")} onRetry={retryLoad} />
       </View>
     );
   }
@@ -219,7 +220,12 @@ export function LedgerView({ clientId, caseId, variant = "screen" }: Props) {
       onPress: () => shareViaEmail(statement(), subject, client.email),
     },
     { label: "Text message (SMS)", icon: "chatbox-outline", onPress: () => shareViaSms(statement(), client.phone) },
-    { label: "Download PDF", icon: "document-outline", onPress: () => downloadStatementPdf(statementInput(), subject) },
+    {
+      label: "Download PDF",
+      icon: "document-outline",
+      onPress: () =>
+        downloadStatementPdf(statementInput(), subject).catch((err) => alertMessage("Couldn't download statement", friendlyErrorMessage(err))),
+    },
     { label: "More options…", icon: "share-social-outline", onPress: () => shareViaSystem(statement(), subject) },
   ];
   const monthActions: SheetAction[] = [
@@ -801,7 +807,7 @@ async function openReceipt(path: string) {
   try {
     await Linking.openURL(await getReceiptUrl(path));
   } catch (err) {
-    Alert.alert("Couldn't open receipt", friendlyErrorMessage(err));
+    alertMessage("Couldn't open receipt", friendlyErrorMessage(err));
   }
 }
 

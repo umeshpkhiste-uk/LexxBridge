@@ -2,9 +2,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect, useLocalSearchParams, useNavigation } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  Image,
   Linking,
   Pressable,
   RefreshControl,
@@ -46,6 +43,8 @@ import { AppModal } from "@/shared/ui/AppModal";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { useSwipeTabs } from "@/shared/hooks/useSwipeTabs";
 import { HomeButton } from "@/shared/ui/HomeButton";
+import { ErrorView, LoadingView } from "@/shared/ui/LoadState";
+import { RemoteImage } from "@/shared/ui/RemoteImage";
 import { useTheme } from "@/shared/ui/theme";
 
 // Community is switched off until users ask for it — its screens
@@ -83,11 +82,12 @@ export default function NetworkScreen() {
         .then(({ conversations: list, hiddenPartnerIds }) => {
           setConversations(list);
           setHiddenChatPartners(hiddenPartnerIds);
-        })
-        .catch(() => {}),
+        }),
     [],
   );
   const [isLoading, setIsLoading] = useState(true);
+  // Sections that failed to load, so an empty list isn't mistaken for "you have none".
+  const [loadErrors, setLoadErrors] = useState<Record<Segment, string | null>>({ feed: null, connections: null, messages: null });
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const [search, setSearch] = useState("");
@@ -105,7 +105,12 @@ export default function NetworkScreen() {
         listSuggestedAdvocates(),
         listMyConnections(),
         reloadConversations(),
-      ]).then(([profile, posts, people, conns]) => {
+      ]).then(([profile, posts, people, conns, chats]) => {
+        const errorOf = (...results: PromiseSettledResult<unknown>[]) => {
+          const failed = results.find((r) => r.status === "rejected");
+          return failed ? friendlyErrorMessage(failed.reason) : null;
+        };
+        setLoadErrors({ feed: errorOf(posts), connections: errorOf(people, conns), messages: errorOf(chats) });
         if (profile.status === "fulfilled") setMe(profile.value);
         if (posts.status === "fulfilled") setFeed(posts.value);
         if (people.status === "fulfilled") {
@@ -136,7 +141,7 @@ export default function NetworkScreen() {
       const unsubscribe = subscribeToMyMessages(() => {
         if (timer) clearTimeout(timer);
         timer = setTimeout(() => {
-          reloadConversations();
+          reloadConversations().catch(() => {});
         }, 400);
       });
       return () => {
@@ -315,7 +320,7 @@ export default function NetworkScreen() {
     } catch (err) {
       alertMessage(pin ? "Couldn't pin chat" : "Couldn't unpin chat", friendlyErrorMessage(err));
     }
-    reloadConversations();
+    reloadConversations().catch(() => {});
   };
   const confirmDeleteChat = (conversation: ConversationSummary) => {
     const name = withAdvPrefix(conversation.otherParty.full_name);
@@ -336,7 +341,7 @@ export default function NetworkScreen() {
             } catch (err) {
               alertMessage("Couldn't delete chat", friendlyErrorMessage(err));
             }
-            reloadConversations();
+            reloadConversations().catch(() => {});
           },
         },
       ],
@@ -353,7 +358,7 @@ export default function NetworkScreen() {
       load();
     } catch (err) {
       setConnections((prev) => prev.filter((c) => c.id !== `optimistic-${profile.id}`));
-      Alert.alert("Couldn't send request", friendlyErrorMessage(err));
+      alertMessage("Couldn't send request", friendlyErrorMessage(err));
     }
   };
 
@@ -375,9 +380,15 @@ export default function NetworkScreen() {
       const conversationId = await getOrCreateConversation(otherId);
       router.push(`/(app)/messages/${conversationId}`);
     } catch (err) {
-      Alert.alert("Couldn't open chat", friendlyErrorMessage(err));
+      alertMessage("Couldn't open chat", friendlyErrorMessage(err));
     }
   };
+
+  const isSegmentEmpty = {
+    feed: feed.length === 0,
+    connections: connections.length === 0 && suggested.length === 0,
+    messages: conversations.length === 0,
+  }[segment];
 
   const myName = me ? withAdvPrefix(me.full_name) : "";
   const myForum = me?.courts[0] ?? me?.city ?? null;
@@ -457,7 +468,16 @@ export default function NetworkScreen() {
         {/* 1 — Content */}
         <View style={{ paddingHorizontal: spacing.md, gap: spacing.md }}>
           {isLoading ? (
-            <ActivityIndicator color={colors.brand} style={{ marginTop: spacing.xl }} />
+            <LoadingView style={{ marginTop: spacing.lg }} />
+          ) : loadErrors[segment] && isSegmentEmpty ? (
+            <ErrorView
+              message={loadErrors[segment]}
+              onRetry={() => {
+                setIsLoading(true);
+                load().finally(() => setIsLoading(false));
+              }}
+              style={{ marginTop: spacing.lg }}
+            />
           ) : segment === "feed" ? (
             <>
               {feed.length === 0
@@ -763,7 +783,7 @@ function PersonRow({
       {photoUrl ? (
         <AppModal visible={viewerOpen} transparent animationType="fade" onRequestClose={() => setViewerOpen(false)}>
           <Pressable style={styles.photoViewer} onPress={() => setViewerOpen(false)} accessibilityLabel={`Close ${name}'s photo`}>
-            <Image source={{ uri: photoUrl }} style={styles.photoViewerImage} resizeMode="contain" />
+            <RemoteImage uri={photoUrl} style={styles.photoViewerImage} contentFit="contain" />
           </Pressable>
         </AppModal>
       ) : null}

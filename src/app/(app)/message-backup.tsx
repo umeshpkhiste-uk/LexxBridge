@@ -1,12 +1,14 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { backupKeyPair, deleteKeyBackup, fetchKeyBackup } from "@/features/messaging/encryption";
 import { alertMessage, confirmAlert } from "@/shared/lib/alert";
 import { Button } from "@/shared/ui/Button";
 import { SettingsGroup, SettingsRow } from "@/shared/ui/SettingsGroup";
 import { TextField } from "@/shared/ui/TextField";
+import { friendlyErrorMessage } from "@/shared/lib/errors";
+import { LoadState } from "@/shared/ui/LoadState";
 import { useTheme } from "@/shared/ui/theme";
 
 type Step = { kind: "menu" } | { kind: "set" };
@@ -26,12 +28,21 @@ export default function MessageBackupScreen() {
   const [passphrase, setPassphrase] = useState("");
   const [confirmPassphrase, setConfirmPassphrase] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (!userId) return;
-    fetchKeyBackup(userId).then((backup) => setHasBackup(!!backup));
-  }, [userId]);
+    fetchKeyBackup(userId)
+      .then((backup) => setHasBackup(!!backup))
+      .catch((err) => setLoadError(friendlyErrorMessage(err)));
+  }, [userId, attempt]);
+
+  const retryLoad = () => {
+    setLoadError(null);
+    setAttempt((n) => n + 1);
+  };
 
   const go = (next: Step) => {
     setStep(next);
@@ -68,8 +79,12 @@ export default function MessageBackupScreen() {
           text: "Turn off",
           style: "destructive",
           onPress: async () => {
-            await deleteKeyBackup(userId);
-            setHasBackup(false);
+            try {
+              await deleteKeyBackup(userId);
+              setHasBackup(false);
+            } catch (err) {
+              alertMessage("Couldn't turn off backup", friendlyErrorMessage(err));
+            }
           },
         },
       ],
@@ -79,7 +94,7 @@ export default function MessageBackupScreen() {
   if (hasBackup === undefined) {
     return (
       <View style={[styles.center, { backgroundColor: colors.background }]}>
-        <ActivityIndicator color={colors.brand} />
+        <LoadState error={loadError} onRetry={retryLoad} />
       </View>
     );
   }

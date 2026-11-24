@@ -1,7 +1,7 @@
 import { DarkTheme, DefaultTheme, router, Stack, ThemeProvider } from "expo-router";
 import { allowScreenCaptureAsync, enableAppSwitcherProtectionAsync, preventScreenCaptureAsync } from "expo-screen-capture";
 import { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Alert, AppState, Platform, View } from "react-native";
+import { Alert, AppState, Platform, View } from "react-native";
 import { AuthProvider, useAuth } from "@/features/auth/AuthProvider";
 import { getSavedLoginUser, isBiometricEnabledFor, loginWithSavedSession } from "@/features/biometric/biometric";
 import { getAppLockMethod, rememberLockedAccount } from "@/features/applock/appLock";
@@ -11,10 +11,19 @@ import { ensureKeyPair, fetchKeyBackup, hasLocalKey, KeyBackupRow } from "@/feat
 import { MessageRestoreScreen } from "@/features/messaging/MessageRestoreScreen";
 import { PresenceProvider } from "@/features/presence/PresenceProvider";
 import { restoreLanguagePreference } from "@/shared/i18n/i18n";
+import { NETWORK_ERROR_MESSAGE } from "@/shared/lib/errors";
 import { AppFrame } from "@/shared/ui/appFrame";
+import { CrashScreen } from "@/shared/ui/CrashScreen";
+import { LoadingView } from "@/shared/ui/LoadState";
 import { useTheme } from "@/shared/ui/theme";
 import { restoreThemePreference } from "@/shared/ui/themePreference";
 import { WebAlertHost } from "@/shared/ui/WebAlertHost";
+
+// A screen that crashes while rendering shows this instead of a blank page or
+// the raw error: in place for a screen (headers and tabs stay), or for the
+// whole app if a layout itself crashes.
+export { CrashScreen as ErrorBoundary };
+export const unstable_settings = { screenErrorBoundary: CrashScreen };
 
 /** locked: gate a saved session. login: logged out, but a PIN / pattern
  * can sign this user back in with the token kept at log out. */
@@ -51,7 +60,9 @@ function RootNavigator() {
       if (!active) return;
       if (backup) setPendingRestore({ userId: session.user.id, backup });
       else ensureKeyPair().catch(() => {});
-    })();
+      // Couldn't tell whether there's a backup (e.g. no network): don't
+      // generate a key over one that may exist.
+    })().catch(() => {});
     return () => {
       active = false;
     };
@@ -146,8 +157,8 @@ function RootNavigator() {
   const checkingConsent = !!session && !isPasswordRecovery && consentStatus === "checking";
   if (isLoading || lockState === "checking" || (checkingConsent && lockState === "unlocked")) {
     return (
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.background }}>
-        <ActivityIndicator color={colors.brand} />
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
+        <LoadingView />
       </View>
     );
   }
@@ -159,6 +170,8 @@ function RootNavigator() {
         mode="login"
         onUnlock={async () => {
           const { error } = await loginWithSavedSession();
+          // Stay on the lock screen: the saved login still works once online.
+          if (error === NETWORK_ERROR_MESSAGE) return Alert.alert("Couldn't log in", error);
           if (error) Alert.alert("Please log in", error);
           setLockState("unlocked");
         }}

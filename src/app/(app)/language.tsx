@@ -2,11 +2,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { Stack } from "expo-router";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, Pressable, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import { getMyProfile } from "@/features/profile/api";
 import { changeAppLanguage, currentLanguageCode } from "@/shared/i18n/i18n";
 import { codeForLanguageName, LanguageCode, SUPPORTED_LANGUAGES } from "@/shared/i18n/languages";
 import { ScreenContainer } from "@/shared/ui/ScreenContainer";
+import { friendlyErrorMessage } from "@/shared/lib/errors";
+import { LoadState } from "@/shared/ui/LoadState";
 import { useTheme } from "@/shared/ui/theme";
 
 /**
@@ -18,6 +20,8 @@ export default function LanguageScreen() {
   const { t } = useTranslation();
   const { colors, spacing, radius, typography } = useTheme();
   const [available, setAvailable] = useState<{ code: LanguageCode; name: string }[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
   const [selected, setSelected] = useState<LanguageCode>(currentLanguageCode());
 
   useEffect(() => {
@@ -26,8 +30,13 @@ export default function LanguageScreen() {
         const codes = new Set(profile.languages.map(codeForLanguageName).filter((c): c is LanguageCode => !!c));
         setAvailable(SUPPORTED_LANGUAGES.filter((l) => codes.has(l.code)));
       })
-      .catch(() => setAvailable([]));
-  }, []);
+      .catch((err) => setError(friendlyErrorMessage(err)));
+  }, [attempt]);
+
+  const retryLoad = () => {
+    setError(null);
+    setAttempt((n) => n + 1);
+  };
 
   const choose = (code: LanguageCode) => {
     setSelected(code);
@@ -40,7 +49,7 @@ export default function LanguageScreen() {
       <Text style={[typography.body, { color: colors.textSecondary, marginBottom: spacing.md }]}>{t("language.subtitle")}</Text>
 
       {available === null ? (
-        <ActivityIndicator color={colors.brand} />
+        <LoadState error={error} onRetry={retryLoad} />
       ) : available.length === 0 ? (
         <View style={{ backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.md, gap: spacing.xs }}>
           <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>{t("language.noneAvailable")}</Text>

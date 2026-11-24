@@ -1,11 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker, { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
 import { useState } from "react";
-import { Alert, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { AppModal } from "@/shared/ui/AppModal";
 import { Button } from "@/shared/ui/Button";
+import { alertMessage } from "@/shared/lib/alert";
 import { useTheme } from "@/shared/ui/theme";
 import { setNextHearing } from "./api";
 import { offerPaymentReminder } from "./paymentReminder";
@@ -52,7 +53,7 @@ export function NextHearingSheet({ caseId, caseTitle, current, onClose, onSaved 
       onClose();
       offerPaymentReminder({ caseId, hearingAt: draft }).catch(() => {});
     } catch (err) {
-      Alert.alert("Couldn't save hearing date", friendlyErrorMessage(err));
+      alertMessage("Couldn't save hearing date", friendlyErrorMessage(err));
     } finally {
       setIsSaving(false);
     }

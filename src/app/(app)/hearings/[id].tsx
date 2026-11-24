@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Text } from "react-native";
+import { Text } from "react-native";
 import { completeHearing, getHearing, Hearing } from "@/features/hearings/api";
 import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { Badge } from "@/shared/ui/Badge";
@@ -9,6 +9,7 @@ import { DateField } from "@/shared/ui/DateField";
 import { ErrorNotice } from "@/shared/ui/ErrorNotice";
 import { ScreenContainer } from "@/shared/ui/ScreenContainer";
 import { TextField } from "@/shared/ui/TextField";
+import { LoadState } from "@/shared/ui/LoadState";
 import { useTheme } from "@/shared/ui/theme";
 
 export default function HearingDetailScreen() {
@@ -23,6 +24,7 @@ export default function HearingDetailScreen() {
   const [nextAction, setNextAction] = useState("");
   const [nextHearingAt, setNextHearingAt] = useState<Date | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -36,7 +38,13 @@ export default function HearingDetailScreen() {
       })
       .catch((err) => setError(friendlyErrorMessage(err)))
       .finally(() => setIsLoading(false));
-  }, [id]);
+  }, [id, attempt]);
+
+  const retryLoad = () => {
+    setError(null);
+    setIsLoading(true);
+    setAttempt((n) => n + 1);
+  };
 
   const handleComplete = async () => {
     if (!hearing) return;
@@ -60,18 +68,10 @@ export default function HearingDetailScreen() {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || !hearing) {
     return (
-      <ScreenContainer style={{ alignItems: "center", justifyContent: "center" }}>
-        <ActivityIndicator color={colors.brand} />
-      </ScreenContainer>
-    );
-  }
-
-  if (!hearing) {
-    return (
-      <ScreenContainer style={{ alignItems: "center", justifyContent: "center" }}>
-        <ErrorNotice message={error ?? "Hearing not found"} />
+      <ScreenContainer>
+        <LoadState error={isLoading ? null : (error ?? "Hearing not found")} onRetry={retryLoad} />
       </ScreenContainer>
     );
   }

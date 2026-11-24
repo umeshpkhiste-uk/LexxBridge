@@ -1,8 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
-import { ActivityIndicator, Alert, Pressable, Text } from "react-native";
+import { ActivityIndicator, Pressable, Text } from "react-native";
 import { useGuardedPress } from "@/shared/lib/useGuardedPress";
+import { alertMessage } from "@/shared/lib/alert";
+import { NETWORK_ERROR_MESSAGE } from "@/shared/lib/errors";
 import { useTheme } from "@/shared/ui/theme";
 import { getBiometricLoginEmail, getBiometricSupport, loginWithBiometric } from "./biometric";
 
@@ -37,8 +39,9 @@ export function BiometricLoginButton() {
     const { error } = await loginWithBiometric(state.label);
     setIsBusy(false);
     if (error) {
-      setState(null);
-      Alert.alert("Couldn't log in", error);
+      // After a network failure the saved login still works, so keep the button.
+      if (error !== NETWORK_ERROR_MESSAGE) setState(null);
+      alertMessage("Couldn't log in", error);
     }
   });
 

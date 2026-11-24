@@ -3,7 +3,6 @@ import { Link, useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   NativeScrollEvent,
   NativeSyntheticEvent,
   Pressable,
@@ -21,6 +20,7 @@ import { BiometricLoginButton } from "@/features/biometric/BiometricLoginButton"
 import { ScreenContainer } from "@/shared/ui/ScreenContainer";
 import { AppLogo } from "@/shared/ui/AppLogo";
 import { useAppWidth } from "@/shared/ui/appFrame";
+import { alertMessage } from "@/shared/lib/alert";
 import { useTheme } from "@/shared/ui/theme";
 
 const SLIDES = [
@@ -78,13 +78,13 @@ export default function WelcomeScreen() {
       const current = enabled?.[provider] ? enabled : await getEnabledProviders();
       setEnabled(current);
       if (!current[provider]) {
-        Alert.alert(`${label} sign-in unavailable`, `${label} sign-in isn't available yet. Please continue with your email for now.`);
+        alertMessage(`${label} sign-in unavailable`, `${label} sign-in isn't available yet. Please continue with your email for now.`);
         return;
       }
       setBusy(provider);
       const result = await signInWithProvider(provider);
       // On success the auth listener switches the app to the signed-in screens.
-      if (result.status === "error") Alert.alert(`Couldn't sign in with ${label}`, result.message);
+      if (result.status === "error") alertMessage(`Couldn't sign in with ${label}`, result.message);
     } finally {
       isActingRef.current = false;
       setBusy(null);

@@ -13,6 +13,8 @@ import { presentNow } from "@/features/notifications/device";
 import { supabase } from "@/shared/lib/supabase";
 import { Button } from "@/shared/ui/Button";
 import { AppLogo } from "@/shared/ui/AppLogo";
+import { friendlyErrorMessage } from "@/shared/lib/errors";
+import { LoadState } from "@/shared/ui/LoadState";
 import { useTheme } from "@/shared/ui/theme";
 import { getAppLockInfo, resetAppLockFailures, verifyAppLock } from "./appLock";
 import { PatternGrid } from "./PatternGrid";
@@ -40,6 +42,8 @@ export function AppLockScreen({ userId, mode = "unlock", onUnlock, onSignedOut }
   const [pin, setPin] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [isChecking, setIsChecking] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
   const prompted = useRef(false);
 
   // "Forgot? Log in with password".
@@ -79,20 +83,28 @@ export function AppLockScreen({ userId, mode = "unlock", onUnlock, onSignedOut }
         prompted.current = true;
         tryBiometric(support.label);
       }
-    });
+    })
+      .catch((err) => active && setLoadError(friendlyErrorMessage(err)));
     return () => {
       active = false;
     };
     // Runs once for this user; the callbacks only matter for that first check.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId]);
+  }, [userId, attempt]);
+
+  const retryLoad = () => {
+    setLoadError(null);
+    setAttempt((n) => n + 1);
+  };
 
   const check = async (secret: string) => {
     setIsChecking(true);
     const result = await verifyAppLock(userId, secret);
     setIsChecking(false);
-    if (result.ok) return onUnlock();
+    // Cleared either way: a correct PIN can still leave this screen up if
+    // logging back in fails on the network.
     setPin("");
+    if (result.ok) return onUnlock();
     if (result.attemptsLeft <= 0) {
       const what = lock?.method === "pattern" ? "pattern" : "PIN";
       setMessage(`App locked after ${MAX_ATTEMPTS} wrong attempts.`);
@@ -122,7 +134,7 @@ export function AppLockScreen({ userId, mode = "unlock", onUnlock, onSignedOut }
   if (lock === undefined) {
     return (
       <View style={[styles.center, { backgroundColor: colors.background }]}>
-        <ActivityIndicator color={colors.brand} />
+        <LoadState error={loadError} onRetry={retryLoad} />
       </View>
     );
   }

@@ -1,12 +1,13 @@
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import { getMyNominee, removeMyNominee, saveMyNominee } from "@/features/legal/dpdpApi";
 import { alertMessage, confirmAlert } from "@/shared/lib/alert";
 import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { Button } from "@/shared/ui/Button";
 import { ScreenContainer } from "@/shared/ui/ScreenContainer";
 import { TextField } from "@/shared/ui/TextField";
+import { LoadState } from "@/shared/ui/LoadState";
 import { useTheme } from "@/shared/ui/theme";
 
 /** DPDP Act §14: name someone who can exercise your data rights (access,
@@ -14,6 +15,8 @@ import { useTheme } from "@/shared/ui/theme";
 export default function NomineeScreen() {
   const { colors, spacing, radius, typography } = useTheme();
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
   const [hasNominee, setHasNominee] = useState(false);
   const [fullName, setFullName] = useState("");
   const [relationship, setRelationship] = useState("");
@@ -31,9 +34,15 @@ export default function NomineeScreen() {
         setEmail(n.email ?? "");
         setPhone(n.phone ?? "");
       })
-      .catch((err) => alertMessage("Couldn't load nominee", friendlyErrorMessage(err)))
+      .catch((err) => setError(friendlyErrorMessage(err)))
       .finally(() => setIsLoading(false));
-  }, []);
+  }, [attempt]);
+
+  const retryLoad = () => {
+    setError(null);
+    setIsLoading(true);
+    setAttempt((n) => n + 1);
+  };
 
   const save = async () => {
     setIsSaving(true);
@@ -66,8 +75,13 @@ export default function NomineeScreen() {
       },
     ]);
 
-  if (isLoading) {
-    return <ActivityIndicator color={colors.brand} style={{ marginTop: spacing.xl }} />;
+  // Not the form: saving its blank fields would overwrite the saved nominee.
+  if (isLoading || error) {
+    return (
+      <ScreenContainer>
+        <LoadState error={error} onRetry={retryLoad} />
+      </ScreenContainer>
+    );
   }
 
   return (

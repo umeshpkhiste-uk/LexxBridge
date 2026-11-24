@@ -97,10 +97,14 @@ export function AuthProvider({ children }: PropsWithChildren) {
       const linkError = await Linking.getInitialURL()
         .then(consumeAuthDeepLink)
         .catch(() => null);
-      const { data } = await supabase.auth.getSession();
+      // A saved session that can't be read shows sign-in, not an endless spinner.
+      const savedSession = await supabase.auth
+        .getSession()
+        .then(({ data }) => data.session)
+        .catch(() => null);
       if (!active) return;
       setDeepLinkError(linkError);
-      setSession(data.session);
+      setSession(savedSession);
       setIsLoading(false);
     })();
     // Warm start: the app was already open (backgrounded) when the link was tapped.

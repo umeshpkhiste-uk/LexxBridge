@@ -1,7 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Href, router } from "expo-router";
 import { useState } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import { LoadState } from "@/shared/ui/LoadState";
 import { useTheme } from "@/shared/ui/theme";
 import { AgendaItem } from "./api";
 import { isSameDay } from "./MonthCalendar";
@@ -26,7 +27,19 @@ function formatTime(iso: string) {
 /** "Schedule for <day>" under a month calendar: collapsible list of that
  * day's hearings and meetings, with a + to add a meeting. Personal to-dos
  * are deliberately not shown here — that list stays fully independent. */
-export function DayAgenda({ selectedDate, items, isLoading }: { selectedDate: Date; items: AgendaItem[]; isLoading?: boolean }) {
+export function DayAgenda({
+  selectedDate,
+  items,
+  isLoading,
+  error,
+  onRetry,
+}: {
+  selectedDate: Date;
+  items: AgendaItem[];
+  isLoading: boolean;
+  error: string | null;
+  onRetry: () => void;
+}) {
   const { colors, spacing, radius, typography } = useTheme();
   const [isOpen, setIsOpen] = useState(true);
   const dayItems = items.filter((item) => isSameDay(new Date(item.at), selectedDate));
@@ -54,8 +67,8 @@ export function DayAgenda({ selectedDate, items, isLoading }: { selectedDate: Da
 
       {isOpen ? (
         <View style={{ marginTop: spacing.md }}>
-          {isLoading ? (
-            <ActivityIndicator color={ACCENT} style={{ marginTop: spacing.lg }} />
+          {isLoading || error ? (
+            <LoadState error={isLoading ? null : error} onRetry={onRetry} />
           ) : dayItems.length === 0 ? (
             <View style={[styles.itemRow, { borderTopColor: colors.border, paddingVertical: spacing.lg }]}>
               <Text style={[typography.body, { color: colors.textSecondary }]}>Nothing scheduled for this day.</Text>

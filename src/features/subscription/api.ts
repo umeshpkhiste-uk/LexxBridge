@@ -1,3 +1,4 @@
+import { UserFacingError } from "@/shared/lib/errors";
 import { supabase } from "@/shared/lib/supabase";
 
 /** Clients allowed on the free plan — must match the clients_free_plan_limit
@@ -37,7 +38,7 @@ async function callSubscription<T>(action: "plan" | "create" | "cancel"): Promis
     // The function's own message ("You already have an active subscription."
     // etc.) is written for the user; fall back to a generic one.
     const body = await (error as { context?: Response }).context?.json?.().catch(() => null);
-    throw new Error(body?.error ?? "Couldn't reach the payment service. Please try again.");
+    throw new UserFacingError(body?.error ?? "Couldn't reach the payment service. Please try again.");
   }
   return data as T;
 }

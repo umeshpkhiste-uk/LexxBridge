@@ -1,8 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Image } from "expo-image";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   deleteTransaction,
@@ -25,6 +24,9 @@ import { ErrorNotice } from "@/shared/ui/ErrorNotice";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { SelectField } from "@/shared/ui/SelectField";
 import { TextField } from "@/shared/ui/TextField";
+import { alertMessage } from "@/shared/lib/alert";
+import { LoadState } from "@/shared/ui/LoadState";
+import { RemoteImage } from "@/shared/ui/RemoteImage";
 import { useTheme } from "@/shared/ui/theme";
 
 function formatDay(dateStr: string) {
@@ -41,6 +43,8 @@ export default function TransactionDetailsScreen() {
   const insets = useSafeAreaInsets();
   const [tx, setTx] = useState<TransactionDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
+  const [receiptFailed, setReceiptFailed] = useState(false);
   const [receiptUrl, setReceiptUrl] = useState<string | null>(null);
   const [viewerOpen, setViewerOpen] = useState(false);
 
@@ -64,16 +68,25 @@ export default function TransactionDetailsScreen() {
           return;
         }
         setTx(t);
-        if (t.receipt_path) getReceiptUrl(t.receipt_path).then(setReceiptUrl).catch(() => {});
+        if (t.receipt_path)
+          getReceiptUrl(t.receipt_path)
+            .then(setReceiptUrl)
+            .catch(() => setReceiptFailed(true));
       })
       .catch((err) => setError(friendlyErrorMessage(err)));
-  }, [id]);
+  }, [id, attempt]);
+
+  const retryLoad = () => {
+    setError(null);
+    setReceiptFailed(false);
+    setAttempt((n) => n + 1);
+  };
 
   if (!tx) {
     return (
       <View style={[styles.center, { backgroundColor: colors.background }]}>
         <Stack.Screen options={{ title: "Payment details" }} />
-        {error ? <ErrorNotice message={error} /> : <ActivityIndicator color={colors.brand} />}
+        <LoadState error={error} onRetry={retryLoad} />
       </View>
     );
   }
@@ -146,7 +159,7 @@ export default function TransactionDetailsScreen() {
       router.back();
     } catch (err) {
       setIsDeleting(false);
-      Alert.alert("Couldn't delete entry", friendlyErrorMessage(err));
+      alertMessage("Couldn't delete entry", friendlyErrorMessage(err));
     }
   };
 
@@ -276,18 +289,18 @@ export default function TransactionDetailsScreen() {
             <Text style={[typography.body, { color: colors.textSecondary }]}>No receipt was attached.</Text>
           ) : receiptUrl ? (
             <Pressable onPress={() => setViewerOpen(true)} accessibilityLabel="View receipt full screen">
-              <Image source={{ uri: receiptUrl }} style={{ width: "100%", height: 260, borderRadius: radius.md }} contentFit="cover" transition={150} />
+              <RemoteImage uri={receiptUrl} style={{ width: "100%", height: 260, borderRadius: radius.md }} />
               <Text style={[typography.caption, { color: colors.brand, textAlign: "center", marginTop: spacing.xs }]}>Tap to view full screen</Text>
             </Pressable>
           ) : (
-            <ActivityIndicator color={colors.brand} />
+            <LoadState error={receiptFailed ? "The receipt couldn't be loaded." : null} onRetry={retryLoad} />
           )}
         </View>
       ) : null}
 
       <AppModal visible={viewerOpen} transparent animationType="fade" onRequestClose={() => setViewerOpen(false)}>
         <Pressable style={styles.viewer} onPress={() => setViewerOpen(false)} accessibilityLabel="Close receipt">
-          {receiptUrl ? <Image source={{ uri: receiptUrl }} style={{ width: "100%", height: "85%" }} contentFit="contain" /> : null}
+          {receiptUrl ? <RemoteImage uri={receiptUrl} style={{ width: "100%", height: "85%" }} contentFit="contain" /> : null}
           <View style={[styles.viewerClose, { top: insets.top + 12 }]}>
             <Ionicons name="close" size={28} color="#FFFFFF" />
           </View>

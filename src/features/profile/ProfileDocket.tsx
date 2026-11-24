@@ -1,8 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useState } from "react";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { OnlineDot } from "@/features/presence/OnlineDot";
+import { RemoteImage } from "@/shared/ui/RemoteImage";
 import { useTheme } from "@/shared/ui/theme";
 import type { AdvocateProfile } from "./api";
 
@@ -81,7 +82,11 @@ export function ProfileDocket({ profile, email, audience, caseCount, connections
         <View style={[styles.heroRow, { gap: spacing.md, marginTop: spacing.sm }]}>
           <View>
             {profile.profile_photo_url ? (
-              <Image source={{ uri: profile.profile_photo_url }} style={[styles.photo, { backgroundColor: colors.surfaceAlt }]} />
+              <RemoteImage
+                uri={profile.profile_photo_url}
+                style={[styles.photo, { backgroundColor: colors.surfaceAlt }]}
+                fallback={<Ionicons name="person" size={36} color={colors.brand} />}
+              />
             ) : (
               <View style={[styles.photo, styles.center, { backgroundColor: colors.surfaceAlt }]}>
                 <Ionicons name="person" size={36} color={colors.brand} />

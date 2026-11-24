@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, Image, ImageBackground, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ImageBackground, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { signOutKeepingBiometric } from "@/features/biometric/biometric";
@@ -16,6 +16,8 @@ import { HomeButton } from "@/shared/ui/HomeButton";
 import { confirmDeleteAccount } from "@/features/account/confirmDeleteAccount";
 import { alertMessage, confirmAlert } from "@/shared/lib/alert";
 import { friendlyErrorMessage } from "@/shared/lib/errors";
+import { ErrorView, LoadingView } from "@/shared/ui/LoadState";
+import { RemoteImage } from "@/shared/ui/RemoteImage";
 import { useTheme } from "@/shared/ui/theme";
 
 const verificationLabel: Record<AdvocateProfile["verification_status"], string> = {
@@ -53,6 +55,8 @@ export default function ProfileScreen() {
   const [notificationsOn, setNotificationsOn] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
 
   const userId = session?.user.id;
   const email = session?.user.email;
@@ -66,7 +70,9 @@ export default function ProfileScreen() {
           if (!isMounted) return;
           setProfile(profile);
           setNotificationsOn(profile.notifications_enabled !== false);
+          setError(null);
         })
+        .catch((err) => isMounted && setError(friendlyErrorMessage(err)))
         .finally(() => {
           if (isMounted) setIsLoading(false);
         });
@@ -76,7 +82,8 @@ export default function ProfileScreen() {
       return () => {
         isMounted = false;
       };
-    }, []),
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- attempt re-runs the load on "Try again"
+    }, [attempt]),
   );
 
   const handleNotificationsToggle = async (enabled: boolean) => {
@@ -108,7 +115,7 @@ export default function ProfileScreen() {
   if (isLoading) {
     return (
       <View style={[styles.center, { backgroundColor: colors.background }]}>
-        <ActivityIndicator color={colors.brand} />
+        <LoadingView />
       </View>
     );
   }
@@ -121,7 +128,11 @@ export default function ProfileScreen() {
 
       <View>
         {profile?.profile_photo_url ? (
-          <Image source={{ uri: profile.profile_photo_url }} style={styles.avatar} />
+          <RemoteImage
+            uri={profile.profile_photo_url}
+            style={[styles.avatar, { backgroundColor: colors.brandPressed }]}
+            fallback={<Ionicons name="person" size={40} color="#FFFFFF" />}
+          />
         ) : (
           <View style={[styles.avatar, { backgroundColor: colors.brandPressed }]}>
             <Ionicons name="person" size={40} color="#FFFFFF" />
@@ -146,7 +157,7 @@ export default function ProfileScreen() {
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.background }} contentContainerStyle={{ paddingBottom: spacing.xl }}>
       {profile?.profile_photo_url ? (
-        <ImageBackground source={{ uri: profile.profile_photo_url }} blurRadius={25}>
+        <ImageBackground source={{ uri: profile.profile_photo_url }} blurRadius={25} style={{ backgroundColor: colors.brand }}>
           <View style={styles.heroOverlay}>{heroContent}</View>
         </ImageBackground>
       ) : (
@@ -154,6 +165,12 @@ export default function ProfileScreen() {
       )}
 
       <View style={{ paddingHorizontal: spacing.md, marginTop: -spacing.xl, gap: spacing.lg }}>
+        {/* Not full-screen: log out and settings below must stay reachable. */}
+        {error && !profile ? (
+          <View style={{ backgroundColor: colors.surface, borderRadius: radius.lg }}>
+            <ErrorView message={error} onRetry={() => setAttempt((n) => n + 1)} />
+          </View>
+        ) : null}
         <SettingsGroup>
           <SettingsRow
             icon="id-card-outline"

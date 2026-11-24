@@ -12,6 +12,7 @@ import { Button } from "@/shared/ui/Button";
 import { ErrorNotice } from "@/shared/ui/ErrorNotice";
 import { ScreenContainer } from "@/shared/ui/ScreenContainer";
 import { TextField } from "@/shared/ui/TextField";
+import { alertMessage } from "@/shared/lib/alert";
 import { useTheme } from "@/shared/ui/theme";
 import { IMAGE_MAX_SIDE, shrinkImage } from "@/shared/lib/shrinkImage";
 
@@ -34,7 +35,7 @@ export default function NewPostScreen() {
     if (result.canceled) return;
     const tooLarge = result.assets.find((a) => a.size && a.size > MAX_ATTACHMENT_BYTES);
     if (tooLarge) {
-      Alert.alert("File too large", `${tooLarge.name} is over the 20 MB attachment limit.`);
+      alertMessage("File too large", `${tooLarge.name} is over the 20 MB attachment limit.`);
       return;
     }
     setFiles((prev) => [...prev, ...result.assets.map((a) => ({ uri: a.uri, name: a.name, mimeType: a.mimeType, size: a.size }))]);
@@ -88,7 +89,7 @@ export default function NewPostScreen() {
       size = info.exists ? info.size : undefined;
     }
     if (size && size > MAX_VIDEO_BYTES) {
-      Alert.alert("Video too large", `This video is ${(size / 1024 / 1024).toFixed(0)} MB. Please choose a video under 50 MB, or trim it first.`);
+      alertMessage("Video too large", `This video is ${(size / 1024 / 1024).toFixed(0)} MB. Please choose a video under 50 MB, or trim it first.`);
       return;
     }
     setVideo({ uri: asset.uri, mimeType: asset.mimeType ?? "video/mp4", size });

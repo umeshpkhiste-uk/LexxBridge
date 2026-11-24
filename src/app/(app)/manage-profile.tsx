@@ -6,6 +6,7 @@ import { AdvocateProfile, getMyProfile, updateMyProfile } from "@/features/profi
 import { alertMessage, confirmAlert } from "@/shared/lib/alert";
 import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { ScreenContainer } from "@/shared/ui/ScreenContainer";
+import { LoadState } from "@/shared/ui/LoadState";
 import { useTheme } from "@/shared/ui/theme";
 
 type Visibility = AdvocateProfile["profile_visibility"];
@@ -25,13 +26,20 @@ const OPTIONS: { value: Visibility; label: string; description: string; icon: ke
 export default function ManageProfileScreen() {
   const { colors, spacing, radius, typography } = useTheme();
   const [selected, setSelected] = useState<Visibility | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
   const [saving, setSaving] = useState<Visibility | null>(null);
 
   useEffect(() => {
     getMyProfile()
       .then((profile) => setSelected(profile.profile_visibility))
-      .catch(() => {});
-  }, []);
+      .catch((err) => setError(friendlyErrorMessage(err)));
+  }, [attempt]);
+
+  const retryLoad = () => {
+    setError(null);
+    setAttempt((n) => n + 1);
+  };
 
   const choose = (value: Visibility) => {
     if (value === selected || saving) return;
@@ -64,7 +72,7 @@ export default function ManageProfileScreen() {
       </Text>
 
       {selected === null ? (
-        <ActivityIndicator color={colors.brand} />
+        <LoadState error={error} onRetry={retryLoad} />
       ) : (
         <View style={{ backgroundColor: colors.surface, borderRadius: radius.lg, overflow: "hidden" }}>
           {OPTIONS.map((option, i) => (

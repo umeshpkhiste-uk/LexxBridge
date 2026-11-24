@@ -2,8 +2,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useMemo, useRef, useState } from "react";
 import {
-  ActivityIndicator,
-  Image,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -33,6 +31,8 @@ import { formatHearingDate, formatINR, toDateParam } from "@/shared/lib/format";
 import { SheetAction } from "@/shared/ui/ActionSheet";
 import { ContextMenu, measureAnchor, MenuAnchor } from "@/shared/ui/ContextMenu";
 import { useAppWidth } from "@/shared/ui/appFrame";
+import { ErrorView, LoadingView } from "@/shared/ui/LoadState";
+import { RemoteImage } from "@/shared/ui/RemoteImage";
 import { useTheme } from "@/shared/ui/theme";
 
 const UPCOMING_DAYS_AHEAD = 60;
@@ -91,6 +91,14 @@ export default function HomeScreen() {
   const [upcoming, setUpcoming] = useState<UpcomingHearing[]>([]);
   const [unreadChats, setUnreadChats] = useState<ConversationSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  // Sections that failed to load, so an advocate is never told "no hearings"
+  // when they simply couldn't be fetched.
+  const [loadErrors, setLoadErrors] = useState<{ today: string | null; hearings: string | null; cases: string | null; chats: string | null }>({
+    today: null,
+    hearings: null,
+    cases: null,
+    chats: null,
+  });
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [search, setSearch] = useState("");
   const [menuCase, setMenuCase] = useState<CaseSummary | null>(null);
@@ -116,6 +124,10 @@ export default function HomeScreen() {
       if (hearings.status === "fulfilled") setUpcoming(hearings.value);
       if (conversations.status === "fulfilled") setUnreadChats(conversations.value.filter((c) => c.unreadCount > 0));
 
+      const errorOf = (result: PromiseSettledResult<unknown>) =>
+        result.status === "rejected" ? friendlyErrorMessage(result.reason) : null;
+      setLoadErrors({ today: errorOf(agenda), hearings: errorOf(hearings), cases: errorOf(caseList), chats: errorOf(conversations) });
+
       const failures = [profile, agenda, caseList, pending, hearings, conversations].filter((r) => r.status === "rejected");
       if (failures.length > 0) console.warn("Home: some sections failed to load", failures.map((f) => f.reason));
     });
@@ -137,6 +149,11 @@ export default function HomeScreen() {
       load().finally(() => setIsLoading(false));
     }, [load])
   );
+
+  const retryLoad = () => {
+    setIsLoading(true);
+    load().finally(() => setIsLoading(false));
+  };
 
   const onRefresh = () => {
     setIsRefreshing(true);
@@ -163,6 +180,14 @@ export default function HomeScreen() {
       await downloadCaseStatementPdf(c.id);
     } catch (err) {
       alertMessage("Couldn't download statement", friendlyErrorMessage(err));
+    }
+  };
+
+  const downloadCaseSummary = async (c: CaseSummary) => {
+    try {
+      await downloadCaseHandoverPdf(c.id);
+    } catch (err) {
+      alertMessage("Couldn't download case summary", friendlyErrorMessage(err));
     }
   };
 
@@ -208,7 +233,7 @@ export default function HomeScreen() {
           onPress: () => router.push(`/(app)/transactions/new?caseId=${menuCase.id}&clientId=${menuCase.client_id}`),
         },
         { label: "Download statement", icon: "download-outline", onPress: () => downloadCaseStatement(menuCase) },
-        { label: "Download case summary", icon: "document-outline", onPress: () => downloadCaseHandoverPdf(menuCase.id) },
+        { label: "Download case summary", icon: "document-outline", onPress: () => downloadCaseSummary(menuCase) },
         ...(menuCase.next_hearing_at
           ? [{ label: "See hearing in calendar", icon: "today-outline" as const, onPress: () => openCalendar(menuCase.next_hearing_at!) }]
           : []),
@@ -248,6 +273,12 @@ export default function HomeScreen() {
         </View>
 
         {/* Today */}
+        {!search && loadErrors.today && todayItems.length === 0 && !isLoading ? (
+          <>
+            <SectionHeader title="Today" colors={colors} typography={typography} spacing={spacing} />
+            <ErrorView message={loadErrors.today} onRetry={retryLoad} />
+          </>
+        ) : null}
         {!search && todayItems.length > 0 ? (
           <>
             <SectionHeader title="Today" colors={colors} typography={typography} spacing={spacing} />
@@ -290,7 +321,9 @@ export default function HomeScreen() {
               spacing={spacing}
             />
             {isLoading ? (
-              <ActivityIndicator color={colors.brand} style={{ marginTop: spacing.sm }} />
+              <LoadingView />
+            ) : loadErrors.hearings && upcomingDays.length === 0 ? (
+              <ErrorView message={loadErrors.hearings} onRetry={retryLoad} />
             ) : upcomingDays.length === 0 ? (
               <Pressable
                 onPress={() => openCalendar()}
@@ -332,7 +365,9 @@ export default function HomeScreen() {
         />
 
         {isLoading ? (
-          <ActivityIndicator color={colors.brand} style={{ marginTop: spacing.lg }} />
+          <LoadingView />
+        ) : loadErrors.cases && cases.length === 0 ? (
+          <ErrorView message={loadErrors.cases} onRetry={retryLoad} />
         ) : currentCases.length === 0 ? (
           <Pressable
             onPress={() => router.push("/(app)/(tabs)/cases")}
@@ -387,7 +422,9 @@ export default function HomeScreen() {
               spacing={spacing}
             />
             {isLoading ? (
-              <ActivityIndicator color={colors.brand} style={{ marginTop: spacing.sm }} />
+              <LoadingView />
+            ) : loadErrors.chats && unreadChats.length === 0 ? (
+              <ErrorView message={loadErrors.chats} onRetry={retryLoad} />
             ) : unreadChats.length === 0 ? (
               <View style={[styles.emptyMessages, { padding: spacing.lg, borderRadius: radius.lg, backgroundColor: colors.surface }]}>
                 <Ionicons name="checkmark-done-outline" size={22} color={colors.success} />
@@ -411,7 +448,15 @@ export default function HomeScreen() {
                   >
                     <View>
                       {chat.otherParty.profile_photo_url ? (
-                        <Image source={{ uri: chat.otherParty.profile_photo_url }} style={styles.avatar} />
+                        <RemoteImage
+                          uri={chat.otherParty.profile_photo_url}
+                          style={[styles.avatar, { backgroundColor: colors.surfaceAlt }]}
+                          fallback={
+                            <Text style={[typography.bodyStrong, { color: colors.brand }]}>
+                              {chat.otherParty.full_name.charAt(0).toUpperCase()}
+                            </Text>
+                          }
+                        />
                       ) : (
                         <View style={[styles.avatar, { backgroundColor: colors.surfaceAlt }]}>
                           <Text style={[typography.bodyStrong, { color: colors.brand }]}>
@@ -462,6 +507,8 @@ function HomeMonthCalendar() {
   const [selectedDate, setSelectedDate] = useState(() => startOfDay(new Date()));
   const [items, setItems] = useState<AgendaItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
 
   useFocusEffect(
     useCallback(() => {
@@ -469,13 +516,18 @@ function HomeMonthCalendar() {
       const from = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), 1);
       const to = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1, 0, 23, 59, 59, 999);
       listAgendaItems({ from, to })
-        .then((rows) => active && setItems(rows))
-        .catch(() => {})
+        .then((rows) => {
+          if (!active) return;
+          setItems(rows);
+          setError(null);
+        })
+        .catch((err) => active && setError(friendlyErrorMessage(err)))
         .finally(() => active && setIsLoading(false));
       return () => {
         active = false;
       };
-    }, [visibleMonth]),
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- attempt re-runs the load on "Try again"
+    }, [visibleMonth, attempt]),
   );
 
   const today = new Date();
@@ -500,7 +552,16 @@ function HomeMonthCalendar() {
           setVisibleMonth(new Date(today.getFullYear(), today.getMonth(), 1));
         }}
       />
-      <DayAgenda selectedDate={selectedDate} items={items} isLoading={isLoading} />
+      <DayAgenda
+        selectedDate={selectedDate}
+        items={items}
+        isLoading={isLoading}
+        error={error}
+        onRetry={() => {
+          setIsLoading(true);
+          setAttempt((n) => n + 1);
+        }}
+      />
     </View>
   );
 }

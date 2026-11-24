@@ -7,7 +7,6 @@ import { router, Stack, useLocalSearchParams } from "expo-router";
 import { useHeaderHeight } from "expo-router/react-navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  ActivityIndicator,
   FlatList,
   KeyboardAvoidingView,
   Linking,
@@ -47,7 +46,8 @@ import { useIsOnline } from "@/features/presence/PresenceProvider";
 import { SheetAction } from "@/shared/ui/ActionSheet";
 import { AppModal } from "@/shared/ui/AppModal";
 import { anchorFromEvent, ContextMenu, measureAnchor, MenuAnchor } from "@/shared/ui/ContextMenu";
-import { ErrorNotice } from "@/shared/ui/ErrorNotice";
+import { LoadState } from "@/shared/ui/LoadState";
+import { RemoteImage } from "@/shared/ui/RemoteImage";
 import { useTheme } from "@/shared/ui/theme";
 import { IMAGE_MAX_SIDE, shrinkImage } from "@/shared/lib/shrinkImage";
 
@@ -79,6 +79,7 @@ export default function ChatScreen() {
   const [pending, setPending] = useState<ChatMessage[]>([]);
   const [partner, setPartner] = useState<ChatPartner | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
   const [draft, setDraft] = useState("");
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
   const [editing, setEditing] = useState<ChatMessage | null>(null);
@@ -157,7 +158,12 @@ export default function ChatScreen() {
       if (typingStopTimer.current) clearTimeout(typingStopTimer.current);
       if (partnerTypingTimer.current) clearTimeout(partnerTypingTimer.current);
     };
-  }, [id, myId, upsert]);
+  }, [id, myId, upsert, attempt]);
+
+  const retryLoad = () => {
+    setError(null);
+    setAttempt((n) => n + 1);
+  };
 
   // The outbox (queued/failed/offline messages) lives outside this screen so
   // it survives navigating away and back, and keeps retrying in the
@@ -461,7 +467,7 @@ export default function ChatScreen() {
     return (
       <View style={[styles.center, { backgroundColor: colors.background }]}>
         {header}
-        {error ? <ErrorNotice message={error} /> : <ActivityIndicator color={colors.brand} />}
+        <LoadState error={error} onRetry={retryLoad} />
       </View>
     );
   }
@@ -648,7 +654,7 @@ export default function ChatScreen() {
 
       <AppModal visible={!!viewerUri} transparent animationType="fade" onRequestClose={() => setViewerUri(null)}>
         <Pressable style={styles.viewer} onPress={() => setViewerUri(null)} accessibilityLabel="Close photo">
-          {viewerUri ? <Image source={{ uri: viewerUri }} style={{ width: "100%", height: "80%" }} contentFit="contain" /> : null}
+          {viewerUri ? <RemoteImage uri={viewerUri} style={{ width: "100%", height: "80%" }} contentFit="contain" /> : null}
           <View style={[styles.viewerClose, { top: insets.top + 12 }]}>
             <Ionicons name="close" size={28} color="#FFFFFF" />
           </View>

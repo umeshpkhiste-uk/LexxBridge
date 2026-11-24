@@ -13,8 +13,10 @@ import {
 } from "@/features/community/api";
 import { ConnectionRow, listMyConnections } from "@/features/network/api";
 import { Avatar } from "@/features/network/NetworkCards";
-import { confirmAlert } from "@/shared/lib/alert";
+import { alertMessage, confirmAlert } from "@/shared/lib/alert";
 import { ScreenContainer } from "@/shared/ui/ScreenContainer";
+import { friendlyErrorMessage } from "@/shared/lib/errors";
+import { LoadState } from "@/shared/ui/LoadState";
 import { useTheme } from "@/shared/ui/theme";
 import { supabase } from "@/shared/lib/supabase";
 
@@ -29,6 +31,7 @@ export default function CommunityMembersScreen() {
   const [members, setMembers] = useState<CommunityMember[]>([]);
   const [connections, setConnections] = useState<ConnectionRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   // busyId-driven `disabled` only takes effect after a re-render, so a fast
   // double-tap can call addMember/removeMember twice first — this ref
@@ -37,6 +40,7 @@ export default function CommunityMembersScreen() {
 
   const load = useCallback(() => {
     setIsLoading(true);
+    setError(null);
     Promise.all([getCommunity(id), listMyConnections(), supabase.auth.getUser()])
       .then(async ([c, conns, user]) => {
         setCommunity(c);
@@ -44,7 +48,7 @@ export default function CommunityMembersScreen() {
         setConnections(conns.filter((r) => r.status === "accepted"));
         setMembers(await listCommunityMembers(c));
       })
-      .catch((err) => console.warn("Community members: failed to load", err))
+      .catch((err) => setError(friendlyErrorMessage(err)))
       .finally(() => setIsLoading(false));
   }, [id]);
 
@@ -66,7 +70,7 @@ export default function CommunityMembersScreen() {
       await addCommunityMember(community.id, advocateId);
       load();
     } catch (err) {
-      console.warn("Community members: failed to add", err);
+      alertMessage("Couldn't add member", friendlyErrorMessage(err));
     } finally {
       actingRef.current = false;
       setBusyId(null);
@@ -88,7 +92,7 @@ export default function CommunityMembersScreen() {
             await removeCommunityMember(community.id, member.id);
             load();
           } catch (err) {
-            console.warn("Community members: failed to remove", err);
+            alertMessage("Couldn't remove member", friendlyErrorMessage(err));
           } finally {
             actingRef.current = false;
             setBusyId(null);
@@ -98,11 +102,11 @@ export default function CommunityMembersScreen() {
     ]);
   };
 
-  if (isLoading) {
+  if (isLoading || error) {
     return (
       <ScreenContainer style={{ alignItems: "center", justifyContent: "center" }}>
         <Stack.Screen options={{ title: "Members" }} />
-        <ActivityIndicator color={colors.brand} />
+        <LoadState error={error} onRetry={load} />
       </ScreenContainer>
     );
   }

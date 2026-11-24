@@ -1,6 +1,7 @@
 import { onPasswordSignIn } from "@/features/biometric/biometric";
 import { CURRENT_POLICY_VERSION, SIGNUP_CONSENT_METADATA_KEY } from "@/features/legal/consent";
 import { Platform } from "react-native";
+import { authErrorMessage } from "@/shared/lib/errors";
 import { supabase } from "@/shared/lib/supabase";
 
 export type AuthResult = { error: string | null };
@@ -35,7 +36,7 @@ export async function signUpWithEmail(params: {
       emailRedirectTo: authRedirect("verify-email"),
     },
   });
-  return { error: error?.message ?? null };
+  return { error: authErrorMessage(error) };
 }
 
 export async function signInWithEmail(params: { email: string; password: string }): Promise<AuthResult> {
@@ -44,12 +45,12 @@ export async function signInWithEmail(params: { email: string; password: string 
     password: params.password,
   });
   if (data.user) await onPasswordSignIn(data.user.id);
-  return { error: error?.message ?? null };
+  return { error: authErrorMessage(error) };
 }
 
 export async function signOut(): Promise<AuthResult> {
   const { error } = await supabase.auth.signOut();
-  return { error: error?.message ?? null };
+  return { error: authErrorMessage(error) };
 }
 
 /** Revokes every session's refresh token except this one — the self-service
@@ -63,19 +64,19 @@ export async function signOut(): Promise<AuthResult> {
  * a revoked device drops to the sign-in screen. */
 export async function signOutOtherSessions(): Promise<AuthResult> {
   const { error } = await supabase.auth.signOut({ scope: "others" });
-  return { error: error?.message ?? null };
+  return { error: authErrorMessage(error) };
 }
 
 export async function requestPasswordReset(email: string): Promise<AuthResult> {
   const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
     redirectTo: authRedirect("reset-password"),
   });
-  return { error: error?.message ?? null };
+  return { error: authErrorMessage(error) };
 }
 
 export async function updatePassword(newPassword: string): Promise<AuthResult> {
   const { error } = await supabase.auth.updateUser({ password: newPassword });
-  if (error) return { error: error.message };
+  if (error) return { error: authErrorMessage(error) };
   // If a hacked password is being changed to lock an intruder out, their
   // existing session shouldn't just sit there — revoke every other
   // session's refresh token so none of them can keep renewing.
@@ -88,5 +89,5 @@ export async function updatePassword(newPassword: string): Promise<AuthResult> {
  * this has none of the biometric-login side effects of a normal sign-in. */
 export async function verifyCurrentPassword(email: string, password: string): Promise<AuthResult> {
   const { error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
-  return { error: error?.message ?? null };
+  return { error: authErrorMessage(error) };
 }

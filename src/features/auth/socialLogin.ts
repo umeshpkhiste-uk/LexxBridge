@@ -2,6 +2,7 @@ import type { Provider } from "@supabase/supabase-js";
 import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
 import { onPasswordSignIn } from "@/features/biometric/biometric";
+import { authErrorMessage, GENERIC_ERROR_MESSAGE } from "@/shared/lib/errors";
 import { supabase } from "@/shared/lib/supabase";
 
 // Closes the auth popup on web once the provider redirects back.
@@ -49,14 +50,14 @@ export async function signInWithProvider(provider: SocialProvider): Promise<Soci
       queryParams: provider === "google" ? { prompt: "select_account" } : undefined,
     },
   });
-  if (error || !data?.url) return { status: "error", message: error?.message ?? "Couldn't start sign-in" };
+  if (error || !data?.url) return { status: "error", message: authErrorMessage(error) ?? "Couldn't start sign-in" };
 
   const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
   if (result.type !== "success") return { status: "cancelled" };
 
   const { queryParams } = Linking.parse(result.url);
   const providerError = queryParams?.error_description ?? queryParams?.error;
-  if (typeof providerError === "string") return { status: "error", message: providerError.replace(/\+/g, " ") };
+  if (typeof providerError === "string") return { status: "error", message: "Sign-in didn't go through. Please try again." };
 
   const code = queryParams?.code;
   if (typeof code !== "string") return { status: "error", message: "Sign-in didn't return a code. Please try again." };
@@ -65,7 +66,7 @@ export async function signInWithProvider(provider: SocialProvider): Promise<Soci
   const existing = await supabase.auth.getSession();
   if (!existing.data.session) {
     const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-    if (exchangeError) return { status: "error", message: exchangeError.message };
+    if (exchangeError) return { status: "error", message: authErrorMessage(exchangeError) ?? GENERIC_ERROR_MESSAGE };
   }
 
   const { data: userData } = await supabase.auth.getUser();

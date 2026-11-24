@@ -1,10 +1,10 @@
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, View } from "react-native";
+import { View } from "react-native";
 import { listCases } from "@/features/cases/api";
 import { clientCaseTargets } from "@/features/clients/clientCases";
 import { friendlyErrorMessage } from "@/shared/lib/errors";
-import { ErrorNotice } from "@/shared/ui/ErrorNotice";
+import { LoadState } from "@/shared/ui/LoadState";
 import { useTheme } from "@/shared/ui/theme";
 
 /**
@@ -16,6 +16,7 @@ export default function ClientRedirectScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
   const [error, setError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     // listCases skips archived cases, matching the Clients tab.
@@ -25,12 +26,17 @@ export default function ClientRedirectScreen() {
         router.replace(target ? `/(app)/cases/${target.id}` : `/(app)/cases/new?clientId=${id}`);
       })
       .catch((err) => setError(friendlyErrorMessage(err)));
-  }, [id]);
+  }, [id, attempt]);
+
+  const retryLoad = () => {
+    setError(null);
+    setAttempt((n) => n + 1);
+  };
 
   return (
     <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.background }}>
       <Stack.Screen options={{ title: "" }} />
-      {error ? <ErrorNotice message={error} /> : <ActivityIndicator color={colors.brand} />}
+      <LoadState error={error} onRetry={retryLoad} />
     </View>
   );
 }

@@ -15,6 +15,7 @@ import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { Button } from "@/shared/ui/Button";
 import { ScreenContainer } from "@/shared/ui/ScreenContainer";
 import { TextField } from "@/shared/ui/TextField";
+import { ErrorView } from "@/shared/ui/LoadState";
 import { useTheme } from "@/shared/ui/theme";
 
 const STATUS_LABEL: Record<Grievance["status"], string> = { open: "Received", in_progress: "In progress", resolved: "Resolved" };
@@ -28,12 +29,16 @@ export default function PrivacyGrievanceScreen() {
   const [description, setDescription] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [history, setHistory] = useState<Grievance[]>([]);
+  const [historyError, setHistoryError] = useState<string | null>(null);
 
-  useFocusEffect(
-    useCallback(() => {
-      listMyGrievances().then(setHistory).catch(() => {});
-    }, []),
-  );
+  const loadHistory = useCallback(() => {
+    setHistoryError(null);
+    listMyGrievances()
+      .then(setHistory)
+      .catch((err) => setHistoryError(friendlyErrorMessage(err)));
+  }, []);
+
+  useFocusEffect(loadHistory);
 
   const submit = async () => {
     if (!category) return;
@@ -105,6 +110,9 @@ export default function PrivacyGrievanceScreen() {
         If you&apos;re not satisfied with our response, you may complain to the Data Protection Board of India.
       </Text>
 
+      {historyError && history.length === 0 ? (
+        <ErrorView message={historyError} onRetry={loadHistory} style={{ marginTop: spacing.xl }} />
+      ) : null}
       {history.length ? (
         <View style={{ marginTop: spacing.xl, gap: spacing.sm }}>
           <Text style={[typography.subtitle, { color: colors.textPrimary }]}>Your grievances</Text>

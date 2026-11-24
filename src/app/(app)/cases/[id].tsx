@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, Stack, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useState } from "react";
-import { ActivityIndicator, Alert, Pressable, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import { CaseDetail, getCase } from "@/features/cases/api";
 import { downloadCaseHandoverPdf } from "@/features/cases/caseHandover";
 import { CaseOverview } from "@/features/cases/CaseOverview";
@@ -10,8 +10,9 @@ import { canUseMoneyTools } from "@/features/subscription/paywall";
 import { downloadCaseStatementPdf } from "@/features/transactions/shareStatement";
 import { useSwipeTabs } from "@/shared/hooks/useSwipeTabs";
 import { friendlyErrorMessage } from "@/shared/lib/errors";
-import { ErrorNotice } from "@/shared/ui/ErrorNotice";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
+import { alertMessage } from "@/shared/lib/alert";
+import { LoadState } from "@/shared/ui/LoadState";
 import { useTheme } from "@/shared/ui/theme";
 
 const TABS = [
@@ -52,7 +53,13 @@ export default function CaseDetailScreen() {
   if (isLoading || error || !caseDetail) {
     return (
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.background }}>
-        {isLoading ? <ActivityIndicator color={colors.brand} /> : <ErrorNotice message={error ?? "Case not found"} />}
+        <LoadState
+          error={isLoading ? null : (error ?? "Case not found")}
+          onRetry={() => {
+            setIsLoading(true);
+            load();
+          }}
+        />
       </View>
     );
   }
@@ -64,7 +71,7 @@ export default function CaseDetailScreen() {
     try {
       await downloadCaseStatementPdf(caseDetail.id);
     } catch (err) {
-      Alert.alert("Couldn't download statement", friendlyErrorMessage(err));
+      alertMessage("Couldn't download statement", friendlyErrorMessage(err));
     } finally {
       setIsDownloading(false);
     }
@@ -75,6 +82,8 @@ export default function CaseDetailScreen() {
     setIsDownloadingSummary(true);
     try {
       await downloadCaseHandoverPdf(caseDetail.id);
+    } catch (err) {
+      alertMessage("Couldn't download case summary", friendlyErrorMessage(err));
     } finally {
       setIsDownloadingSummary(false);
     }

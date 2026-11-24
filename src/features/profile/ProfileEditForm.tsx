@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Image, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { COURT_OPTIONS } from "@/shared/data/courts";
 import { BAR_COUNCILS, INDIA_STATES, STATE_NAMES } from "@/shared/data/indiaLocations";
 import { SUPPORTED_LANGUAGES } from "@/shared/i18n/languages";
@@ -23,6 +23,7 @@ import { ErrorNotice } from "@/shared/ui/ErrorNotice";
 import { SelectField } from "@/shared/ui/SelectField";
 import { TagInput } from "@/shared/ui/TagInput";
 import { TextField } from "@/shared/ui/TextField";
+import { RemoteImage } from "@/shared/ui/RemoteImage";
 import { useTheme } from "@/shared/ui/theme";
 import { AdvocateProfile, EducationEntry, Gender, updateMyProfile, uploadProfilePhoto } from "./api";
 import { IMAGE_MAX_SIDE, shrinkImage } from "@/shared/lib/shrinkImage";
@@ -246,7 +247,11 @@ export function ProfileEditForm({ profile, email, submitLabel, secondaryLabel, o
         <Pressable onPress={pickPhoto} style={[styles.photoRow, { gap: spacing.md, marginBottom: spacing.md }]}>
           <View>
             {photoUrl ? (
-              <Image source={{ uri: photoUrl }} style={[styles.photo, { backgroundColor: colors.surfaceAlt }]} />
+              <RemoteImage
+                uri={photoUrl}
+                style={[styles.photo, { backgroundColor: colors.surfaceAlt }]}
+                fallback={<Ionicons name="person" size={32} color={colors.brand} />}
+              />
             ) : (
               <View style={[styles.photo, styles.center, { backgroundColor: colors.surfaceAlt }]}>
                 <Ionicons name="person" size={32} color={colors.brand} />

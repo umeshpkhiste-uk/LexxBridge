@@ -25,6 +25,7 @@ import { ScreenContainer } from "@/shared/ui/ScreenContainer";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { SettingsGroup, SettingsRow } from "@/shared/ui/SettingsGroup";
 import { TextField } from "@/shared/ui/TextField";
+import { LoadState } from "@/shared/ui/LoadState";
 import { useTheme } from "@/shared/ui/theme";
 
 function isSameDay(a: Date, b: Date) {
@@ -45,6 +46,7 @@ export default function AdminScreen() {
   const [actingId, setActingId] = useState<string | null>(null);
   const [rejectReasons, setRejectReasons] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
   // Hundreds of verification requests can pile up in a day — this lets an
   // admin work through them one submission-date at a time instead of
   // scrolling one long list.
@@ -64,8 +66,13 @@ export default function AdminScreen() {
         }
         setChecking(false);
       })
-      .catch(() => router.back());
-  }, []);
+      .catch((err) => setError(friendlyErrorMessage(err)));
+  }, [attempt]);
+
+  const retryLoad = () => {
+    setError(null);
+    setAttempt((n) => n + 1);
+  };
 
   const load = useCallback(() => {
     if (checking) return;
@@ -164,7 +171,7 @@ export default function AdminScreen() {
   if (checking) {
     return (
       <ScreenContainer style={{ alignItems: "center", justifyContent: "center" }}>
-        <ActivityIndicator color={colors.brand} />
+        <LoadState error={error} onRetry={retryLoad} />
       </ScreenContainer>
     );
   }
@@ -192,7 +199,7 @@ export default function AdminScreen() {
         autoCapitalize="none"
       />
 
-      {error ? <ErrorNotice message={error} style={{ marginBottom: spacing.md }} /> : null}
+      {error && profiles !== null ? <ErrorNotice message={error} style={{ marginBottom: spacing.md }} /> : null}
 
       {pendingVerificationsAllDates.length > 0 ? (
         <View style={{ marginBottom: spacing.lg, gap: spacing.sm }}>
@@ -292,9 +299,7 @@ export default function AdminScreen() {
         title={`Users${profiles ? ` (${visibleProfiles.length}${userFilter === "new" && !isSearching ? ` of ${allProfiles.length}` : ""})` : ""}`}
       >
         {profiles === null ? (
-          <View style={{ padding: spacing.lg, alignItems: "center" }}>
-            <ActivityIndicator color={colors.brand} />
-          </View>
+          <LoadState error={error} onRetry={load} />
         ) : visibleProfiles.length === 0 ? (
           <Text style={[typography.body, { color: colors.textSecondary, padding: spacing.md }]}>
             {userFilter === "new" && !isSearching ? "No new unverified users today." : "No users found."}

@@ -1,8 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Image } from "expo-image";
 import { Children, Fragment, PropsWithChildren, ReactNode } from "react";
 import { Pressable, StyleSheet, Switch, Text, View } from "react-native";
 import { useGuardedPress } from "@/shared/lib/useGuardedPress";
+import { RemoteImage } from "./RemoteImage";
 import { useTheme } from "./theme";
 
 /** White rounded card grouping settings rows, with dividers between them. */
@@ -74,7 +74,11 @@ export function SettingsRow({ icon, avatarUri, label, subtitle, onPress, destruc
       style={({ pressed }) => [styles.row, { paddingVertical: spacing.md, opacity: pressed ? 0.6 : 1 }]}
     >
       {avatarUri ? (
-        <Image source={{ uri: avatarUri }} style={{ width: 28, height: 28, borderRadius: 14, marginRight: 8 }} contentFit="cover" />
+        <RemoteImage
+          uri={avatarUri}
+          style={{ width: 28, height: 28, borderRadius: 14, marginRight: 8 }}
+          fallback={<Ionicons name={icon} size={22} color={tint} />}
+        />
       ) : (
         <Ionicons name={icon} size={22} color={tint} style={{ width: 36 }} />
       )}

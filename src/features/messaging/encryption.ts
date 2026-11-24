@@ -144,7 +144,8 @@ export type KeyBackupRow = { wrapped_secret_key: string; nonce: string; salt: st
  * backup has ever been set up (not a "wrong passphrase" or error state). */
 export async function fetchKeyBackup(userId: string): Promise<KeyBackupRow | null> {
   const { data, error } = await supabase.from("messaging_key_backups").select("wrapped_secret_key, nonce, salt").eq("user_id", userId).maybeSingle();
-  return error ? null : (data ?? null);
+  if (error) throw new Error(error.message);
+  return data ?? null;
 }
 
 /** Wraps this device's current secret key under the given passphrase and

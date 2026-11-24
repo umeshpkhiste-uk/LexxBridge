@@ -1,6 +1,6 @@
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import {
   getTransaction,
   INCOME_CATEGORIES,
@@ -18,6 +18,7 @@ import { ScreenContainer } from "@/shared/ui/ScreenContainer";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { SelectField } from "@/shared/ui/SelectField";
 import { TextField } from "@/shared/ui/TextField";
+import { LoadState } from "@/shared/ui/LoadState";
 import { useTheme } from "@/shared/ui/theme";
 
 /**
@@ -37,6 +38,7 @@ export default function EditPendingPaymentScreen() {
   const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
   const [receipt, setReceipt] = useState<PickedReceipt | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [amountTouched, setAmountTouched] = useState(false);
 
@@ -53,13 +55,18 @@ export default function EditPendingPaymentScreen() {
         setPaymentMethod(t.payment_method);
       })
       .catch((err) => setLoadError(friendlyErrorMessage(err)));
-  }, [id]);
+  }, [id, attempt]);
+
+  const retryLoad = () => {
+    setLoadError(null);
+    setAttempt((n) => n + 1);
+  };
 
   if (!tx) {
     return (
       <ScreenContainer style={{ alignItems: "center", justifyContent: "center" }}>
         <Stack.Screen options={{ title: "Edit payment" }} />
-        {loadError ? <ErrorNotice message={loadError} /> : <ActivityIndicator color={colors.brand} />}
+        <LoadState error={loadError} onRetry={retryLoad} />
       </ScreenContainer>
     );
   }

@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Image } from "expo-image";
 import { useEffect, useState } from "react";
 import { Text, View } from "react-native";
+import { RemoteImage } from "@/shared/ui/RemoteImage";
 import { useTheme } from "@/shared/ui/theme";
 import { ClientType, getClientPhotoUrl } from "./api";
 
@@ -43,9 +43,7 @@ export function ClientAvatar({
   const uri = localUri ?? (signedUrl && signedUrl.path === photoPath ? signedUrl.url : null);
   const shape = { width: size, height: size, borderRadius: size / 2 };
 
-  if (uri) return <Image source={{ uri }} style={shape} contentFit="cover" transition={150} accessibilityLabel={`${name}'s photo`} />;
-
-  return (
+  const fallback = (
     <View style={[shape, { alignItems: "center", justifyContent: "center", backgroundColor: colors.surfaceAlt }]}>
       {clientType === "organization" ? (
         <Ionicons name="business-outline" size={size * 0.45} color={colors.brand} />
@@ -54,4 +52,7 @@ export function ClientAvatar({
       )}
     </View>
   );
+
+  if (!uri) return fallback;
+  return <RemoteImage uri={uri} style={shape} fallback={fallback} accessibilityLabel={`${name}'s photo`} />;
 }

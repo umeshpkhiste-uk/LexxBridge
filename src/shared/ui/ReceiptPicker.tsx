@@ -1,7 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
-import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import { alertMessage } from "@/shared/lib/alert";
 import { useTheme } from "@/shared/ui/theme";
 import { IMAGE_MAX_SIDE, shrinkImage } from "../lib/shrinkImage";
 
@@ -46,7 +47,7 @@ export function ReceiptPicker({
     const permission =
       source === "camera" ? await ImagePicker.requestCameraPermissionsAsync() : await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert("Permission needed", `Allow ${source === "camera" ? "camera" : "photo"} access in Settings to attach a receipt.`);
+      alertMessage("Permission needed", `Allow ${source === "camera" ? "camera" : "photo"} access in Settings to attach a receipt.`);
       return;
     }
     const options: ImagePicker.ImagePickerOptions = { mediaTypes: ["images"], quality: 0.7 };
@@ -56,7 +57,7 @@ export function ReceiptPicker({
 
     const mimeType = normalizeMimeType(asset.mimeType ?? mimeFromUri(asset.uri) ?? "image/jpeg");
     if (allowedMimeTypes && !allowedMimeTypes.includes(mimeType)) {
-      Alert.alert("Unsupported format", "Please upload a PNG or JPEG/JPG image, or take a new photo.");
+      alertMessage("Unsupported format", "Please upload a PNG or JPEG/JPG image, or take a new photo.");
       return;
     }
     const photo = await shrinkImage({ ...asset, mimeType }, IMAGE_MAX_SIDE.receipt);

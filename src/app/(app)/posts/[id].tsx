@@ -1,12 +1,16 @@
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useState } from "react";
-import { ActivityIndicator, Alert, Image, Pressable, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import { supabase } from "@/shared/lib/supabase";
 import { addComment, deletePost, FeedPost, getPost, getPublicImageUrl, listComments, PostComment, toggleLike } from "@/features/posts/api";
 import { Button } from "@/shared/ui/Button";
 import { ScreenContainer } from "@/shared/ui/ScreenContainer";
 import { TextField } from "@/shared/ui/TextField";
 import { PostVideo } from "@/features/posts/PostVideo";
+import { alertMessage, confirmAlert } from "@/shared/lib/alert";
+import { friendlyErrorMessage } from "@/shared/lib/errors";
+import { LoadState } from "@/shared/ui/LoadState";
+import { RemoteImage } from "@/shared/ui/RemoteImage";
 import { useTheme } from "@/shared/ui/theme";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -19,16 +23,19 @@ export default function PostDetailScreen() {
   const [myId, setMyId] = useState<string | null>(null);
   const [commentText, setCommentText] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
 
   const load = useCallback(() => {
     setIsLoading(true);
+    setError(null);
     Promise.all([getPost(id), listComments(id), supabase.auth.getUser()])
       .then(([postData, commentData, userResult]) => {
         setPost(postData);
         setComments(commentData);
         setMyId(userResult.data.user?.id ?? null);
       })
+      .catch((err) => setError(friendlyErrorMessage(err)))
       .finally(() => setIsLoading(false));
   }, [id]);
 
@@ -41,7 +48,12 @@ export default function PostDetailScreen() {
   const handleToggleLike = async () => {
     if (!post) return;
     setPost({ ...post, liked_by_me: !post.liked_by_me, likes_count: post.likes_count + (post.liked_by_me ? -1 : 1) });
-    await toggleLike(post.id, post.liked_by_me);
+    try {
+      await toggleLike(post.id, post.liked_by_me);
+    } catch (err) {
+      setPost(post);
+      alertMessage("Couldn't update", friendlyErrorMessage(err));
+    }
   };
 
   const handleAddComment = async () => {
@@ -51,37 +63,35 @@ export default function PostDetailScreen() {
       await addComment(id, commentText);
       setCommentText("");
       load();
+    } catch (err) {
+      alertMessage("Couldn't post comment", friendlyErrorMessage(err));
     } finally {
       setIsSubmittingComment(false);
     }
   };
 
   const handleDeletePost = () => {
-    Alert.alert("Delete post", "This can't be undone.", [
+    confirmAlert("Delete post", "This can't be undone.", [
       { text: "Cancel", style: "cancel" },
       {
         text: "Delete",
         style: "destructive",
         onPress: async () => {
-          if (post) await deletePost(post);
-          router.back();
+          try {
+            if (post) await deletePost(post);
+            router.back();
+          } catch (err) {
+            alertMessage("Couldn't delete post", friendlyErrorMessage(err));
+          }
         },
       },
     ]);
   };
 
-  if (isLoading) {
+  if (isLoading || error || !post) {
     return (
-      <ScreenContainer style={{ alignItems: "center", justifyContent: "center" }}>
-        <ActivityIndicator color={colors.brand} />
-      </ScreenContainer>
-    );
-  }
-
-  if (!post) {
-    return (
-      <ScreenContainer style={{ alignItems: "center", justifyContent: "center" }}>
-        <Text style={{ color: colors.danger }}>Post not found</Text>
+      <ScreenContainer>
+        <LoadState error={isLoading ? null : (error ?? "This post isn't available.")} onRetry={load} />
       </ScreenContainer>
     );
   }
@@ -112,10 +122,9 @@ export default function PostDetailScreen() {
       <Text style={[typography.body, { color: colors.textPrimary, marginBottom: spacing.md }]}>{post.content}</Text>
 
       {post.image_path ? (
-        <Image
-          source={{ uri: getPublicImageUrl(post.image_path) }}
-          style={{ width: "100%", height: 220, borderRadius: 8, marginBottom: spacing.md }}
-          resizeMode="cover"
+        <RemoteImage
+          uri={getPublicImageUrl(post.image_path)}
+          style={{ width: "100%", height: 220, borderRadius: 8, marginBottom: spacing.md, backgroundColor: colors.surfaceAlt }}
         />
       ) : null}
       {post.video_path ? (

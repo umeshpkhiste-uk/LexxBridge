@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Alert, Image, Linking, Pressable, StyleSheet, Text, TextInput, View, type ViewInstance } from "react-native";
+import { ActivityIndicator, Linking, Pressable, StyleSheet, Text, TextInput, View, type ViewInstance } from "react-native";
 import {
   addComment,
   deleteComment,
@@ -25,6 +25,9 @@ import { friendlyErrorMessage } from "@/shared/lib/errors";
 import { SheetAction } from "@/shared/ui/ActionSheet";
 import { ContextMenu, measureAnchor, MenuAnchor } from "@/shared/ui/ContextMenu";
 import { PostVideo } from "@/features/posts/PostVideo";
+import { alertMessage, confirmAlert } from "@/shared/lib/alert";
+import { LoadState } from "@/shared/ui/LoadState";
+import { RemoteImage } from "@/shared/ui/RemoteImage";
 import { useTheme } from "@/shared/ui/theme";
 import type { PublicProfile } from "./api";
 
@@ -230,14 +233,17 @@ export function Avatar({
   userId?: string | null;
 }) {
   const { colors, typography } = useTheme();
+  const fallback = (
+    <View style={[styles.avatarFallback, { width: size, height: size, borderRadius: size / 2, backgroundColor: colors.surfaceAlt }]}>
+      <Text style={[typography.bodyStrong, { color: colors.brand, fontSize: size * 0.34 }]}>{initials(name)}</Text>
+    </View>
+  );
   return (
     <View style={{ width: size, height: size }}>
       {photoUrl ? (
-        <Image source={{ uri: photoUrl }} style={{ width: size, height: size, borderRadius: size / 2 }} />
+        <RemoteImage uri={photoUrl} style={{ width: size, height: size, borderRadius: size / 2 }} fallback={fallback} />
       ) : (
-        <View style={[styles.avatarFallback, { width: size, height: size, borderRadius: size / 2, backgroundColor: colors.surfaceAlt }]}>
-          <Text style={[typography.bodyStrong, { color: colors.brand, fontSize: size * 0.34 }]}>{initials(name)}</Text>
-        </View>
+        fallback
       )}
       {verified ? (
         <View style={[styles.verifiedBadge, { backgroundColor: colors.surface }]}>
@@ -311,7 +317,7 @@ export function PostCard({
       onEdited(await updatePost(post.id, text));
       setIsEditing(false);
     } catch (err) {
-      Alert.alert("Couldn't update post", friendlyErrorMessage(err));
+      alertMessage("Couldn't update post", friendlyErrorMessage(err));
     } finally {
       isSavingRef.current = false;
       setIsSaving(false);
@@ -319,7 +325,7 @@ export function PostCard({
   };
 
   const confirmDelete = () =>
-    Alert.alert("Delete this post?", "It will be removed from the feed for everyone, along with its comments and reactions. This can't be undone.", [
+    confirmAlert("Delete this post?", "It will be removed from the feed for everyone, along with its comments and reactions. This can't be undone.", [
       { text: "Cancel", style: "cancel" },
       {
         text: "Delete",
@@ -329,7 +335,7 @@ export function PostCard({
             await deletePost(post);
             onDeleted();
           } catch (err) {
-            Alert.alert("Couldn't delete post", friendlyErrorMessage(err));
+            alertMessage("Couldn't delete post", friendlyErrorMessage(err));
           }
         },
       },
@@ -419,10 +425,9 @@ export function PostCard({
         </View>
       ) : null}
       {post.image_path ? (
-        <Image
-          source={{ uri: getPublicImageUrl(post.image_path) }}
-          style={{ width: "100%", height: 190, borderRadius: radius.sm, marginTop: spacing.sm }}
-          resizeMode="cover"
+        <RemoteImage
+          uri={getPublicImageUrl(post.image_path)}
+          style={{ width: "100%", height: 190, borderRadius: radius.sm, marginTop: spacing.sm, backgroundColor: colors.surfaceAlt }}
         />
       ) : null}
       {post.video_path ? (
@@ -484,7 +489,11 @@ function InlineComments({ postId, onAdded, onRemoved }: { postId: string; onAdde
   const typingStopTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const othersTypingTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
-  const refresh = () => listComments(postId).then(setComments).catch(() => setComments((prev) => prev ?? []));
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const refresh = () =>
+    listComments(postId)
+      .then(setComments)
+      .catch((err) => setLoadError(friendlyErrorMessage(err)));
 
   useEffect(() => {
     let isMounted = true;
@@ -555,7 +564,7 @@ function InlineComments({ postId, onAdded, onRemoved }: { postId: string; onAdde
       await refresh();
       onAdded();
     } catch (err) {
-      Alert.alert("Couldn't post comment", friendlyErrorMessage(err));
+      alertMessage("Couldn't post comment", friendlyErrorMessage(err));
     } finally {
       isSendingRef.current = false;
       setIsSending(false);
@@ -567,7 +576,13 @@ function InlineComments({ postId, onAdded, onRemoved }: { postId: string; onAdde
   return (
     <View style={[styles.comments, { borderTopColor: colors.border, marginTop: spacing.xs, paddingTop: spacing.sm, gap: spacing.sm }]}>
       {comments === null ? (
-        <ActivityIndicator color={colors.brand} />
+        <LoadState
+          error={loadError}
+          onRetry={() => {
+            setLoadError(null);
+            refresh();
+          }}
+        />
       ) : comments.length === 0 ? (
         <Text style={[typography.caption, { color: colors.textSecondary }]}>No replies yet. Start the discussion.</Text>
       ) : !expanded ? (
@@ -680,7 +695,7 @@ function CommentRow({
       onEdited(await updateComment(comment.id, text));
       setIsEditing(false);
     } catch (err) {
-      Alert.alert("Couldn't update comment", friendlyErrorMessage(err));
+      alertMessage("Couldn't update comment", friendlyErrorMessage(err));
     } finally {
       isSavingRef.current = false;
       setIsSaving(false);
@@ -688,7 +703,7 @@ function CommentRow({
   };
 
   const confirmDelete = () =>
-    Alert.alert("Delete this comment?", "This can't be undone.", [
+    confirmAlert("Delete this comment?", "This can't be undone.", [
       { text: "Cancel", style: "cancel" },
       {
         text: "Delete",
@@ -698,7 +713,7 @@ function CommentRow({
             await deleteComment(comment.id);
             onDeleted();
           } catch (err) {
-            Alert.alert("Couldn't delete comment", friendlyErrorMessage(err));
+            alertMessage("Couldn't delete comment", friendlyErrorMessage(err));
           }
         },
       },
@@ -809,14 +824,17 @@ export function PortraitAvatar({
   const { colors, typography } = useTheme();
   const corner = size * 0.22;
   const badge = Math.round(size * 0.34);
+  const fallback = (
+    <View style={[styles.avatarFallback, { width: size, height: size, borderRadius: corner, backgroundColor: colors.surfaceAlt }]}>
+      <Text style={[typography.title, { color: colors.brand, fontSize: size * 0.32 }]}>{initials(name)}</Text>
+    </View>
+  );
   return (
     <View style={{ width: size, height: size }}>
       {photoUrl ? (
-        <Image source={{ uri: photoUrl }} style={{ width: size, height: size, borderRadius: corner }} />
+        <RemoteImage uri={photoUrl} style={{ width: size, height: size, borderRadius: corner }} fallback={fallback} />
       ) : (
-        <View style={[styles.avatarFallback, { width: size, height: size, borderRadius: corner, backgroundColor: colors.surfaceAlt }]}>
-          <Text style={[typography.title, { color: colors.brand, fontSize: size * 0.32 }]}>{initials(name)}</Text>
-        </View>
+        fallback
       )}
       <View
         style={[

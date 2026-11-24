@@ -77,6 +77,9 @@ Reuse these; don't build a one-off styled component for something this list alre
 | `Button` | Primary/secondary/ghost variants, loading state, optional `pill` shape (auth CTAs only) |
 | `TextField`, `SelectField`, `DateField`, `TagInput` | Form inputs, theme-driven border/background |
 | `ScreenContainer` | Safe-area + keyboard-avoiding screen wrapper; `scroll` prop toggles a `ScrollView`; skips the top inset automatically when a nav header is already shown |
+| `LoadState` (`LoadingView`, `ErrorView`) | Shown until a screen or section has its data: spinner, "Your network is slow" after 6 s, "You're offline", or an error with Try again. Use instead of a bare `ActivityIndicator`; never show an empty list or a blank edit form when loading failed |
+| `RemoteImage` | Any image from the network: loading, slow and failed (tap to retry) states, or a `fallback` for avatars |
+| `CrashScreen` | Error boundary for every screen, wired in `src/app/_layout.tsx` |
 | `SettingsGroup` | Grouped-rows card, used for every Settings-style screen |
 | `Badge`, `Chip` | Status/tag pills (verification status, block reason, etc.) |
 | `ActionSheet` | Bottom action sheet (native) / fallback presentation on web |

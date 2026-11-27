@@ -92,7 +92,7 @@ Configuration:**
   "work" but land somewhere that looks wrong (we hit exactly this once — see commit history around
   the reset-password email investigation).
 
-## Social login (Google / Facebook / Apple)
+## Social login (Google; Facebook supported in code but not shown)
 
 `src/features/auth/socialLogin.ts`. Also PKCE OAuth through Supabase:
 `signInWithProvider(provider)` opens the provider's page in a secure in-app browser

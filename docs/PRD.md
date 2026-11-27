@@ -69,7 +69,7 @@ advocate accounts, confirm A cannot read B's private data") is automated and pas
 
 | Area | Status | Notes |
 |---|---|---|
-| Authentication | ✅ | Email/password + Google/Facebook/Apple OAuth, forgot/reset password, session management, biometric + app-lock. SMS-code login for verified numbers is built but off until an SMS provider is configured. See `docs/AUTH.md`. |
+| Authentication | ✅ | Email/password + Google OAuth (Facebook supported in code but not shown), forgot/reset password, session management, biometric + app-lock. SMS-code login for verified numbers is built but off until an SMS provider is configured. See `docs/AUTH.md`. |
 | Advocate profile | ✅ | All spec'd fields; sensitive verification fields excluded from the public view by design. |
 | Home dashboard | ✅ | Today's hearings/meetings, pending tasks, outstanding payments, recent cases. |
 | Client management | ✅ | Full CRUD, search, archive, per-client case/transaction/document history. |

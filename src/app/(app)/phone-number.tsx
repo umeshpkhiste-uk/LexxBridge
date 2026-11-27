@@ -20,7 +20,7 @@ export default function PhoneNumberScreen() {
   const user = session?.user;
   const email = user?.email;
   // A verified number is a way into the account, so adding one asks for the
-  // password first. Google / Apple accounts don't have one.
+  // password first. Google accounts don't have one.
   const needsPassword = !!email && !!user?.app_metadata.providers?.includes("email");
 
   const send = async (phone: string) => {

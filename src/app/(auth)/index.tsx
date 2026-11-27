@@ -31,7 +31,6 @@ const SLIDES = [
 ];
 
 const SOCIAL: { provider: SocialProvider; icon: keyof typeof Ionicons.glyphMap; color?: string }[] = [
-  { provider: "apple", icon: "logo-apple" },
   { provider: "google", icon: "logo-google", color: "#EA4335" },
 ];
 

@@ -8,9 +8,9 @@ import { supabase } from "@/shared/lib/supabase";
 // Closes the auth popup on web once the provider redirects back.
 WebBrowser.maybeCompleteAuthSession();
 
-export type SocialProvider = "google" | "facebook" | "apple";
+export type SocialProvider = "google" | "facebook";
 
-export const SOCIAL_LABEL: Record<SocialProvider, string> = { google: "Google", facebook: "Facebook", apple: "Apple" };
+export const SOCIAL_LABEL: Record<SocialProvider, string> = { google: "Google", facebook: "Facebook" };
 
 /** Which sign-in methods besides email are switched on in the Supabase project. */
 export async function getEnabledProviders(): Promise<Record<SocialProvider | "phone", boolean>> {
@@ -22,18 +22,17 @@ export async function getEnabledProviders(): Promise<Record<SocialProvider | "ph
     return {
       google: !!settings.external?.google,
       facebook: !!settings.external?.facebook,
-      apple: !!settings.external?.apple,
       phone: !!settings.external?.phone,
     };
   } catch {
-    return { google: false, facebook: false, apple: false, phone: false };
+    return { google: false, facebook: false, phone: false };
   }
 }
 
 export type SocialResult = { status: "signed-in" } | { status: "cancelled" } | { status: "error"; message: string };
 
 /**
- * Sign in (or sign up) with Google / Facebook / Apple through Supabase OAuth
+ * Sign in (or sign up) with Google / Facebook through Supabase OAuth
  * (PKCE): the provider's page opens in a secure in-app browser, redirects
  * back to `<scheme>://auth-callback?code=…`, and the code is exchanged here
  * for a session. New users get a profile from the database trigger and then

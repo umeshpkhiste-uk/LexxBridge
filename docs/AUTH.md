@@ -102,6 +102,24 @@ so the sign-in screen only shows buttons for providers actually turned on in the
 social sign-ups get a profile row the same way email sign-ups do (same `handle_new_user` trigger)
 and go through the same onboarding.
 
+## Mobile number login (SMS code)
+
+`src/features/auth/phone.ts`, `PhoneCodeForm.tsx`, `(auth)/phone-login.tsx`, `(app)/phone-number.tsx`.
+
+- **A code never creates an account** (`shouldCreateUser: false`), otherwise someone who signed up
+  by email would get a second, empty account. A number works only once it's verified in Settings →
+  Security → Mobile number login (`updateUser({ phone })` + `verifyOtp` type `phone_change`), which
+  asks for the current password first on email accounts.
+- The sign-in screen gives the same answer for unknown numbers, so it can't be used to find out
+  who is registered.
+- The login number is `auth.users.phone`. It is separate from the contact number on the profile,
+  so the `phone_changed` notice (below) does **not** fire for it.
+- Off until **Authentication → Sign In / Providers → Phone** is enabled in the Supabase dashboard
+  with an SMS provider; `getEnabledProviders().phone` drives both screens. For Indian numbers the
+  sender ID and message template must be DLT-registered (TRAI). Set the OTP length to 6, and turn on
+  CAPTCHA / check the SMS rate limit first, since every text costs money. The SMS provider must be
+  listed as a Data Processor in the Privacy Policy before this is switched on.
+
 ## Biometric "login" (Face ID / Touch ID / fingerprint)
 
 `src/features/biometric/biometric.ts`. **Important: this is not a second factor and does not

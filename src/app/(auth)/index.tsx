@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Link, useLocalSearchParams } from "expo-router";
+import { Link, router, useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -50,7 +50,7 @@ export default function WelcomeScreen() {
     if (next !== page) setPage(next);
   };
 
-  const [enabled, setEnabled] = useState<Record<SocialProvider, boolean> | null>(null);
+  const [enabled, setEnabled] = useState<Record<SocialProvider | "phone", boolean> | null>(null);
   const [busy, setBusy] = useState<SocialProvider | null>(null);
   // `busy`-driven `disabled` only takes effect after a re-render, so a fast
   // double-tap can call onSocial twice first — this ref blocks the second
@@ -88,6 +88,19 @@ export default function WelcomeScreen() {
     } finally {
       isActingRef.current = false;
       setBusy(null);
+    }
+  };
+
+  const onPhone = async () => {
+    if (isActingRef.current) return;
+    isActingRef.current = true;
+    try {
+      const current = enabled?.phone ? enabled : await getEnabledProviders();
+      setEnabled(current);
+      if (current.phone) router.push("/(auth)/phone-login");
+      else alertMessage("Mobile sign-in unavailable", "Mobile sign-in isn't available yet. Please continue with your email for now.");
+    } finally {
+      isActingRef.current = false;
     }
   };
 
@@ -228,6 +241,18 @@ export default function WelcomeScreen() {
                 )}
               </Pressable>
             ))}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Sign in with a code sent by SMS"
+              disabled={!!busy}
+              onPress={onPhone}
+              style={({ pressed }) => [
+                styles.socialButton,
+                { backgroundColor: colors.surfaceAlt, borderRadius: radius.pill, opacity: pressed ? 0.85 : 1 },
+              ]}
+            >
+              <Ionicons name="chatbox-ellipses-outline" size={24} color={colors.brand} />
+            </Pressable>
           </View>
 
           <Link href="/(auth)/sign-up" style={{ marginTop: spacing.md, alignSelf: "center" }}>

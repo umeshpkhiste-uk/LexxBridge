@@ -45,6 +45,11 @@ const AUTH_MESSAGES: Record<string, string> = {
   over_email_send_rate_limit: "Too many emails requested. Please wait a few minutes and try again.",
   user_banned: "This account has been disabled. Please contact support.",
   signup_disabled: "Sign-up isn't available right now.",
+  otp_expired: "That code is wrong or has expired. Request a new one.",
+  sms_send_failed: "The code couldn't be sent. Please try again in a few minutes.",
+  over_sms_send_rate_limit: "Too many codes requested. Please wait a few minutes and try again.",
+  phone_exists: "This number is already used by another account.",
+  phone_provider_disabled: "Mobile sign-in isn't available yet.",
   session_not_found: "Your session has ended. Please sign in again.",
   session_expired: "Your session has ended. Please sign in again.",
 };

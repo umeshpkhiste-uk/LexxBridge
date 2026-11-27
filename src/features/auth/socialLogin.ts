@@ -12,8 +12,8 @@ export type SocialProvider = "google" | "facebook" | "apple";
 
 export const SOCIAL_LABEL: Record<SocialProvider, string> = { google: "Google", facebook: "Facebook", apple: "Apple" };
 
-/** Which social providers are switched on in the Supabase project. */
-export async function getEnabledProviders(): Promise<Record<SocialProvider, boolean>> {
+/** Which sign-in methods besides email are switched on in the Supabase project. */
+export async function getEnabledProviders(): Promise<Record<SocialProvider | "phone", boolean>> {
   try {
     const res = await fetch(`${process.env.EXPO_PUBLIC_SUPABASE_URL}/auth/v1/settings`, {
       headers: { apikey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? "" },
@@ -23,9 +23,10 @@ export async function getEnabledProviders(): Promise<Record<SocialProvider, bool
       google: !!settings.external?.google,
       facebook: !!settings.external?.facebook,
       apple: !!settings.external?.apple,
+      phone: !!settings.external?.phone,
     };
   } catch {
-    return { google: false, facebook: false, apple: false };
+    return { google: false, facebook: false, apple: false, phone: false };
   }
 }
 

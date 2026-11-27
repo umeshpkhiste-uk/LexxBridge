@@ -9,6 +9,7 @@ import { LockMethod } from "@/features/applock/rules";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { authenticateBiometric, disableBiometric, enableBiometric, getBiometricSupport, isBiometricEnabledFor } from "@/features/biometric/biometric";
 import { signOutOtherSessions } from "@/features/auth/api";
+import { getEnabledProviders } from "@/features/auth/socialLogin";
 import { confirmDeleteAccount } from "@/features/account/confirmDeleteAccount";
 import { getMyLatestConsent } from "@/features/legal/dpdpApi";
 import { alertMessage, confirmAlert } from "@/shared/lib/alert";
@@ -35,11 +36,13 @@ export default function SettingsScreen() {
   const [lockMethod, setLockMethod] = useState<LockMethod | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
 
+  const [phoneLogin, setPhoneLogin] = useState(false);
   const [consent, setConsent] = useState<{ accepted_at: string } | null>(null);
   const [isWithdrawing, setIsWithdrawing] = useState(false);
 
   useEffect(() => {
     getThemePreference().then(setThemePref).catch(() => {});
+    getEnabledProviders().then((p) => setPhoneLogin(p.phone));
     isCurrentUserAdmin().then(setIsAdmin).catch(() => {});
     getMyLatestConsent().then(setConsent).catch(() => {});
   }, []);
@@ -175,6 +178,14 @@ export default function SettingsScreen() {
           subtitle={lockMethod === "pin" ? t("settings.appLockOnPin") : lockMethod === "pattern" ? t("settings.appLockOnPattern") : t("settings.appLockOff")}
           onPress={() => router.push("/(app)/app-lock")}
         />
+        {phoneLogin ? (
+          <SettingsRow
+            icon="phone-portrait-outline"
+            label="Mobile number login"
+            subtitle={session?.user.phone ? `+${session.user.phone} verified` : "Verify a number to sign in with an SMS code"}
+            onPress={() => router.push("/(app)/phone-number")}
+          />
+        ) : null}
         <SettingsRow
           icon="key-outline"
           label="Message backup"
